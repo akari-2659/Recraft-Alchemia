@@ -181,7 +181,7 @@
   .skill-category-card { margin-bottom: 12px; }
   .skill-row {
     display: grid;
-    grid-template-columns: 1.2fr .65fr .65fr .65fr .65fr;
+    grid-template-columns: 1.2fr .6fr .6fr .6fr .6fr .6fr;
     gap: 8px;
     align-items: center;
     border-top: 1px dashed rgba(221, 203, 176, .78);
@@ -198,6 +198,7 @@
     .skill-cell.base::before { content: "能力"; }
     .skill-cell.cat::before { content: "分類P"; }
     .skill-cell.free::before { content: "自由P"; }
+    .skill-cell.other::before { content: "その他"; }
     .skill-cell.total::before { content: "技能値"; }
   }
 
@@ -205,7 +206,10 @@
   @media (min-width: 760px) { .formula-grid { grid-template-columns: 1fr 1fr; } }
   .spellbook-fields { display: none; border-top: 1px dashed rgba(221, 203, 176, .85); margin-top: 8px; padding-top: 10px; }
   .spellbook-fields.active { display: block; }
-  .spell-set-select { min-height: 132px; }
+  .spell-slot-list { display: grid; gap: 8px; }
+  .spell-slot-row { display: grid; gap: 4px; }
+  .spell-slot-row label { font-size: .8rem; color: var(--muted); font-weight: 900; }
+  .spell-slot-select { min-height: 38px; }
   .field-disabled-by-type { opacity: .55; }
   .spell-slot-badge { display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(184,119,56,.26); background: rgba(184,119,56,.08); color: var(--accent2); border-radius: 999px; padding: 4px 10px; font-size: .82rem; font-weight: 900; }
   .inventory-toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 12px; }
@@ -714,7 +718,7 @@
       <details class="big-section" open>
         <summary>技能</summary>
         <div class="section-body">
-          <p class="hint">各分類ポイントは分類ごとに2点＋ボーナス、自由ポイントは合計3点です。初期作成時、1技能への割り振り合計は最大+3です。</p>
+          <p class="hint">各分類ポイントは分類ごとに2点＋ボーナス、自由ポイントは合計3点です。「その他」は装備・アイテム・状態補正などの増減に使用します。</p>
           <div id="skillPointStatus" class="status-box">技能ポイントを確認します。</div>
           <div id="skillArea"></div>
         </div>
@@ -757,7 +761,7 @@
           </div>
           <div class="inventory-toolbar">
             <button id="addInventoryItemBtn" type="button">追加</button>
-            <button id="addInitialWeaponSetBtn" type="button" class="secondary">初期所持品を登録</button>
+            <button id="addInitialWeaponSetBtn" type="button" class="secondary">初期所持品をDB同期</button>
             <button id="sortInventoryItemBtn" type="button" class="ghost">名称順に整理</button>
           </div>
           <div id="inventoryArea" class="inventory-list"></div>
@@ -803,7 +807,7 @@
       <div class="field"><label for="inventoryFormPrice">価格/売価</label><input id="inventoryFormPrice" type="text" placeholder="例：30G" /></div>
       <div class="field inventory-wide"><label for="inventoryFormCategory">カテゴリ</label><input id="inventoryFormCategory" type="text" placeholder="例：短剣 / 回復薬 / 草花 / 調合レシピ" /></div>
       <div class="field" data-inventory-kind-field="weapon armor accessory"><label for="inventoryFormEquipSlot">装備/使用枠</label><select id="inventoryFormEquipSlot"><option value="">なし</option><option>右手/左手</option><option>両手</option><option>鎧</option><option>装飾品</option><option>携行品</option></select></div>
-      <div class="field" data-inventory-kind-field="weapon"><label for="inventoryFormPower">威力</label><input id="inventoryFormPower" type="text" placeholder="例：1D6+1" /></div>
+      <div class="field" data-inventory-kind-field="weapon item spell"><label for="inventoryFormPower">威力</label><input id="inventoryFormPower" type="text" placeholder="例：1D6+1 / 武器依存 / 1D6+魔法ポイント" /></div>
       <div class="field" data-inventory-kind-field="weapon"><label for="inventoryFormHit">命中補正</label><input id="inventoryFormHit" type="text" placeholder="例：+1 / -1" /></div>
       <div class="field" data-inventory-kind-field="armor accessory"><label for="inventoryFormDefense">常時防御値</label><input id="inventoryFormDefense" type="text" placeholder="例：2" /></div>
       <div class="field" data-inventory-kind-field="armor"><label for="inventoryFormGuard">防御行動値</label><input id="inventoryFormGuard" type="text" placeholder="例：1D6+1" /></div>
@@ -812,7 +816,6 @@
       <div class="field" data-inventory-kind-field="accessory"><label for="inventoryFormSpellSlots">術式登録枠</label><input id="inventoryFormSpellSlots" type="number" min="0" max="99" value="" placeholder="魔印/聖印用" /></div>
       <div class="field" data-inventory-kind-field="item spell"><label for="inventoryFormTarget">対象</label><input id="inventoryFormTarget" type="text" placeholder="例：味方1体 / 敵1体" /></div>
       <div class="field" data-inventory-kind-field="spell"><label for="inventoryFormCost">コスト</label><input id="inventoryFormCost" type="text" placeholder="例：MP1 / MP2" /></div>
-      <div class="field" data-inventory-kind-field="item spell"><label for="inventoryFormDamage">ダメージ</label><input id="inventoryFormDamage" type="text" placeholder="例：武器依存 / 1D6+魔法ポイント" /></div>
       <div class="field inventory-wide" data-inventory-kind-field="recipe"><label for="inventoryFormRecipeResult">完成品</label><input id="inventoryFormRecipeResult" type="text" placeholder="例：ポーション ×1" /></div>
       <div class="field inventory-wide" data-inventory-kind-field="recipe"><label for="inventoryFormMaterials">必要素材</label><textarea id="inventoryFormMaterials" placeholder="例：薬草×1、澄んだ水×1"></textarea></div>
       <div class="field inventory-wide" data-inventory-kind-field="weapon armor accessory item spell recipe important other"><label for="inventoryFormDescription">説明</label><textarea id="inventoryFormDescription" placeholder="見た目、雰囲気、使われ方など"></textarea></div>
@@ -1103,23 +1106,26 @@ function categoryPointLimits(stats=getStats(), manual=getManualCategoryBonuses()
 }
 function defaultSkillAlloc() {
   const alloc = {};
-  for (const key of Object.keys(SKILL_BY_KEY)) alloc[key] = { cat: 0, free: 0 };
+  for (const key of Object.keys(SKILL_BY_KEY)) alloc[key] = { cat: 0, free: 0, other: 0 };
   return alloc;
 }
 function getSkillAlloc() {
   const alloc = defaultSkillAlloc();
   for (const key of Object.keys(SKILL_BY_KEY)) {
     alloc[key] = {
-      cat: clampInt($('skill_cat_' + key)?.value || 0, 0, 3),
+      cat: clampInt($('skill_cat_' + key)?.value || 0, 0, 99),
       free: clampInt($('skill_free_' + key)?.value || 0, 0, 3),
+      other: clampInt($('skill_other_' + key)?.value || 0, 0, 99),
     };
   }
   return alloc;
 }
 function setSkillAlloc(alloc={}) {
   for (const key of Object.keys(SKILL_BY_KEY)) {
-    if ($('skill_cat_' + key)) $('skill_cat_' + key).value = clampInt(alloc?.[key]?.cat || 0, 0, 3);
+    if ($('skill_cat_' + key)) $('skill_cat_' + key).value = clampInt(alloc?.[key]?.cat || 0, 0, 99);
     if ($('skill_free_' + key)) $('skill_free_' + key).value = clampInt(alloc?.[key]?.free || 0, 0, 3);
+    if ($('skill_other_' + key)) $('skill_other_' + key).value = clampInt(alloc?.[key]?.other || 0, -99, 99);
+    if ($('skill_other_' + key)) $('skill_other_' + key).value = clampInt(alloc?.[key]?.other || 0, 0, 99);
   }
   updateAll();
 }
@@ -1129,7 +1135,8 @@ function skillTotals(abilities=computeAbilities(), alloc=getSkillAlloc()) {
     const base = abilities[sk.ability] || 0;
     const cat = alloc[key]?.cat || 0;
     const free = alloc[key]?.free || 0;
-    totals[key] = { base, cat, free, add: cat + free, total: base + cat + free };
+    const other = alloc[key]?.other || 0;
+    totals[key] = { base, cat, free, other, add: cat + free + other, total: base + cat + free + other };
   }
   return totals;
 }
@@ -1144,7 +1151,6 @@ function validateSkills(alloc=getSkillAlloc(), stats=getStats(), manual=getManua
     const free = v.free || 0;
     catSums[sk.category] += cat;
     freeSum += free;
-    if (cat + free > 3) errors.push(`${sk.name} の割り振りが+3を超えています。`);
   }
   for (const c of SKILL_CATEGORIES) if (catSums[c.key] > catLimits[c.key]) errors.push(`${c.name}ポイントが${catLimits[c.key]}点を超えています。`);
   if (freeSum > 3) errors.push(`自由ポイントが3点を超えています。`);
@@ -1175,14 +1181,15 @@ function renderStatic() {
     <div class="skill-category-card" data-cat="${cat.key}">
       <h3>${cat.name} <span class="small">基礎能力：${ABILITY_NAMES[cat.ability]} / 分類P 0/2</span></h3>
       <div class="skill-row header">
-        <div>技能</div><div>能力</div><div>分類P</div><div>自由P</div><div>技能値</div>
+        <div>技能</div><div>能力</div><div>分類P</div><div>自由P</div><div>その他</div><div>技能値</div>
       </div>
       ${cat.skills.map(sk => `
         <div class="skill-row">
           <div class="skill-name">${sk.name}</div>
           <div class="skill-cell base"><span id="skill_base_${sk.key}">0</span></div>
-          <div class="skill-cell cat"><input id="skill_cat_${sk.key}" data-skill-input="1" type="number" min="0" max="3" value="0" /></div>
+          <div class="skill-cell cat"><input id="skill_cat_${sk.key}" data-skill-input="1" type="number" min="0" max="99" value="0" /></div>
           <div class="skill-cell free"><input id="skill_free_${sk.key}" data-skill-input="1" type="number" min="0" max="3" value="0" /></div>
+          <div class="skill-cell other"><input id="skill_other_${sk.key}" data-skill-input="1" type="number" min="0" max="99" value="0" /></div>
           <div class="skill-cell total computed-value" id="skill_total_${sk.key}">0</div>
         </div>
       `).join('')}
@@ -1278,8 +1285,9 @@ function renderStatic() {
               <span class="small">所持品に登録されている術式から選択してください。</span>
             </div>
             <div class="field equipment-wide">
-              <label for="equip_${slot.key}_setSpells">セット術式</label>
-              <select id="equip_${slot.key}_setSpells" class="spell-set-select" data-equipment-input="1" multiple size="6"></select>
+              <label>セット術式</label>
+              <div id="equip_${slot.key}_spellSlotList" class="spell-slot-list" data-equipment-input="1"></div>
+              <input id="equip_${slot.key}_setSpells" data-equipment-input="1" type="hidden" value="" />
               <input id="equip_${slot.key}_knownSpells" data-equipment-input="1" type="hidden" value="" />
               <div id="equip_${slot.key}_spellHelp" class="small">所持品に対応する術式がない場合は、所持品タブで術式を登録してください。</div>
             </div>
@@ -1358,7 +1366,7 @@ function makeSummary() {
     lines.push(`［${cat.name}］`);
     for (const sk of cat.skills) {
       const t = totals[sk.key];
-      lines.push(`${sk.name}: ${t.total}（能力${t.base}+割振${t.add}）`);
+      lines.push(`${sk.name}: ${t.total}（能力${t.base}+分類P${t.cat}+自由P${t.free}+その他${t.other || 0}）`);
     }
   }
   pushInventorySummaryLines(lines, data.inventory || {});
@@ -1529,7 +1537,7 @@ function spellContainerKind(type) {
 }
 function getSkillPointTotal(skillKey, alloc=getSkillAlloc()) {
   const row = alloc?.[skillKey] || {};
-  return (Number(row.cat) || 0) + (Number(row.free) || 0);
+  return (Number(row.cat) || 0) + (Number(row.free) || 0) + (Number(row.other) || 0);
 }
 function selectedSpellSlotBase(slotKey, info) {
   const row = findCsItemById($('equip_' + slotKey + '_itemSelect')?.value || '');
@@ -1547,10 +1555,16 @@ function splitFormulaList(text) {
   return String(text || '').split(/[\n,、，\/]+/).map(v => v.trim()).filter(Boolean);
 }
 function selectedSpellNames(slotKey) {
+  const list = $('equip_' + slotKey + '_spellSlotList');
+  if (list) {
+    return Array.from(list.querySelectorAll('select.spell-slot-select'))
+      .map(sel => sel.value)
+      .filter(Boolean);
+  }
   const el = $('equip_' + slotKey + '_setSpells');
   if (!el) return [];
   if (el.tagName === 'SELECT') return Array.from(el.selectedOptions || []).map(o => o.value).filter(Boolean);
-  return splitFormulaList(el.value || '');
+  return splitFormulaList(el.value || el.dataset.pendingSpells || '');
 }
 function spellTypeAliases(label) {
   if (label === '魔法') return ['魔法'];
@@ -1567,40 +1581,85 @@ function ownedSpellRowsForInfo(info) {
   }).sort((a,b) => String(a.rank || '').localeCompare(String(b.rank || ''), 'ja') || String(a.name || '').localeCompare(String(b.name || ''), 'ja'));
 }
 function spellOptionLabel(item) {
-  const meta = [item.cost ? 'コスト ' + item.cost : '', item.target ? '対象 ' + item.target : '', item.damage ? 'ダメージ ' + item.damage : ''].filter(Boolean).join(' / ');
+  const meta = [item.cost ? 'コスト ' + item.cost : '', item.target ? '対象 ' + item.target : '', item.power ? '威力 ' + item.power : ''].filter(Boolean).join(' / ');
   return meta ? `${item.name}（${meta}）` : item.name;
 }
+function syncSpellSetHidden(slotKey) {
+  const hidden = $('equip_' + slotKey + '_setSpells');
+  if (!hidden) return;
+  const names = selectedSpellNames(slotKey);
+  hidden.value = names.join('\n');
+  hidden.dataset.pendingSpells = hidden.value;
+}
 function setSpellSelectValues(slotKey, values) {
-  const el = $('equip_' + slotKey + '_setSpells');
-  if (!el) return;
+  const hidden = $('equip_' + slotKey + '_setSpells');
   const names = Array.isArray(values) ? values : splitFormulaList(values || '');
-  el.dataset.pendingSpells = names.join('\n');
+  if (hidden) {
+    hidden.value = names.join('\n');
+    hidden.dataset.pendingSpells = hidden.value;
+  }
+  const list = $('equip_' + slotKey + '_spellSlotList');
+  if (list) {
+    list.dataset.pendingSpells = names.join('\n');
+    const selects = Array.from(list.querySelectorAll('select.spell-slot-select'));
+    if (selects.length) {
+      selects.forEach((sel, i) => { sel.value = names[i] || ''; });
+      syncSpellSetHidden(slotKey);
+    }
+    return;
+  }
+  const el = hidden;
+  if (!el) return;
   if (el.tagName === 'SELECT') {
     const set = new Set(names);
     Array.from(el.options || []).forEach(opt => { opt.selected = set.has(opt.value); });
-  } else {
-    el.value = names.join('\n');
   }
 }
 function refreshSpellSetSelect(slotKey, info=null) {
-  const el = $('equip_' + slotKey + '_setSpells');
-  if (!el || el.tagName !== 'SELECT') return;
+  const hidden = $('equip_' + slotKey + '_setSpells');
+  const list = $('equip_' + slotKey + '_spellSlotList');
+  if (!hidden && !list) return;
   const type = $('equip_' + slotKey + '_type')?.value || 'なし';
   const spellInfo = info || spellContainerKind(type);
   const current = selectedSpellNames(slotKey);
-  const pending = splitFormulaList(el.dataset.pendingSpells || '');
+  const pending = splitFormulaList((hidden && (hidden.value || hidden.dataset.pendingSpells)) || (list && list.dataset.pendingSpells) || '');
   const keep = current.length ? current : pending;
-  const rows = ownedSpellRowsForInfo(spellInfo);
   if (!spellInfo) {
-    el.innerHTML = '';
-    el.dataset.pendingSpells = '';
+    if (list) list.innerHTML = '';
+    if (hidden) { hidden.value = ''; hidden.dataset.pendingSpells = ''; }
     return;
   }
+  const limit = spellSlotLimitForType(type, getSkillAlloc(), slotKey);
+  const rows = ownedSpellRowsForInfo(spellInfo);
+  const safeLimit = Math.max(0, Number(limit) || 0);
+  if (list) {
+    if (!safeLimit) {
+      list.innerHTML = '<div class="small">この装備にはセットできる術式枠がありません。</div>';
+      if (hidden) { hidden.value = ''; hidden.dataset.pendingSpells = ''; }
+      return;
+    }
+    const selectedBySlot = keep.slice(0, safeLimit);
+    const rowOptions = rows.map(row => ({ value: String(row.name || ''), label: spellOptionLabel(row) })).filter(o => o.value);
+    list.innerHTML = Array.from({ length: safeLimit }, (_, i) => {
+      const selectedValue = selectedBySlot[i] || '';
+      const options = ['<option value="">術式を選択してください</option>'].concat(rowOptions.map(opt =>
+        `<option value="${esc(opt.value)}" ${opt.value === selectedValue ? 'selected' : ''}>${esc(opt.label)}</option>`
+      ));
+      return `<div class="spell-slot-row"><label>${i + 1}枠目</label><select class="spell-slot-select" data-slot-key="${esc(slotKey)}" data-slot-index="${i}" data-equipment-input="1">${options.join('')}</select></div>`;
+    }).join('');
+    if (!rows.length) list.insertAdjacentHTML('beforeend', '<div class="small">所持品に対応する術式がありません。</div>');
+    list.dataset.pendingSpells = selectedBySlot.join('\n');
+    syncSpellSetHidden(slotKey);
+    updateEquipmentFieldAvailability();
+    return;
+  }
+  const el = hidden;
+  if (!el || el.tagName !== 'SELECT') return;
   const options = rows.map(row => `<option value="${esc(row.name)}">${esc(spellOptionLabel(row))}</option>`);
   el.innerHTML = options.length ? options.join('') : '<option value="" disabled>所持品に対応する術式がありません</option>';
-  const keepSet = new Set(keep);
+  const keepSet = new Set(keep.slice(0, safeLimit));
   Array.from(el.options || []).forEach(opt => { opt.selected = keepSet.has(opt.value); });
-  el.dataset.pendingSpells = keep.join('\n');
+  el.dataset.pendingSpells = Array.from(keepSet).join('\n');
 }
 function refreshSpellSetSelects() {
   for (const slot of EQUIPMENT_SLOTS) {
@@ -1608,15 +1667,19 @@ function refreshSpellSetSelects() {
   }
 }
 function enforceSpellSetLimit(slotKey) {
-  const el = $('equip_' + slotKey + '_setSpells');
-  if (!el || el.tagName !== 'SELECT') return;
   const type = $('equip_' + slotKey + '_type')?.value || 'なし';
   const limit = spellSlotLimitForType(type, getSkillAlloc(), slotKey);
-  if (!limit) return;
-  const selected = Array.from(el.options || []).filter(o => o.selected && o.value);
-  if (selected.length <= limit) return;
-  selected.slice(limit).forEach(o => { o.selected = false; });
-  showToast(`セットできる術式は${limit}件までです。`, 'warn');
+  const names = selectedSpellNames(slotKey);
+  if (!limit) {
+    setSpellSelectValues(slotKey, []);
+    return;
+  }
+  if (names.length > limit) {
+    setSpellSelectValues(slotKey, names.slice(0, limit));
+    showToast(`セットできる術式は${limit}件までです。`, 'warn');
+  } else {
+    syncSpellSetHidden(slotKey);
+  }
 }
 function updateSpellSlotHints() {
   const alloc = getSkillAlloc();
@@ -1776,7 +1839,10 @@ function updateEquipmentFieldAvailability() {
       if (book && currentMode !== 'view') el.value = '';
     }
     const setEl = $('equip_' + slot.key + '_setSpells');
-    if (setEl) setEl.disabled = baseDisabled || !spellContainerKind(type);
+    const spellDisabled = baseDisabled || !spellContainerKind(type);
+    if (setEl) setEl.disabled = spellDisabled;
+    const spellList = $('equip_' + slot.key + '_spellSlotList');
+    if (spellList) spellList.querySelectorAll('select.spell-slot-select').forEach(sel => { sel.disabled = spellDisabled; });
   }
 }
 function updateEquipmentHandLocks(clearOpposite=true) {
@@ -1854,13 +1920,16 @@ function inferEquipSlotForInventory(item={}) {
   return '';
 }
 function emptyInventoryItem() {
-  return { id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), name:'', kind:defaultInventoryKind(), category:'', count:1, location:'所持', rank:'', price:'', equipSlot:'', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', spellSlots:'', target:'', cost:'', damage:'', description:'', effect:'', recipeResult:'', materials:'', note:'' };
+  return { id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), masterId:'', masterSheet:'', masterSync:'', name:'', kind:defaultInventoryKind(), category:'', count:1, location:'所持', rank:'', price:'', equipSlot:'', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', spellSlots:'', target:'', cost:'', description:'', effect:'', recipeResult:'', materials:'', note:'' };
 }
 function normalizeInventoryItem(item={}) {
   const kind = normalizeInventoryKind(item.kind || 'アイテム');
   const oldDescription = item['fla' + 'vor' + 'Text'];
   return {
     id: item.id || ('inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6)),
+    masterId: String(item.masterId || item.masterID || item.sourceId || item.sourceID || '').trim(),
+    masterSheet: String(item.masterSheet || item.sourceSheet || '').trim(),
+    masterSync: String(item.masterSync || item.syncRole || '').trim(),
     name: String(item.name || '').trim(),
     kind,
     category: String(item.category || item.itemCategory || item.materialCategory || '').trim(),
@@ -1869,7 +1938,7 @@ function normalizeInventoryItem(item={}) {
     rank: String(item.rank || '').trim(),
     price: String(item.price || '').trim(),
     equipSlot: inferEquipSlotForInventory({ ...item, kind }),
-    power: String(item.power || '').trim(),
+    power: String(item.power || item.damage || '').trim(),
     hit: String(item.hit || item.hitMod || '').trim(),
     defense: String(item.defense || item.alwaysDefense || '').trim(),
     guard: String(item.guard || item.guardValue || '').trim(),
@@ -1878,7 +1947,6 @@ function normalizeInventoryItem(item={}) {
     spellSlots: String(item.spellSlots || item.slotCount || item.registerSlots || item.maxStack || '').trim(),
     target: String(item.target || '').trim(),
     cost: String(item.cost || item.mpCost || '').trim(),
-    damage: String(item.damage || '').trim(),
     description: mergeTextUnique(item.description, oldDescription),
     effect: String(item.effect || '').trim(),
     recipeResult: String(item.recipeResult || item.resultItem || '').trim(),
@@ -1887,7 +1955,7 @@ function normalizeInventoryItem(item={}) {
   };
 }
 function getInventoryState() {
-  const items = inventoryItemsState.map(item => normalizeInventoryItem(item)).filter(item => item.name || item.category || item.damage || item.description || item.effect || item.count > 0);
+  const items = inventoryItemsState.map(item => normalizeInventoryItem(item)).filter(item => item.name || item.category || item.power || item.description || item.effect || item.count > 0);
   return { items };
 }
 function setInventoryState(inventory=defaultInventory()) {
@@ -1954,11 +2022,11 @@ function renderInventory() {
     const description = item.description || '';
     const effectText = item.effect || '';
     const equipMeta = [item.equipSlot, item.power ? '威力 ' + item.power : '', item.hit ? '命中 ' + item.hit : '', item.defense ? '防御 ' + item.defense : ''].filter(Boolean).join(' / ') || '—';
-    const spellMeta = item.kind === '術式' ? [item.cost ? 'コスト：' + item.cost : '', item.target ? '対象：' + item.target : '', item.damage ? 'ダメージ：' + item.damage : ''].filter(Boolean).join(' / ') : '';
+    const spellMeta = item.kind === '術式' ? [item.cost ? 'コスト：' + item.cost : '', item.target ? '対象：' + item.target : '', item.power ? '威力：' + item.power : ''].filter(Boolean).join(' / ') : '';
     const recipeMeta = item.kind === 'レシピ' ? [item.recipeResult ? '完成品：' + item.recipeResult : '', item.materials ? '必要素材：' + item.materials : ''].filter(Boolean).join('\n') : '';
-    const itemUseMeta = item.kind === 'アイテム' ? [item.target ? '対象：' + item.target : '', item.damage ? 'ダメージ：' + item.damage : ''].filter(Boolean).join(' / ') : '';
+    const itemUseMeta = item.kind === 'アイテム' ? [item.target ? '対象：' + item.target : '', item.power ? '威力：' + item.power : ''].filter(Boolean).join(' / ') : '';
     const spellSlotMeta = item.spellSlots ? `術式登録枠：${item.spellSlots}` : '';
-    const searchText = [title, item.kind, item.category, item.rank, item.price, item.equipSlot, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.spellSlots, item.target, item.cost, item.damage, item.description, item.effect, item.recipeResult, item.materials].filter(Boolean).join(' ');
+    const searchText = [title, item.kind, item.category, item.rank, item.price, item.equipSlot, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.spellSlots, item.target, item.cost, item.power, item.description, item.effect, item.recipeResult, item.materials].filter(Boolean).join(' ');
     return `
     <details class="inventory-card" open data-inventory-row="${index}" data-inventory-id="${esc(item.id || '')}" data-inventory-location="所持" data-inventory-kind="${esc(item.kind || 'アイテム')}" data-inventory-search="${esc(searchText)}">
       <summary class="inventory-card-head">
@@ -2025,7 +2093,6 @@ function openInventoryDialog(index=-1) {
   if ($('inventoryFormSpellSlots')) $('inventoryFormSpellSlots').value = item.spellSlots || '';
   if ($('inventoryFormTarget')) $('inventoryFormTarget').value = item.target || '';
   if ($('inventoryFormCost')) $('inventoryFormCost').value = item.cost || '';
-  if ($('inventoryFormDamage')) $('inventoryFormDamage').value = item.damage || '';
   if ($('inventoryFormDescription')) $('inventoryFormDescription').value = item.description || '';
   if ($('inventoryFormEffect')) $('inventoryFormEffect').value = item.effect || '';
   if ($('inventoryFormRecipeResult')) $('inventoryFormRecipeResult').value = item.recipeResult || '';
@@ -2054,7 +2121,6 @@ function collectInventoryDialogItem() {
     spellSlots: $('inventoryFormSpellSlots')?.value || '',
     target: $('inventoryFormTarget')?.value || '',
     cost: $('inventoryFormCost')?.value || '',
-    damage: $('inventoryFormDamage')?.value || '',
     description: $('inventoryFormDescription')?.value || '',
     effect: $('inventoryFormEffect')?.value || '',
     recipeResult: $('inventoryFormRecipeResult')?.value || '',
@@ -2117,6 +2183,9 @@ function dbItemToInventoryItem(row) {
   const mappedCategory = row.itemCategory || row.materialCategory || row.itemType || '';
   return normalizeInventoryItem({
     id: row.id || row.name,
+    masterId: row.id || row.name || '',
+    masterSheet: 'items',
+    masterSync: hasMasterToken(row, INITIAL_MASTER_TOKEN) ? INITIAL_MASTER_TOKEN : '',
     name: row.name || '',
     kind,
     category: mappedCategory,
@@ -2133,7 +2202,7 @@ function dbItemToInventoryItem(row) {
     spellSlots: row.maxStack || row.spellSlots || '',
     target: row.target || '',
     cost: formatMpCost(row.mpCost || row.cost || ''),
-    damage: row.damage || '',
+    
     description: mergeTextUnique(row.description, row['fla' + 'vor' + 'Text']),
     effect: String(row.effect || '').trim(),
     note: ''
@@ -2142,6 +2211,9 @@ function dbItemToInventoryItem(row) {
 function dbSpellToInventoryItem(row) {
   return normalizeInventoryItem({
     id: row.id || row.name,
+    masterId: row.id || row.name || '',
+    masterSheet: 'spells',
+    masterSync: hasMasterToken(row, INITIAL_MASTER_TOKEN) ? INITIAL_MASTER_TOKEN : '',
     name: row.name || '',
     kind: '術式',
     category: row.type || '',
@@ -2150,7 +2222,8 @@ function dbSpellToInventoryItem(row) {
     price: row.scrollPrice || '',
     target: row.target || '',
     cost: formatMpCost(row.mpCost || ''),
-    damage: row.damage || '',
+    power: row.power || '',
+    
     description: mergeTextUnique(row.description, row['fla' + 'vor' + 'Text']),
     effect: String(row.effect || '').trim(),
     note: ''
@@ -2166,25 +2239,95 @@ async function loadCharacterSheetMasterFromDbForInitial() {
   setDbCharacterSheetMaster(res || {});
   return res || {};
 }
-async function addInitialWeaponSet() {
-  if (currentMode === 'view') return;
+function getInitialPresetsFromMaster(master={}) {
+  const itemRows = (master.cs_items || []).filter(row => hasMasterToken(row, INITIAL_MASTER_TOKEN));
+  const spellRows = (master.spells || []).filter(row => hasMasterToken(row, INITIAL_MASTER_TOKEN));
+  return itemRows.map(dbItemToInventoryItem).concat(spellRows.map(dbSpellToInventoryItem));
+}
+
+function getInventoryMasterPresetsFromMaster(master={}) {
+  const presets = [];
+  for (const row of (master.cs_items || [])) presets.push(dbItemToInventoryItem(row));
+  for (const row of (master.spells || [])) presets.push(dbSpellToInventoryItem(row));
+  return presets.filter(item => String(item.masterId || item.id || '').trim() && String(item.masterSheet || '').trim());
+}
+function masterPresetMapFromMaster(master={}) {
+  const map = new Map();
+  for (const preset of getInventoryMasterPresetsFromMaster(master)) {
+    map.set(inventoryMasterKey(preset), preset);
+  }
+  return map;
+}
+function inventoryMasterKey(item={}) {
+  const normalized = normalizeInventoryItem(item);
+  const mid = String(normalized.masterId || normalized.id || '').trim();
+  const sheet = String(normalized.masterSheet || '').trim();
+  return (sheet ? sheet + ':' : '') + mid;
+}
+function sameInitialMasterItem(item={}, preset={}) {
+  const normalized = normalizeInventoryItem(item);
+  const presetNorm = normalizeInventoryItem(preset);
+  const presetId = String(presetNorm.masterId || presetNorm.id || '').trim();
+  const itemMasterId = String(normalized.masterId || '').trim();
+  if (itemMasterId && presetId && itemMasterId === presetId) return true;
+  if (String(normalized.id || '').trim() && presetId && String(normalized.id || '').trim() === presetId) return true;
+  return false;
+}
+function mergeInitialPresetIntoInventoryItem(existing={}, preset={}) {
+  const oldItem = normalizeInventoryItem(existing);
+  const base = normalizeInventoryItem(preset);
+  return normalizeInventoryItem({
+    ...oldItem,
+    ...base,
+    id: oldItem.id || base.id,
+    masterId: base.masterId || base.id || oldItem.masterId || '',
+    masterSheet: base.masterSheet || oldItem.masterSheet || '',
+    masterSync: INITIAL_MASTER_TOKEN,
+    count: oldItem.count || base.count || 1,
+    location: '所持',
+  });
+}
+
+function mergeMasterPresetIntoInventoryItem(existing={}, preset={}) {
+  const oldItem = normalizeInventoryItem(existing);
+  const base = normalizeInventoryItem(preset);
+  const isInitial = String(oldItem.masterSync || '').trim() === INITIAL_MASTER_TOKEN || String(base.masterSync || '').trim() === INITIAL_MASTER_TOKEN;
+  return normalizeInventoryItem({
+    ...oldItem,
+    ...base,
+    id: oldItem.id || base.id,
+    masterId: base.masterId || base.id || oldItem.masterId || '',
+    masterSheet: base.masterSheet || oldItem.masterSheet || '',
+    masterSync: isInitial ? INITIAL_MASTER_TOKEN : (oldItem.masterSync || base.masterSync || ''),
+    count: oldItem.count || base.count || 1,
+    location: '所持',
+  });
+}
+function isSameInventoryCore(a={}, b={}) {
+  const aa = normalizeInventoryItem(a);
+  const bb = normalizeInventoryItem(b);
+  const keys = ['masterId','masterSheet','masterSync','name','kind','category','rank','price','equipSlot','power','hit','defense','guard','evade','offhand','spellSlots','target','cost','description','effect','recipeResult','materials'];
+  return keys.every(k => String(aa[k] ?? '') === String(bb[k] ?? '')) && Number(aa.count || 0) === Number(bb.count || 0);
+}
+async function syncInitialInventoryFromDb(options={}) {
+  const silent = !!options.silent;
+  if (currentMode === 'view' && options.skipView) return { added:0, updated:0, replaced:0 };
   if (!gasUrl()) {
-    showToast('初期所持品はDBから取得します。先にGAS WebアプリURLを設定してください。', 'warn');
-    return;
+    if (!silent) showToast('初期所持品はDBから取得します。先にGAS WebアプリURLを設定してください。', 'warn');
+    return { added:0, updated:0, replaced:0 };
   }
   let master;
   try {
     master = await loadCharacterSheetMasterFromDbForInitial();
   } catch (e) {
-    showToast('初期所持品のDB読み込みに失敗しました：' + e.message, 'error');
-    return;
+    if (!silent) showToast('初期所持品のDB読み込みに失敗しました：' + e.message, 'error');
+    return { added:0, updated:0, replaced:0 };
   }
-  const itemRows = (master.cs_items || []).filter(row => hasMasterToken(row, INITIAL_MASTER_TOKEN));
-  const spellRows = (master.spells || []).filter(row => hasMasterToken(row, INITIAL_MASTER_TOKEN));
-  const presets = itemRows.map(dbItemToInventoryItem).concat(spellRows.map(dbSpellToInventoryItem));
+  const presets = getInitialPresetsFromMaster(master);
+  const masterMap = masterPresetMapFromMaster(master);
   if (!presets.length) {
-    showToast('DBに初期所持品タグ付きのアイテム/術式が見つかりません。統合DB管理ツールで初期データをDBへ登録してください。', 'warn');
-    return;
+    if (!silent) showToast('DBに初期所持品タグ付きのアイテム/術式が見つかりません。統合DB管理ツールで初期データをDBへ登録してください。', 'warn');
+    return { added:0, updated:0, replaced:0, synced:0 };
   }
   const oldPlaceholderNames = new Set(['短剣','片手剣','片手斧','片手槌','片手槍','杖','弓','弩','両手剣','大槌','長槍']);
   const removedInitialWeaponIds = new Set(['wpn_magical_tool','wpn_large_magical_tool']);
@@ -2202,23 +2345,59 @@ async function addInitialWeaponSet() {
   });
   const replaced = beforeCleanup - inventoryItemsState.length;
   let added = 0;
-  for (const base of presets) {
-    const key = String(base.id || base.name || '').trim();
-    const exists = inventoryItemsState.some(item => {
-      const normalized = normalizeInventoryItem(item);
-      return String(normalized.id || '').trim() === key || String(normalized.name || '').trim() === base.name;
-    });
-    if (exists) continue;
-    inventoryItemsState.push(normalizeInventoryItem(base));
-    added++;
+  let updated = 0;
+  let synced = 0;
+  inventoryItemsState = inventoryItemsState.map(item => {
+    const normalized = normalizeInventoryItem(item);
+    const key = inventoryMasterKey(normalized);
+    const masterPreset = key ? masterMap.get(key) : null;
+    if (!masterPreset) return normalized;
+    const merged = mergeMasterPresetIntoInventoryItem(normalized, masterPreset);
+    if (!isSameInventoryCore(normalized, merged)) synced++;
+    return merged;
+  });
+  for (const preset of presets) {
+    const idx = inventoryItemsState.findIndex(item => sameInitialMasterItem(item, preset));
+    if (idx >= 0) {
+      const merged = mergeInitialPresetIntoInventoryItem(inventoryItemsState[idx], preset);
+      if (!isSameInventoryCore(inventoryItemsState[idx], merged)) updated++;
+      inventoryItemsState[idx] = merged;
+    } else {
+      inventoryItemsState.push(normalizeInventoryItem(preset));
+      added++;
+    }
   }
-  renderInventory();
-  updateSummary();
-  const message = replaced && added ? `旧初期装備${replaced}件を差し替え、DBから初期所持品を${added}件登録しました。`
-    : replaced ? `旧初期装備${replaced}件を差し替えました。`
-    : added ? `DBから初期所持品を${added}件登録しました。`
-    : '初期所持品は登録済みです。';
-  showToast(message, (added || replaced) ? 'ok' : 'warn');
+  if (added || updated || replaced || synced) {
+    renderInventory();
+    refreshEquipmentItemSelects();
+    updateSummary();
+  }
+  if (!silent) {
+    const parts = [];
+    if (replaced) parts.push(`旧初期装備${replaced}件を整理`);
+    if (synced) parts.push(`DB由来所持品${synced}件を同期`);
+    if (added) parts.push(`初期所持品${added}件を追加`);
+    if (updated) parts.push(`初期所持品${updated}件をDB内容に更新`);
+    showToast(parts.length ? parts.join('、') + 'しました。' : '初期所持品はDB内容と一致しています。', parts.length ? 'ok' : 'warn');
+  }
+  return { added, updated, replaced, synced };
+}
+async function addInitialWeaponSet() {
+  await syncInitialInventoryFromDb({ silent:false });
+}
+function scheduleInitialInventorySyncForEditor(mode) {
+  if (mode === 'view') return;
+  if (!gasUrl()) return;
+  window.setTimeout(async () => {
+    const result = await syncInitialInventoryFromDb({ silent:true });
+    if (result && (result.added || result.updated || result.replaced || result.synced)) {
+      const st = $('editorStatus');
+      if (st && mode !== 'view') {
+        st.className = 'status-box ok';
+        st.textContent = `DBから所持品を同期しました。追加${result.added}件 / 初期更新${result.updated}件 / DB由来更新${result.synced || 0}件。保存すると反映されます。`;
+      }
+    }
+  }, 0);
 }
 
 function duplicateInventoryItem(index) {
@@ -2289,6 +2468,7 @@ function setReadOnly(readOnly) {
   for (const key of Object.keys(SKILL_BY_KEY)) {
     if ($('skill_cat_' + key)) $('skill_cat_' + key).disabled = readOnly;
     if ($('skill_free_' + key)) $('skill_free_' + key).disabled = readOnly;
+    if ($('skill_other_' + key)) $('skill_other_' + key).disabled = readOnly;
   }
   for (const el of document.querySelectorAll('[data-equipment-input]')) el.disabled = readOnly;
   for (const el of document.querySelectorAll('[data-inventory-input]')) el.disabled = readOnly;
@@ -2332,6 +2512,7 @@ function openEditor(mode, data=null) {
   if ($('editorActionBar')) $('editorActionBar').classList.add('collapsed');
   showEditorTab('ability');
   setView('editor');
+  scheduleInitialInventorySyncForEditor(mode);
 }
 
 
@@ -2693,7 +2874,7 @@ function applyEquipmentCategoryMaster(rows, {save=false, silent=false, meta=null
     const name = String(row.name || '').trim();
     if (!name || name === 'なし') continue;
     EQUIPMENT_PRESETS[name] = {
-      power: row.power || '',
+      power: row.power || row.damage || '',
       hit: row.hitMod || '',
       defense: row.alwaysDefense || '',
       guard: row.guardValue || '',
@@ -2733,7 +2914,7 @@ function refreshEquipmentTypeSelects() {
 function buildEquipmentCategoryLocalMeta(rows) {
   const compact = (rows || []).map(row => ({
     id: row.id || '', name: row.name || '', itemCategory: row.itemCategory || '', equipSlot: row.equipSlot || '',
-    skill: row.skill || '', power: row.power || '', hitMod: row.hitMod || '',
+    skill: row.skill || '', power: row.power || row.damage || '', hitMod: row.hitMod || '',
     alwaysDefense: row.alwaysDefense || '', guardValue: row.guardValue || '', evasionMod: row.evasionMod || '', offhandBonus: row.offhandBonus || '',
     description: row.description || row['fla' + 'vor' + 'Text'] || '', effect: row.effect || '', sortOrder: row.sortOrder || '', enabled: row.enabled || ''
   }));
@@ -3280,7 +3461,7 @@ function bindEvents() {
   $('refreshListBtn').addEventListener('click', refreshList);
   $('newCharacterBtn').addEventListener('click', () => openEditor('new', emptyCharacter()));
   $('backListBtn').addEventListener('click', () => { setView('list'); refreshList(); });
-  $('toggleViewEditBtn').addEventListener('click', () => { currentMode = 'edit'; setReadOnly(false); $('editorTitle').textContent = 'キャラクター編集'; $('editorStatus').className = 'status-box'; $('editorStatus').textContent = '編集モードに切り替えました。'; showToast('編集モードに切り替えました。', 'ok'); });
+  $('toggleViewEditBtn').addEventListener('click', () => { currentMode = 'edit'; setReadOnly(false); $('editorTitle').textContent = 'キャラクター編集'; $('editorStatus').className = 'status-box'; $('editorStatus').textContent = '編集モードに切り替えました。'; showToast('編集モードに切り替えました。', 'ok'); scheduleInitialInventorySyncForEditor('edit'); });
   $('saveBtn').addEventListener('click', onSave);
   $('rollBtn').addEventListener('click', rollAllConvertedAbilities);
   $('abilityOutput').addEventListener('click', e => { const btn = e.target.closest('[data-reroll-ability]'); if (!btn) return; rerollOneAbility(btn.dataset.rerollAbility); });
@@ -3348,6 +3529,13 @@ function bindEvents() {
     if (e.target.id?.startsWith('stat_') || e.target.dataset.abilityInput || e.target.dataset.skillInput || e.target.id?.startsWith('manualBonus_') || ['currentHp','currentMp','hpBonus','mpBonus'].includes(e.target.id)) updateAll();
   });
   document.addEventListener('change', e => {
+    if (e.target.classList?.contains('spell-slot-select')) {
+      const slotKey = e.target.dataset.slotKey || '';
+      syncSpellSetHidden(slotKey);
+      updateSpellSlotHints();
+      updateSummary();
+      return;
+    }
     if (e.target.id?.startsWith('equip_') && e.target.id.endsWith('_setSpells')) {
       const slotKey = e.target.id.replace(/^equip_/, '').replace(/_setSpells$/, '');
       enforceSpellSetLimit(slotKey);
