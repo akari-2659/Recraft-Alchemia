@@ -1938,7 +1938,7 @@ function normalizeInventoryItem(item={}) {
     rank: String(item.rank || '').trim(),
     price: String(item.price || '').trim(),
     equipSlot: inferEquipSlotForInventory({ ...item, kind }),
-    power: String(item.power || item.damage || '').trim(),
+    power: String(item.power || item.damage || item['威力'] || item['ダメージ'] || '').trim(),
     hit: String(item.hit || item.hitMod || '').trim(),
     defense: String(item.defense || item.alwaysDefense || '').trim(),
     guard: String(item.guard || item.guardValue || '').trim(),
@@ -2193,7 +2193,7 @@ function dbItemToInventoryItem(row) {
     rank: row.rank || '',
     price: row.price || '',
     equipSlot: row.equipSlot || '',
-    power: row.power || '',
+    power: row.power || row.damage || row['威力'] || row['ダメージ'] || '',
     hit: row.hitMod || '',
     defense: row.alwaysDefense || '',
     guard: row.guardValue || '',
@@ -2222,7 +2222,7 @@ function dbSpellToInventoryItem(row) {
     price: row.scrollPrice || '',
     target: row.target || '',
     cost: formatMpCost(row.mpCost || ''),
-    power: row.power || '',
+    power: row.power || row.damage || row['威力'] || row['ダメージ'] || '',
     
     description: mergeTextUnique(row.description, row['fla' + 'vor' + 'Text']),
     effect: String(row.effect || '').trim(),
@@ -2874,7 +2874,7 @@ function applyEquipmentCategoryMaster(rows, {save=false, silent=false, meta=null
     const name = String(row.name || '').trim();
     if (!name || name === 'なし') continue;
     EQUIPMENT_PRESETS[name] = {
-      power: row.power || row.damage || '',
+      power: row.power || row.damage || row['威力'] || row['ダメージ'] || '',
       hit: row.hitMod || '',
       defense: row.alwaysDefense || '',
       guard: row.guardValue || '',
@@ -2914,7 +2914,7 @@ function refreshEquipmentTypeSelects() {
 function buildEquipmentCategoryLocalMeta(rows) {
   const compact = (rows || []).map(row => ({
     id: row.id || '', name: row.name || '', itemCategory: row.itemCategory || '', equipSlot: row.equipSlot || '',
-    skill: row.skill || '', power: row.power || row.damage || '', hitMod: row.hitMod || '',
+    skill: row.skill || '', power: row.power || row.damage || row['威力'] || row['ダメージ'] || '', hitMod: row.hitMod || '',
     alwaysDefense: row.alwaysDefense || '', guardValue: row.guardValue || '', evasionMod: row.evasionMod || '', offhandBonus: row.offhandBonus || '',
     description: row.description || row['fla' + 'vor' + 'Text'] || '', effect: row.effect || '', sortOrder: row.sortOrder || '', enabled: row.enabled || ''
   }));
