@@ -1,0 +1,3373 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>リクラフト・アルケミア キャラクター作成ツール v58</title>
+<style>
+  :root {
+    --bg: #f5eee4;
+    --paper: #fff9ef;
+    --paper2: #fffdf8;
+    --ink: #34251d;
+    --muted: #76685e;
+    --line: #ddcbb0;
+    --accent: #b77738;
+    --accent2: #8f5728;
+    --green: #5f866d;
+    --blue: #5f7899;
+    --danger: #b54d43;
+    --warn: #a36a19;
+    --ok: #477553;
+    --shadow: rgba(67, 44, 18, .13);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(circle at 0 0, rgba(255, 224, 177, .75), transparent 32rem),
+      linear-gradient(180deg, #fbf4e8, var(--bg));
+    color: var(--ink);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Yu Gothic", sans-serif;
+    line-height: 1.6;
+  }
+  header {
+    padding: 26px 14px 14px;
+    text-align: center;
+  }
+  h1 { margin: 0 0 8px; font-size: clamp(1.55rem, 4vw, 2.35rem); letter-spacing: .04em; }
+  .subtitle { color: var(--muted); font-size: .94rem; }
+  main { width: min(1000px, calc(100% - 20px)); margin: 0 auto 56px; }
+  .view { display: none; }
+  .view.active { display: block; }
+  section, .panel, details.big-section {
+    background: rgba(255, 249, 239, .96);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    box-shadow: 0 8px 24px var(--shadow);
+    padding: 16px;
+    margin: 0 0 14px;
+  }
+  details.big-section { padding: 0; overflow: hidden; }
+  details.big-section > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    font-size: 1.06rem;
+    font-weight: 900;
+    color: var(--accent2);
+    background: rgba(184, 119, 56, .08);
+    border-bottom: 1px solid rgba(221, 203, 176, .75);
+  }
+  details.big-section > summary::-webkit-details-marker { display: none; }
+  details.big-section > summary::before { content: "▶"; display: inline-block; margin-right: 8px; transition: transform .12s ease; }
+  details.big-section[open] > summary::before { transform: rotate(90deg); }
+  .section-body { padding: 15px 16px 16px; }
+  h2 { margin: 0 0 12px; padding-bottom: 7px; border-bottom: 2px solid rgba(184, 119, 56, .20); font-size: 1.18rem; }
+  h3 { margin: 0 0 10px; font-size: 1.03rem; }
+  h4 { margin: 0 0 8px; font-size: .96rem; }
+  .hint, .small { color: var(--muted); font-size: .88rem; }
+  .small { font-size: .82rem; }
+  .warning { color: var(--warn); font-weight: 800; }
+  .error-text { color: var(--danger); font-weight: 800; }
+  .ok-text { color: var(--ok); font-weight: 800; }
+  label { display: block; font-weight: 800; font-size: .9rem; margin: 0 0 5px; }
+  input, textarea, select, button { font: inherit; }
+  input[type="text"], input[type="number"], input[type="url"], textarea, select {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    background: var(--paper2);
+    color: var(--ink);
+    padding: 9px 10px;
+    outline: none;
+  }
+  input[type="number"] { text-align: center; }
+  textarea { min-height: 120px; resize: vertical; }
+  input:focus, textarea:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(184, 119, 56, .17); }
+  input:disabled, textarea:disabled, select:disabled { opacity: .72; background: #f2eadc; }
+  button {
+    border: 0;
+    border-radius: 999px;
+    padding: 9px 14px;
+    color: #fffdf8;
+    background: var(--accent);
+    cursor: pointer;
+    font-weight: 800;
+    box-shadow: 0 4px 10px rgba(80, 48, 16, .16);
+  }
+  button:hover { filter: brightness(.98); transform: translateY(-1px); }
+  button:active { transform: translateY(0); }
+  button.secondary { background: var(--green); }
+  button.blue { background: var(--blue); }
+  button.danger { background: var(--danger); }
+  button.ghost { background: transparent; color: var(--accent2); border: 1px solid var(--line); box-shadow: none; }
+  button:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+  .button-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .button-row.vertical { flex-direction: column; }
+  .storage-choice { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  @media (min-width: 760px) { .storage-choice { grid-template-columns: 1fr 1fr; } }
+  .choice-card {
+    background: rgba(255, 253, 248, .86);
+    border: 1px solid rgba(221, 203, 176, .9);
+    border-radius: 18px;
+    padding: 16px;
+  }
+  .choice-card h3 { font-size: 1.12rem; }
+  .field { margin-bottom: 12px; }
+  .field:last-child { margin-bottom: 0; }
+  .mini-card {
+    border: 1px solid rgba(221, 203, 176, .9);
+    background: rgba(255, 253, 248, .76);
+    border-radius: 14px;
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+  .status-box {
+    border-left: 5px solid var(--accent);
+    background: rgba(255, 253, 248, .78);
+    border-radius: 12px;
+    padding: 10px 12px;
+    color: var(--muted);
+    margin-top: 10px;
+    white-space: pre-wrap;
+  }
+  .status-box.error { border-left-color: var(--danger); color: var(--danger); }
+  .status-box.ok { border-left-color: var(--ok); color: var(--ok); }
+  .status-box.warn { border-left-color: var(--warn); color: var(--warn); }
+  .topbar { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+  @media (min-width: 760px) { .topbar { flex-direction: row; justify-content: space-between; align-items: center; } }
+  .list { display: flex; flex-direction: column; gap: 10px; }
+  .list-item {
+    border: 1px solid rgba(221, 203, 176, .9);
+    border-radius: 16px;
+    background: rgba(255, 253, 248, .8);
+    padding: 12px;
+  }
+  .list-title { font-weight: 900; font-size: 1.02rem; }
+  .list-meta { color: var(--muted); font-size: .84rem; margin-top: 2px; }
+  .profile-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  @media (min-width: 680px) { .profile-grid { grid-template-columns: 2fr 1fr 1fr; } }
+  .hidden-stat-inputs { display: none; }
+  .stat-grid { display: none; }
+  .stat-card, .ability-card, .trait-card, .skill-category-card {
+    border: 1px solid rgba(221, 203, 176, .9);
+    border-radius: 14px;
+    background: rgba(255, 253, 248, .78);
+    padding: 11px;
+  }
+  .stat-card label { text-align: center; }
+  .ability-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+  @media (min-width: 760px) { .ability-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (min-width: 960px) { .ability-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+  .ability-name, .trait-name { font-weight: 900; }
+  .ability-card { display: flex; flex-direction: column; gap: 8px; }
+  .ability-card input { font-size: 1.15rem; font-weight: 900; color: var(--accent2); }
+  .ability-card button { padding: 7px 10px; font-size: .84rem; }
+  .computed-value { font-size: 1.35rem; font-weight: 900; color: var(--accent2); }
+  .trait-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  @media (min-width: 680px) { .trait-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .bonus-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  @media (min-width: 680px) { .bonus-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .bonus-card { padding: 10px; border: 1px solid rgba(168, 116, 61, .28); border-radius: 14px; background: rgba(255,255,255,.64); }
+  .bonus-card .bonus-line { display: grid; grid-template-columns: 1fr 92px; gap: 8px; align-items: end; }
+  .trait-check { display: flex; gap: 8px; align-items: flex-start; padding: 8px 0; border-bottom: 1px dashed rgba(221, 203, 176, .75); }
+  .trait-check:last-child { border-bottom: 0; }
+  .trait-check input { margin-top: 5px; }
+  .pill-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill { border: 1px solid rgba(184,119,56,.25); background: rgba(184,119,56,.08); border-radius: 999px; padding: 5px 10px; font-size: .86rem; font-weight: 800; }
+  .pill.empty { color: var(--muted); background: rgba(255,255,255,.45); }
+  .skill-category-card { margin-bottom: 12px; }
+  .skill-row {
+    display: grid;
+    grid-template-columns: 1.2fr .65fr .65fr .65fr .65fr;
+    gap: 8px;
+    align-items: center;
+    border-top: 1px dashed rgba(221, 203, 176, .78);
+    padding: 9px 0;
+  }
+  .skill-row.header { font-weight: 900; color: var(--muted); border-top: 0; padding-top: 0; font-size: .82rem; }
+  .skill-row input { padding: 7px 6px; }
+  .skill-name { font-weight: 900; }
+  @media (max-width: 620px) {
+    .skill-row { grid-template-columns: 1fr 1fr 1fr 1fr; }
+    .skill-row.header { display: none; }
+    .skill-name { grid-column: 1 / -1; }
+    .skill-cell::before { display: block; font-size: .76rem; color: var(--muted); font-weight: 800; }
+    .skill-cell.base::before { content: "能力"; }
+    .skill-cell.cat::before { content: "分類P"; }
+    .skill-cell.free::before { content: "自由P"; }
+    .skill-cell.total::before { content: "技能値"; }
+  }
+
+  .formula-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  @media (min-width: 760px) { .formula-grid { grid-template-columns: 1fr 1fr; } }
+  .spellbook-fields { display: none; border-top: 1px dashed rgba(221, 203, 176, .85); margin-top: 8px; padding-top: 10px; }
+  .spellbook-fields.active { display: block; }
+  .spell-set-select { min-height: 132px; }
+  .field-disabled-by-type { opacity: .55; }
+  .spell-slot-badge { display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(184,119,56,.26); background: rgba(184,119,56,.08); color: var(--accent2); border-radius: 999px; padding: 4px 10px; font-size: .82rem; font-weight: 900; }
+  .inventory-toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 12px; }
+  .inventory-filter-panel { border: 1px solid rgba(221, 203, 176, .9); background: rgba(255, 253, 248, .72); border-radius: 14px; padding: 12px; margin: 10px 0 12px; }
+  .inventory-filter-row { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 8px; }
+  .inventory-filter-label { font-size: .86rem; font-weight: 900; color: var(--muted); }
+  .inventory-chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .inventory-chip-row button { flex: 0 1 auto; min-height: 34px; padding: 7px 10px; }
+  .inventory-chip-row button.active { background: #8f5728; color: #fffaf2; border-color: #8f5728; }
+  .inventory-filter-status { margin-top: 8px; font-size: .86rem; color: var(--muted); }
+  .inventory-card.inventory-hidden { display: none; }
+  .inventory-list { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  .inventory-card { border: 1px solid rgba(221, 203, 176, .9); background: rgba(255, 253, 248, .78); border-radius: 14px; padding: 12px; }
+  .inventory-card > summary { list-style: none; cursor: pointer; }
+  .inventory-card > summary::-webkit-details-marker { display: none; }
+  .inventory-card-head { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; margin-bottom: 8px; }
+  .inventory-card-head::before { content: "▼"; color: var(--accent2); font-weight: 900; margin-top: 2px; transition: transform .16s ease; }
+  .inventory-card:not([open]) .inventory-card-head::before { transform: rotate(-90deg); }
+  .inventory-card:not([open]) .inventory-card-head { margin-bottom: 0; }
+  .inventory-title { font-weight: 900; color: var(--accent2); }
+  .inventory-card:not([open]) .inventory-title::after { content: " / 折り畳み中"; color: var(--muted); font-size: .78rem; font-weight: 800; }
+  #inventorySearchInput { width: 100%; }
+  .inventory-card-meta { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 8px; }
+  .inventory-card-meta .meta-item { border: 1px solid rgba(221, 203, 176, .75); border-radius: 10px; padding: 8px; background: rgba(255,255,255,.45); }
+  .inventory-card-meta .meta-label { display:block; font-size:.76rem; font-weight:900; color:var(--muted); margin-bottom:2px; }
+  .inventory-note { white-space: pre-wrap; line-height: 1.65; }
+  .inventory-fields { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  @media (min-width: 760px) { .inventory-card-meta { grid-template-columns: repeat(4, minmax(0, 1fr)); } .inventory-card-meta .meta-wide { grid-column: 1 / -1; } .inventory-fields { grid-template-columns: 1.2fr .8fr .55fr .75fr .7fr .7fr; } .inventory-fields .inventory-wide { grid-column: 1 / -1; } }
+  .inventory-form-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 12px; }
+  @media (min-width: 760px) { .inventory-form-grid { grid-template-columns: 1.2fr .8fr .55fr .75fr .7fr .7fr; } .inventory-form-grid .inventory-wide { grid-column: 1 / -1; } }
+
+  .roll-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  @media (min-width: 760px) { .roll-grid { grid-template-columns: 1fr 1fr; } }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border-bottom: 1px solid rgba(221, 203, 176, .8); padding: 7px; text-align: center; }
+  th { color: var(--muted); font-size: .82rem; }
+  .summary-text {
+    white-space: pre-wrap;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: .86rem;
+    background: #fffdf8;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px;
+    overflow: auto;
+    max-height: 360px;
+  }
+
+
+  .toast-container {
+    position: fixed;
+    left: 50%;
+    bottom: calc(18px + env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none;
+    width: min(92vw, 520px);
+  }
+  .toast {
+    max-width: 100%;
+    border: 1px solid rgba(221, 203, 176, .95);
+    border-left: 5px solid var(--accent);
+    border-radius: 14px;
+    background: rgba(255, 253, 248, .96);
+    color: var(--ink);
+    box-shadow: 0 10px 26px rgba(52, 37, 29, .22);
+    padding: 10px 14px;
+    font-weight: 800;
+    font-size: .92rem;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity .22s ease, transform .22s ease;
+    white-space: pre-wrap;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.ok { border-left-color: var(--ok); }
+  .toast.error { border-left-color: var(--danger); color: var(--danger); }
+  .toast.warn { border-left-color: var(--warn); color: var(--warn); }
+  @media (max-width: 620px) {
+    .toast-container { bottom: calc(74px + env(safe-area-inset-bottom)); width: calc(100vw - 22px); }
+    .toast { width: 100%; text-align: center; }
+  }
+
+  .resource-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  @media (min-width: 720px) { .resource-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .resource-card {
+    border: 1px solid rgba(221, 203, 176, .9);
+    border-radius: 14px;
+    background: rgba(255, 253, 248, .78);
+    padding: 12px;
+  }
+  .resource-main { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: end; }
+  .resource-max { font-size: 1.4rem; font-weight: 900; color: var(--accent2); }
+  dialog.output-dialog {
+    width: min(760px, calc(100% - 24px));
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    background: var(--paper);
+    color: var(--ink);
+    box-shadow: 0 18px 60px rgba(45, 27, 8, .28);
+    padding: 0;
+  }
+  dialog.output-dialog::backdrop { background: rgba(35, 22, 12, .42); }
+  .dialog-inner { padding: 16px; }
+  .dialog-title { margin: 0 0 8px; color: var(--accent2); font-weight: 900; font-size: 1.12rem; }
+  .output-textarea {
+    width: 100%;
+    min-height: 220px;
+    margin-top: 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: .86rem;
+  }
+
+
+  .editor-action-bar {
+    display: none;
+    position: fixed;
+    right: 14px;
+    bottom: 14px;
+    z-index: 50;
+    padding: 8px;
+    background: rgba(255, 249, 239, .96);
+    border: 1px solid rgba(221, 203, 176, .95);
+    border-radius: 18px;
+    box-shadow: 0 10px 28px rgba(67, 44, 18, .22);
+    backdrop-filter: blur(10px);
+  }
+  body.editor-active .editor-action-bar { display: block; }
+  body.editor-active main { margin-bottom: 96px; }
+  .editor-action-toggle {
+    width: 100%;
+    min-width: 92px;
+    min-height: 34px;
+    padding: 6px 10px;
+    font-size: .84rem;
+    background: var(--accent2);
+  }
+  .editor-action-inner {
+    margin-top: 7px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 6px;
+    align-items: center;
+    width: 148px;
+  }
+  .editor-action-inner button {
+    width: 100%;
+    min-height: 34px;
+    padding: 6px 10px;
+    font-size: .84rem;
+  }
+  .editor-action-bar.collapsed {
+    padding: 6px;
+    border-radius: 999px;
+  }
+  .editor-action-bar.collapsed .editor-action-inner { display: none; }
+  @media (max-width: 680px) {
+    .editor-action-bar {
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border-left: 0;
+      border-right: 0;
+      border-bottom: 0;
+      border-radius: 18px 18px 0 0;
+      padding: 8px 10px max(8px, env(safe-area-inset-bottom));
+    }
+    .editor-action-toggle { width: auto; min-width: 82px; }
+    .editor-action-inner { width: 100%; grid-template-columns: repeat(3, 1fr); }
+    .editor-action-bar.collapsed { left: auto; right: 10px; bottom: max(10px, env(safe-area-inset-bottom)); border: 1px solid rgba(221, 203, 176, .95); border-radius: 999px; }
+  }
+
+
+
+  .editor-tabs {
+    position: sticky;
+    top: 8px;
+    z-index: 35;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 0 0 14px;
+    padding: 8px;
+    background: rgba(255, 249, 239, .92);
+    border: 1px solid rgba(221, 203, 176, .85);
+    border-radius: 18px;
+    box-shadow: 0 6px 18px var(--shadow);
+    backdrop-filter: blur(8px);
+  }
+  .editor-tab-btn {
+    flex: 1 1 110px;
+    background: transparent;
+    color: var(--accent2);
+    border: 1px solid var(--line);
+    box-shadow: none;
+  }
+  .editor-tab-btn.active {
+    background: var(--accent);
+    color: #fffdf8;
+    border-color: transparent;
+    box-shadow: 0 4px 10px rgba(80, 48, 16, .16);
+  }
+  .editor-tab-page { display: none; }
+  .editor-tab-page.active { display: block; }
+
+  .equipment-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  @media (min-width: 780px) { .equipment-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .equipment-card {
+    border: 1px solid rgba(221, 203, 176, .9);
+    border-radius: 14px;
+    background: rgba(255, 253, 248, .78);
+    padding: 12px;
+  }
+  .equipment-card.hand-disabled {
+    opacity: .58;
+    background: rgba(246, 239, 226, .62);
+  }
+  .equipment-card.hand-disabled::after {
+    content: '両手装備により使用不可';
+    display: inline-block;
+    margin-top: 8px;
+    font-size: .78rem;
+    color: var(--muted);
+  }
+  .equipment-card h3 { color: var(--accent2); }
+  .equipment-fields {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  @media (min-width: 560px) {
+    .equipment-fields.compact { grid-template-columns: 1.4fr .9fr .7fr; }
+    .equipment-fields.three { grid-template-columns: 1.5fr .8fr .8fr; }
+  }
+  .equipment-wide { grid-column: 1 / -1; }
+
+
+  /* v27: スマホ表示の強化 */
+  html { -webkit-text-size-adjust: 100%; }
+  @media (max-width: 680px) {
+    body { font-size: 15px; }
+    header { padding: 18px 10px 10px; }
+    main { width: calc(100% - 14px); margin-bottom: 82px; }
+    section, .panel, details.big-section { border-radius: 14px; padding: 12px; margin-bottom: 10px; }
+    details.big-section { padding: 0; }
+    details.big-section > summary { padding: 12px; }
+    .section-body { padding: 12px; }
+    h2 { font-size: 1.08rem; }
+    .button-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .button-row.vertical { display: flex; }
+    .button-row button { width: 100%; min-height: 42px; padding: 8px 9px; font-size: .9rem; }
+    .choice-card { padding: 12px; border-radius: 14px; }
+    .list-item { padding: 12px; border-radius: 14px; }
+    .list-title { font-size: 1rem; }
+    .list-meta { overflow-wrap: anywhere; }
+    .status-box { font-size: .88rem; }
+    .profile-grid { gap: 8px; }
+    .ability-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .ability-card, .skill-category-card, .equipment-card { padding: 10px; }
+    .computed-value { font-size: 1.22rem; }
+    .bonus-card .bonus-line { grid-template-columns: 1fr 78px; }
+    .resource-line { grid-template-columns: 1fr 1fr; }
+    .resource-max { font-size: 1.18rem; }
+    .editor-tabs {
+      top: 0;
+      margin-left: -2px;
+      margin-right: -2px;
+      padding: 6px;
+      gap: 6px;
+      border-radius: 0 0 14px 14px;
+    }
+    .editor-tab-btn { flex: 1 1 calc(33.333% - 6px); min-height: 40px; padding: 7px 6px; font-size: .86rem; }
+    dialog.output-dialog { width: calc(100% - 16px); max-height: calc(100dvh - 20px); }
+    .dialog-inner { padding: 12px; }
+  }
+  @media (max-width: 390px) {
+    .button-row { grid-template-columns: 1fr; }
+    .list-item .button-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .list-item .button-row button { font-size: .82rem; padding-left: 6px; padding-right: 6px; }
+    .editor-tab-btn { font-size: .82rem; }
+    .skill-row { gap: 6px; }
+  }
+
+  .hidden-file { display: none; }
+</style>
+</head>
+<body>
+<div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+<header>
+  <h1>リクラフト・アルケミア</h1>
+  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v39</div>
+</header>
+<main>
+  <div id="homeView" class="view active">
+    <section>
+      <h2>保存先を選択</h2>
+      <p class="hint">最初に保存先を選びます。選択後、それぞれの作成リストから閲覧・編集・削除・出力、または新規作成ができます。</p>
+      <div class="storage-choice">
+        <div class="choice-card">
+          <h3>ローカル保存</h3>
+          <p class="hint">初回に保存フォルダを選択し、そのフォルダ内のキャラクターJSONを一覧・保存します。</p>
+          <button id="chooseLocalBtn">ローカルの作成リストへ</button>
+        </div>
+        <div class="choice-card">
+          <h3>クラウド保存</h3>
+          <p class="hint">Google Apps Script とスプレッドシートを使って保存します。</p>
+          <div class="field">
+            <label for="gasUrlInput">クラウド接続先（GAS WebアプリURL）</label>
+            <input id="gasUrlInput" type="url" placeholder="https://script.google.com/macros/s/.../exec" />
+          </div>
+          <div class="field">
+            <label for="cloudPlayerKeyInput">プレイヤーキー</label>
+            <input id="cloudPlayerKeyInput" type="password" placeholder="このキーに紐づくキャラクターだけ表示" autocomplete="off" />
+          </div>
+          <div class="button-row">
+            <button id="saveGasUrlBtn" class="ghost">接続先保存</button>
+            <button id="chooseCloudBtn" class="blue">クラウドの作成リストへ</button>
+          </div>
+          <div class="small">クラウド接続先はこのブラウザに保存されます。</div>
+        </div>
+      </div>
+      <div id="homeStatus" class="status-box">保存先を選んで開始してください。</div>
+    </section>
+  </div>
+
+  <div id="listView" class="view">
+    <section>
+      <div class="topbar">
+        <div>
+          <h2 id="listTitle">作成リスト</h2>
+          <div id="listSub" class="hint"></div>
+        </div>
+        <div class="button-row">
+          <button id="backHomeBtn" class="ghost">保存先選択へ戻る</button>
+          <button id="changeCloudKeyBtn" class="blue">プレイヤーキー変更</button>
+          <button id="changeLocalFolderBtn" class="secondary">保存先変更</button>
+          <button id="syncToCloudBtn" class="blue">ローカル→クラウド</button>
+          <button id="syncToLocalBtn" class="secondary">クラウド→ローカル</button>
+          <button id="refreshListBtn" class="blue">リスト更新</button>
+          <button id="newCharacterBtn">新規作成</button>
+        </div>
+      </div>
+      <div id="listStatus" class="status-box">リストを読み込みます。</div>
+      <div id="characterList" class="list"></div>
+    </section>
+  </div>
+
+  <div id="editorView" class="view">
+    <section>
+      <div class="topbar">
+        <div>
+          <h2 id="editorTitle">キャラクター編集</h2>
+          <div id="editorSub" class="hint"></div>
+        </div>
+        <div class="button-row">
+          <button id="backListBtn" class="ghost">リストへ戻る</button>
+          <button id="toggleViewEditBtn" class="blue">編集に切替</button>
+        </div>
+      </div>
+      <div id="editorStatus" class="status-box">編集中です。</div>
+    </section>
+
+    <div class="editor-tabs" role="tablist" aria-label="編集ページ切替">
+      <button type="button" class="editor-tab-btn active" data-editor-tab="ability">能力</button>
+      <button type="button" class="editor-tab-btn" data-editor-tab="skills">技能</button>
+      <button type="button" class="editor-tab-btn" data-editor-tab="equipment">装備</button>
+      <button type="button" class="editor-tab-btn" data-editor-tab="inventory">所持品</button>
+    </div>
+
+    <div id="tabAbility" class="editor-tab-page active">
+      <details class="big-section" open>
+        <summary>基本情報</summary>
+        <div class="section-body">
+          <div class="profile-grid">
+            <div class="field">
+              <label for="charName">キャラクター名</label>
+              <input id="charName" type="text" placeholder="名前を入力" />
+            </div>
+            <div class="field">
+              <label for="charGender">性別</label>
+              <input id="charGender" type="text" placeholder="任意" />
+            </div>
+            <div class="field">
+              <label for="charAge">年齢</label>
+              <input id="charAge" type="text" placeholder="任意" />
+            </div>
+            <div class="field cloud-key-field">
+              <label for="playerKey">プレイヤーキー</label>
+              <input id="playerKey" type="password" placeholder="クラウド保存・変更・削除用" autocomplete="off" />
+            </div>
+            <div class="field cloud-key-field">
+              <label for="newPlayerKey">新しいプレイヤーキー</label>
+              <input id="newPlayerKey" type="password" placeholder="変更時のみ入力" autocomplete="off" />
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="big-section" open>
+        <summary>能力値</summary>
+        <div class="section-body">
+          <div class="mini-card">
+            <h3>新規作成ダイス</h3>
+            <div class="button-row">
+              <button id="rollBtn">全体振り直し</button>
+            </div>
+          </div>
+
+          <div class="mini-card">
+            <h3>いあきゃらテキスト読込</h3>
+            <p class="hint">いあきゃらのテキストファイル出力を選択すると、名前・性別・年齢・能力値へすぐ反映します。</p>
+            <div class="button-row">
+              <button id="txtFileBtn" class="secondary">txtファイルを選択</button>
+              <input id="txtFileInput" class="hidden-file" type="file" accept=".txt,text/plain" />
+            </div>
+            <div id="parseStatus" class="status-box">未読込です。</div>
+          </div>
+
+          <h3>能力値</h3>
+          <div id="abilityOutput" class="ability-grid"></div>
+          <h3>戦闘参照値</h3>
+          <div id="derivedCombatStats" class="ability-grid"></div>
+          <div id="statInputs" class="hidden-stat-inputs"></div>
+        </div>
+      </details>
+
+      <details class="big-section" open>
+        <summary>HP・MP</summary>
+        <div class="section-body">
+          <div class="resource-grid">
+            <div class="resource-card">
+              <h3>HP</h3>
+              <div class="resource-main">
+                <div>
+                  <label for="currentHp">現在HP</label>
+                  <input id="currentHp" type="number" min="0" max="999" inputmode="numeric" />
+                </div>
+                <div>
+                  <div class="small">最大HP</div>
+                  <div id="maxHp" class="resource-max">0</div>
+                </div>
+              </div>
+              <div class="field" style="margin-top:10px;">
+                <label for="hpBonus">HP補正</label>
+                <input id="hpBonus" type="number" min="-99" max="999" inputmode="numeric" value="0" />
+              </div>
+            </div>
+            <div class="resource-card">
+              <h3>MP</h3>
+              <div class="resource-main">
+                <div>
+                  <label for="currentMp">現在MP</label>
+                  <input id="currentMp" type="number" min="0" max="999" inputmode="numeric" />
+                </div>
+                <div>
+                  <div class="small">最大MP</div>
+                  <div id="maxMp" class="resource-max">0</div>
+                </div>
+              </div>
+              <div class="field" style="margin-top:10px;">
+                <label for="mpBonus">MP補正</label>
+                <input id="mpBonus" type="number" min="-99" max="999" inputmode="numeric" value="0" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="big-section">
+        <summary>メモ</summary>
+        <div class="section-body">
+          <div class="field">
+            <label for="charMemo">メモ</label>
+            <textarea id="charMemo" placeholder="設定、外見、通過シナリオ、補足など"></textarea>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <div id="tabSkills" class="editor-tab-page">
+      <details class="big-section" open>
+        <summary>技能ボーナス</summary>
+        <div class="section-body">
+          <div class="mini-card" style="margin-top:12px;">
+            <h3>自動技能ボーナス</h3>
+            <p class="hint">読み込んだ元能力値が通常最大値を超えていた場合、対応する技能カテゴリの分類ポイントが+1されます。</p>
+            <div id="autoCategoryBonuses" class="pill-list"></div>
+          </div>
+
+          <div class="mini-card">
+            <h3>追加技能ボーナス</h3>
+            <p class="hint">成長や依頼報酬などで後から増えたカテゴリ別の分類ポイントを入力できます。</p>
+            <div id="manualCategoryBonuses" class="bonus-grid"></div>
+          </div>
+        </div>
+      </details>
+
+      <details class="big-section" open>
+        <summary>技能</summary>
+        <div class="section-body">
+          <p class="hint">各分類ポイントは分類ごとに2点＋ボーナス、自由ポイントは合計3点です。初期作成時、1技能への割り振り合計は最大+3です。</p>
+          <div id="skillPointStatus" class="status-box">技能ポイントを確認します。</div>
+          <div id="skillArea"></div>
+        </div>
+      </details>
+    </div>
+
+    <div id="tabEquipment" class="editor-tab-page">
+      <details class="big-section" open>
+        <summary>装備</summary>
+        <div class="section-body">
+          <p class="hint">右手・左手・鎧・装飾品・携行品は、登録済みの所持品から選択して反映します。必要な装備や道具は先に所持品へ登録してください。</p>
+          <div class="button-row">
+            <button id="loadEquipmentCategoriesBtn" type="button" class="ghost">所持品から選択カテゴリ読込</button>
+            <span id="equipmentCategoryStatus" class="small">未読込の場合は内蔵カテゴリを使います。</span>
+          </div>
+          <div id="equipmentArea" class="equipment-grid"></div>
+        </div>
+      </details>
+    </div>
+
+    <div id="tabInventory" class="editor-tab-page">
+      <details class="big-section" open>
+        <summary>所持品</summary>
+        <div class="section-body">
+          <p class="hint">キャラクターが実際に持っているものを登録します。装備欄・携行品欄の候補は、この所持品一覧から生成されます。</p>
+          <div class="inventory-filter-panel" aria-label="所持・預けアイテムの表示切替">
+            <div class="inventory-filter-row">
+              <div class="inventory-filter-label">表示</div>
+              <div id="inventoryLocationTabs" class="inventory-chip-row"></div>
+            </div>
+            <div class="inventory-filter-row">
+              <div class="inventory-filter-label">中身の区分</div>
+              <div id="inventoryKindTabs" class="inventory-chip-row"></div>
+            </div>
+            <div class="inventory-filter-row">
+              <div class="inventory-filter-label">検索</div>
+              <input id="inventorySearchInput" type="search" placeholder="名称・カテゴリ・対象・説明・効果・術式種別で検索してください" />
+            </div>
+            <div id="inventoryFilterStatus" class="inventory-filter-status">全件を表示中</div>
+          </div>
+          <div class="inventory-toolbar">
+            <button id="addInventoryItemBtn" type="button">追加</button>
+            <button id="addInitialWeaponSetBtn" type="button" class="secondary">初期所持品を登録</button>
+            <button id="sortInventoryItemBtn" type="button" class="ghost">名称順に整理</button>
+          </div>
+          <div id="inventoryArea" class="inventory-list"></div>
+          <div id="inventoryEmptyStatus" class="status-box">まだアイテムが登録されていません。</div>
+        </div>
+      </details>
+    </div>
+</div>
+</main>
+
+<div id="editorActionBar" class="editor-action-bar collapsed" aria-label="編集操作">
+  <button id="actionBarToggleBtn" type="button" class="editor-action-toggle">操作</button>
+  <div class="editor-action-inner">
+    <button id="saveBtn" type="button">保存</button>
+    <button id="outputBtn" type="button" class="secondary">出力</button>
+    <button id="shareBtn" type="button" class="blue">共有</button>
+  </div>
+</div>
+
+<dialog id="outputDialog" class="output-dialog">
+  <div class="dialog-inner">
+    <div class="dialog-title">出力</div>
+    <p class="hint">出力種別を選択すると、内容を直接クリップボードへコピーします。</p>
+    <div class="button-row">
+      <button id="makeTokenOutputBtn" type="button">駒出力をコピー</button>
+      <button id="makePaletteOutputBtn" type="button" class="blue">チャットパレットをコピー</button>
+      <button id="closeOutputDialogBtn" type="button" class="ghost">閉じる</button>
+    </div>
+    <div id="outputCopyStatus" class="status-box">出力種別を選択してください。</div>
+  </div>
+</dialog>
+
+<dialog id="inventoryDialog" class="output-dialog">
+  <div class="dialog-inner">
+    <div id="inventoryDialogTitle" class="dialog-title">アイテムを追加</div>
+    <p class="hint">登録する区分に応じて必要な入力欄が切り替わります。ここに登録したものだけが装備・携行品の候補になります。</p>
+    <input id="inventoryEditIndex" type="hidden" value="-1" />
+    <div class="inventory-form-grid">
+      <div class="field"><label for="inventoryFormName">名称</label><input id="inventoryFormName" type="text" placeholder="例：旅人の短剣 / ポーション / ポーションのレシピ" /></div>
+      <div class="field"><label for="inventoryFormKind">登録区分</label><select id="inventoryFormKind"></select></div>
+      <div class="field"><label for="inventoryFormCount">個数</label><input id="inventoryFormCount" type="number" min="0" max="9999" value="1" /></div>
+      <div class="field"><label for="inventoryFormRank">ランク</label><input id="inventoryFormRank" type="text" placeholder="例：初級 / 低級 / 良質" /></div>
+      <div class="field"><label for="inventoryFormPrice">価格/売価</label><input id="inventoryFormPrice" type="text" placeholder="例：30G" /></div>
+      <div class="field inventory-wide"><label for="inventoryFormCategory">カテゴリ</label><input id="inventoryFormCategory" type="text" placeholder="例：短剣 / 回復薬 / 草花 / 調合レシピ" /></div>
+      <div class="field" data-inventory-kind-field="weapon armor accessory"><label for="inventoryFormEquipSlot">装備/使用枠</label><select id="inventoryFormEquipSlot"><option value="">なし</option><option>右手/左手</option><option>両手</option><option>鎧</option><option>装飾品</option><option>携行品</option></select></div>
+      <div class="field" data-inventory-kind-field="weapon"><label for="inventoryFormPower">威力</label><input id="inventoryFormPower" type="text" placeholder="例：1D6+1" /></div>
+      <div class="field" data-inventory-kind-field="weapon"><label for="inventoryFormHit">命中補正</label><input id="inventoryFormHit" type="text" placeholder="例：+1 / -1" /></div>
+      <div class="field" data-inventory-kind-field="armor accessory"><label for="inventoryFormDefense">常時防御値</label><input id="inventoryFormDefense" type="text" placeholder="例：2" /></div>
+      <div class="field" data-inventory-kind-field="armor"><label for="inventoryFormGuard">防御行動値</label><input id="inventoryFormGuard" type="text" placeholder="例：1D6+1" /></div>
+      <div class="field" data-inventory-kind-field="armor accessory"><label for="inventoryFormEvade">回避補正</label><input id="inventoryFormEvade" type="text" placeholder="例：+1 / -1" /></div>
+      <div class="field" data-inventory-kind-field="weapon"><label for="inventoryFormOffhand">副手追撃値</label><input id="inventoryFormOffhand" type="text" placeholder="例：+2" /></div>
+      <div class="field" data-inventory-kind-field="accessory"><label for="inventoryFormSpellSlots">術式登録枠</label><input id="inventoryFormSpellSlots" type="number" min="0" max="99" value="" placeholder="魔印/聖印用" /></div>
+      <div class="field" data-inventory-kind-field="item spell"><label for="inventoryFormTarget">対象</label><input id="inventoryFormTarget" type="text" placeholder="例：味方1体 / 敵1体" /></div>
+      <div class="field" data-inventory-kind-field="spell"><label for="inventoryFormCost">コスト</label><input id="inventoryFormCost" type="text" placeholder="例：MP1 / MP2" /></div>
+      <div class="field inventory-wide" data-inventory-kind-field="recipe"><label for="inventoryFormRecipeResult">完成品</label><input id="inventoryFormRecipeResult" type="text" placeholder="例：ポーション ×1" /></div>
+      <div class="field inventory-wide" data-inventory-kind-field="recipe"><label for="inventoryFormMaterials">必要素材</label><textarea id="inventoryFormMaterials" placeholder="例：薬草×1、澄んだ水×1"></textarea></div>
+      <div class="field inventory-wide" data-inventory-kind-field="weapon armor accessory item spell recipe important other"><label for="inventoryFormDescription">説明</label><textarea id="inventoryFormDescription" placeholder="見た目、雰囲気、使われ方など"></textarea></div>
+      <div class="field inventory-wide" data-inventory-kind-field="weapon armor accessory item spell recipe important other"><label for="inventoryFormEffect">効果</label><textarea id="inventoryFormEffect" placeholder="数値、使用条件、ルール処理など"></textarea></div>
+    </div>
+    <div class="button-row" style="margin-top:12px;">
+      <button id="saveInventoryDialogBtn" type="button">保存</button>
+      <button id="cancelInventoryDialogBtn" type="button" class="ghost">閉じる</button>
+    </div>
+    <div id="inventoryDialogStatus" class="status-box">必要項目を入力してください。</div>
+  </div>
+</dialog>
+
+<script>
+'use strict';
+
+const APP_NAME = 'recraft_alchemia_v4';
+const GAS_URL_KEY = APP_NAME + '.gas.url';
+// GitHub Pagesで毎回URLを入力しない運用にする場合は、ここにApps Scriptの /exec URLを入れてください。
+const DEFAULT_GAS_WEB_APP_URL = '';
+const EQUIPMENT_CATEGORY_CACHE_KEY = APP_NAME + '.equipmentCategories';
+const EQUIPMENT_CATEGORY_CACHE_META_KEY = APP_NAME + '.equipmentCategories.meta';
+const CS_ITEM_CACHE_KEY = APP_NAME + '.characterSheetItems';
+let CS_ITEM_MASTER = [];
+let DB_INITIAL_ITEM_MASTER = [];
+let DB_INITIAL_SPELL_MASTER = [];
+let DB_RECIPE_MASTER = [];
+const FILE_HANDLE_DB = APP_NAME + '.fileHandles';
+const FILE_HANDLE_STORE = 'handles';
+const LOCAL_DIR_HANDLE_ID = 'localDirectory';
+
+const STAT_ORDER = ['STR','CON','POW','DEX','APP','SIZ','INT','EDU'];
+const STAT_MAX = { STR:18, CON:18, POW:18, DEX:18, APP:18, SIZ:18, INT:18, EDU:21 };
+const STAT_LABEL = { STR:'STR', CON:'CON', POW:'POW', DEX:'DEX', APP:'APP', SIZ:'SIZ', INT:'INT', EDU:'EDU' };
+
+const ABILITIES = [
+  { key:'body', name:'体力', desc:'力仕事・耐久・近接・防御' },
+  { key:'dexterity', name:'器用', desc:'採取・細工・射撃・操作' },
+  { key:'sense', name:'感覚', desc:'探索・感知・回避・追跡' },
+  { key:'intellect', name:'知性', desc:'調合・鑑定・知識・設計' },
+  { key:'will', name:'意志', desc:'抵抗・集中・魔法・祈念' },
+  { key:'charm', name:'魅力', desc:'交渉・共感・芸術・鼓舞' },
+];
+const ABILITY_NAMES = Object.fromEntries(ABILITIES.map(a => [a.key, a.name]));
+
+const STAT_CATEGORY_BONUS = {
+  STR:'body', CON:'body', SIZ:'body',
+  DEX:'dexterity', INT:'sense', EDU:'intellect',
+  POW:'will', APP:'charm',
+};
+const STAT_CATEGORY_BONUS_LABEL = {
+  STR:'体力系', CON:'体力系', SIZ:'体力系',
+  DEX:'器用系', INT:'感覚系', EDU:'知性系',
+  POW:'意志系', APP:'魅力系',
+};
+
+const SKILL_CATEGORIES = [
+  { key:'body', name:'体力系', ability:'body', skills:[
+    { key:'athletics', name:'運動', desc:'走る、登る、泳ぐ、跳ぶ' },
+    { key:'force', name:'力業', desc:'重い物を動かす、破壊、運搬' },
+    { key:'melee', name:'近接', desc:'近接武器や素手で戦う' },
+    { key:'guard', name:'防御', desc:'盾、防具、受け流し、かばう' },
+  ]},
+  { key:'dexterity', name:'器用系', ability:'dexterity', skills:[
+    { key:'gather', name:'採取', desc:'素材を傷つけずに集める' },
+    { key:'craft', name:'細工', desc:'工作、罠解除、鍵開け、精密修理' },
+    { key:'shoot', name:'射撃', desc:'弓、投擲、銃など' },
+    { key:'operate', name:'操作', desc:'道具、装置、乗り物、工房設備' },
+  ]},
+  { key:'sense', name:'感覚系', ability:'sense', skills:[
+    { key:'search', name:'探索', desc:'手がかり、隠し通路、素材群生地' },
+    { key:'detect', name:'感知', desc:'気配、罠、危険、異変' },
+    { key:'evade', name:'回避', desc:'攻撃、落石、罠、爆発を避ける' },
+    { key:'track', name:'追跡', desc:'足跡、痕跡、匂い、魔力の流れ' },
+  ]},
+  { key:'intellect', name:'知性系', ability:'intellect', skills:[
+    { key:'alchemy', name:'調合', desc:'素材を組み合わせてアイテムを作る' },
+    { key:'appraise', name:'鑑定', desc:'素材、遺物、魔物、装置の性質' },
+    { key:'knowledge', name:'知識', desc:'歴史、地理、魔物、植物、伝承' },
+    { key:'design', name:'設計', desc:'施設復興、建築、装置、レシピ構造' },
+  ]},
+  { key:'will', name:'意志系', ability:'will', skills:[
+    { key:'resist', name:'抵抗', desc:'毒、呪い、恐怖、疲労、異界影響' },
+    { key:'focus', name:'集中', desc:'長時間作業、高難度調合、儀式' },
+    { key:'magic', name:'魔法', desc:'魔法、魔力操作' },
+    { key:'prayer', name:'祈祷', desc:'祈り、加護、浄化、精神支援' },
+  ]},
+  { key:'charm', name:'魅力系', ability:'charm', skills:[
+    { key:'negotiate', name:'交渉', desc:'説得、値切り、取引、条件交渉' },
+    { key:'service', name:'共感', desc:'' },
+    { key:'art', name:'芸術', desc:'音楽、絵画、料理、装飾、演技' },
+    { key:'leadership', name:'鼓舞', desc:'' },
+  ]},
+];
+const HAND_TYPE_OPTIONS = ['なし','短剣','片手剣','片手斧','片手槌','片手槍','杖','盾','大盾','魔導書','祈祷書','両手剣','大槌','長槍','弓','弩','大型弩'];
+const TWO_HAND_TYPES = new Set(['両手剣','大槌','長槍','弓','弩','大型弩']);
+const EQUIPMENT_PRESETS = {
+  'なし': { power:'', hit:'', defense:'', guard:'', evade:'0', offhand:'', description:'', note:'' },
+  '短剣': { power:'1D6', hit:'+1', defense:'', guard:'', evade:'0', offhand:'2', description:'短い刃で素早く切り込む軽量武器。近い間合いで細かな動きに合わせやすい。', note:'' },
+  '片手剣': { power:'1D6+1', hit:'0', defense:'', guard:'', evade:'0', offhand:'2', description:'扱いやすさと攻防の均衡に優れた片手剣。盾や書物とも併用しやすい。', note:'' },
+  '片手斧': { power:'1D6+2', hit:'-1', defense:'', guard:'', evade:'0', offhand:'3', description:'刃の重みを叩きつける片手斧。小回りよりも一撃の圧を重視する。', note:'' },
+  '片手槌': { power:'1D6+1', hit:'0', defense:'', guard:'', evade:'0', offhand:'2', description:'硬い装甲や障害物を打ち砕く片手槌。重い打撃で敵の姿勢を崩す。', note:'' },
+  '槍': { power:'1D6+1', hit:'0', defense:'', guard:'', evade:'0', offhand:'2', description:'片手で扱える短めの槍。間合いを取りながら敵を突き止める。', note:'' },
+  '片手槍': { power:'1D6+1', hit:'0', defense:'', guard:'', evade:'0', offhand:'2', description:'片手で扱える短めの槍。間合いを取りながら敵を突き止める。', note:'' },
+  '杖': { power:'1D6', hit:'0', defense:'', guard:'', evade:'0', offhand:'1', description:'魔力を通しやすい杖。身体の支えにもなり、術者の集中を助ける。', note:'' },
+  '盾': { power:'', hit:'', defense:'+1', guard:'+2', evade:'0', description:'腕に構えて攻撃を受け止める防具。仲間を守る時にも頼りになる。', note:'' },
+  '大盾': { power:'', hit:'', defense:'+2', guard:'+3', evade:'-1', description:'大きな面で攻撃を遮る重盾。取り回しは重いが守りは厚い。', note:'' },
+  '魔導書': { power:'', hit:'', defense:'', guard:'', evade:'0', description:'魔法の術式を記し、戦闘中に扱える形へ整える書物。', note:'' },
+  '祈祷書': { power:'', hit:'', defense:'', guard:'', evade:'0', description:'祈祷の詞と儀礼を記し、祈りを術として形にする書物。', note:'' },
+  '魔印': { power:'', hit:'', defense:'', guard:'', evade:'0', description:'魔力を留めるための印。身につけた者の魔法を発動しやすく整える。', note:'' },
+  '聖印': { power:'', hit:'', defense:'', guard:'', evade:'0', description:'祈りを込めるための聖なる印。身につけた者の祈祷を静かに支える。', note:'' },
+  '両手剣': { power:'2D6', hit:'0', defense:'', guard:'', evade:'0', description:'両手で振るう大剣。重い刃で正面から敵を押し切る。', note:'' },
+  '大槌': { power:'2D6+2', hit:'-1', defense:'', guard:'', evade:'0', description:'巨大な頭部を叩きつける大槌。硬い外殻や障害物の破壊に向く。', note:'' },
+  '長槍': { power:'1D6+2', hit:'0', defense:'', guard:'', evade:'0', description:'長い柄で敵を遠ざける槍。前線を押し返し、足止めに使いやすい。', note:'' },
+  '弓': { power:'1D6+1', hit:'0', defense:'', guard:'', evade:'0', description:'離れた敵を狙う短弓。軽く扱いやすく、移動しながらの射撃に向く。', note:'' },
+  '弩': { power:'2D6', hit:'-1', defense:'', guard:'', evade:'0', description:'機構で矢を放つ弩。狙いを定めやすく、重い一撃を届ける。', note:'' },
+  '大型弩': { power:'2D6+2', hit:'-2', defense:'', guard:'', evade:'0', description:'大型の弩。構えに力はいるが、遠くの強敵にも深く食い込む。', note:'' },
+  '普段着': { power:'', hit:'', defense:'0', guard:'1D3', evade:'0', description:'日常の衣服。軽く動きやすく、探索中も身体の動きを邪魔しにくい。', note:'' },
+  '軽装': { power:'', hit:'', defense:'1', guard:'1D6', evade:'+1', description:'動きやすさを重視した軽い防具。身軽に立ち回りたい者に向く。', note:'' },
+  '中装': { power:'', hit:'', defense:'2', guard:'1D6+1', evade:'0', description:'守りと動きやすさを両立した標準的な防具。多くの冒険者が扱いやすい。', note:'' },
+  '重装': { power:'', hit:'', defense:'3', guard:'1D6+2', evade:'-1', description:'厚い装甲で身を固める重い防具。攻撃を受け止める力に優れる。', note:'' },
+  '特殊防具': { power:'', hit:'', defense:'', guard:'', evade:'', description:'特殊な素材や仕掛けを備えた防具。通常の鎧とは異なる働きを持つ。', note:'' },
+};
+const HAND_SLOT_KEYS = ['rightHand','leftHand'];
+
+const EQUIPMENT_SLOTS = [
+  { key:'rightHand', name:'右手', kind:'hand', typeOptions:HAND_TYPE_OPTIONS },
+  { key:'leftHand', name:'左手', kind:'hand', typeOptions:HAND_TYPE_OPTIONS },
+  { key:'armor', name:'鎧', kind:'armor', typeOptions:['なし','普段着','軽装','中装','重装','特殊防具'] },
+  { key:'accessory1', name:'装飾品1', kind:'accessory', typeOptions:['なし','装飾品','魔印','聖印','護符','指輪','腕輪','その他'] },
+  { key:'accessory2', name:'装飾品2', kind:'accessory', typeOptions:['なし','装飾品','魔印','聖印','護符','指輪','腕輪','その他'] },
+  { key:'carry1', name:'携行品1', kind:'carry', typeOptions:['なし','回復薬','魔力薬','爆弾','特殊矢弾','補助品','浄化品','道具','その他'] },
+  { key:'carry2', name:'携行品2', kind:'carry', typeOptions:['なし','回復薬','魔力薬','爆弾','特殊矢弾','補助品','浄化品','道具','その他'] },
+  { key:'carry3', name:'携行品3', kind:'carry', typeOptions:['なし','回復薬','魔力薬','爆弾','特殊矢弾','補助品','浄化品','道具','その他'] },
+];
+
+const SKILL_BY_KEY = {};
+for (const cat of SKILL_CATEGORIES) for (const sk of cat.skills) SKILL_BY_KEY[sk.key] = { ...sk, category: cat.key, ability: cat.ability, categoryName: cat.name };
+
+let currentStorage = 'local';
+let currentCloudPlayerKey = '';
+let currentMode = 'edit'; // new/edit/view
+let currentCharacter = null;
+let outputTargetData = null;
+let lastRolls = [];
+
+function $(id) { return document.getElementById(id); }
+
+function showToast(message, type='ok', duration=2200) {
+  const container = $('toastContainer');
+  if (!container) return;
+  const toast = document.createElement('div');
+  toast.className = `toast ${type || 'ok'}`;
+  toast.textContent = message;
+  container.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add('show'));
+  window.setTimeout(() => {
+    toast.classList.remove('show');
+    window.setTimeout(() => toast.remove(), 260);
+  }, duration);
+}
+function esc(s) { return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function uuid() { return 'ch_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 9); }
+function nowIso() { return new Date().toISOString(); }
+function safeName(s) { return String(s || 'character').replace(/[\\/:*?"<>|]/g, '_').trim() || 'character'; }
+function nval(v, fallback=0) { const n = Number(v); return Number.isFinite(n) ? n : fallback; }
+function clampInt(v, min, max) { return Math.max(min, Math.min(max, Math.trunc(nval(v, min)))); }
+function d(sides) { return Math.floor(Math.random() * sides) + 1; }
+function roll(expr) {
+  if (expr === '3D6') return d(6) + d(6) + d(6);
+  if (expr === '2D6+6') return d(6) + d(6) + 6;
+  if (expr === '3D6+3') return d(6) + d(6) + d(6) + 3;
+  return 0;
+}
+function diceExpr(stat) {
+  if (stat === 'SIZ' || stat === 'INT') return '2D6+6';
+  if (stat === 'EDU') return '3D6+3';
+  return '3D6';
+}
+function stage(raw, stat) {
+  let v = clampInt(raw, 0, 99);
+  v = Math.min(v, STAT_MAX[stat] || 18);
+  if (v <= 2) return 0;
+  if (v <= 5) return 0;
+  if (v <= 8) return 1;
+  if (v <= 12) return 2;
+  if (v <= 15) return 3;
+  return 4;
+}
+function computeAbilitiesFromStats(stats={}) {
+  const st = Object.fromEntries(STAT_ORDER.map(k => [k, stage(stats[k], k)]));
+  return {
+    body: Math.max(st.STR, st.CON, st.SIZ),
+    dexterity: st.DEX,
+    sense: st.INT,
+    intellect: Math.max(st.INT, st.EDU),
+    will: st.POW,
+    charm: st.APP,
+  };
+}
+function getAbilityValues() {
+  const values = {};
+  for (const a of ABILITIES) values[a.key] = clampInt($('ability_' + a.key)?.value || 0, 0, 4);
+  return values;
+}
+function setAbilityValues(values={}) {
+  for (const a of ABILITIES) if ($('ability_' + a.key)) $('ability_' + a.key).value = clampInt(values?.[a.key] ?? 0, 0, 4);
+}
+function resolveAbilities(data) {
+  return data?.abilities || computeAbilitiesFromStats(data?.stats || {});
+}
+function clearRawStats() {
+  for (const stat of STAT_ORDER) if ($('stat_' + stat)) $('stat_' + stat).value = '';
+}
+function rollConvertedAbility(key) {
+  if (key === 'body') return Math.max(stage(roll('3D6'), 'STR'), stage(roll('3D6'), 'CON'), stage(roll('2D6+6'), 'SIZ'));
+  if (key === 'dexterity') return stage(roll('3D6'), 'DEX');
+  if (key === 'sense') return stage(roll('2D6+6'), 'INT');
+  if (key === 'intellect') return Math.max(stage(roll('2D6+6'), 'INT'), stage(roll('3D6+3'), 'EDU'));
+  if (key === 'will') return stage(roll('3D6'), 'POW');
+  if (key === 'charm') return stage(roll('3D6'), 'APP');
+  return 0;
+}
+function rollAllConvertedAbilities() {
+  const values = {};
+  for (const a of ABILITIES) values[a.key] = rollConvertedAbility(a.key);
+  clearRawStats();
+  setAbilityValues(values);
+  if ($('currentHp')) $('currentHp').value = '';
+  if ($('currentMp')) $('currentMp').value = '';
+  updateAll();
+}
+function rerollOneAbility(key) {
+  clearRawStats();
+  if ($('ability_' + key)) $('ability_' + key).value = rollConvertedAbility(key);
+  if ($('currentHp')) $('currentHp').value = '';
+  if ($('currentMp')) $('currentMp').value = '';
+  updateAll();
+}
+function getStats() {
+  const stats = {};
+  for (const stat of STAT_ORDER) stats[stat] = clampInt($('stat_' + stat)?.value || 0, 0, 99);
+  return stats;
+}
+function setStats(stats, syncAbilities=true) {
+  for (const stat of STAT_ORDER) if ($('stat_' + stat)) $('stat_' + stat).value = stats?.[stat] ?? '';
+  if (syncAbilities) setAbilityValues(computeAbilitiesFromStats(stats || {}));
+  if ($('currentHp')) $('currentHp').value = '';
+  if ($('currentMp')) $('currentMp').value = '';
+  updateAll();
+}
+function computeAbilities(stats) {
+  if (arguments.length === 0) return getAbilityValues();
+  return computeAbilitiesFromStats(stats || {});
+}
+function emptyCategoryBonus() {
+  return Object.fromEntries(SKILL_CATEGORIES.map(c => [c.key, 0]));
+}
+function computeAutoCategoryBonuses(stats=getStats()) {
+  const bonus = emptyCategoryBonus();
+  for (const stat of STAT_ORDER) {
+    if (nval(stats[stat]) > (STAT_MAX[stat] || 18)) {
+      const cat = STAT_CATEGORY_BONUS[stat];
+      if (cat) bonus[cat] = 1; // 同じ分類への自動ボーナスは最大+1
+    }
+  }
+  return bonus;
+}
+function computeAutoCategoryBonusDetails(stats=getStats()) {
+  const bonus = computeAutoCategoryBonuses(stats);
+  return SKILL_CATEGORIES
+    .filter(cat => (bonus[cat.key] || 0) > 0)
+    .map(cat => ({ category: cat.key, categoryName: cat.name }));
+}
+function getManualCategoryBonuses() {
+  const bonus = emptyCategoryBonus();
+  for (const c of SKILL_CATEGORIES) bonus[c.key] = clampInt($('manualBonus_' + c.key)?.value || 0, 0, 99);
+  return bonus;
+}
+function setManualCategoryBonuses(values={}) {
+  for (const c of SKILL_CATEGORIES) if ($('manualBonus_' + c.key)) $('manualBonus_' + c.key).value = clampInt(values?.[c.key] || 0, 0, 99);
+}
+function categoryPointLimits(stats=getStats(), manual=getManualCategoryBonuses()) {
+  const auto = computeAutoCategoryBonuses(stats);
+  const limits = {};
+  for (const c of SKILL_CATEGORIES) limits[c.key] = 2 + (auto[c.key] || 0) + (manual[c.key] || 0);
+  return limits;
+}
+function defaultSkillAlloc() {
+  const alloc = {};
+  for (const key of Object.keys(SKILL_BY_KEY)) alloc[key] = { cat: 0, free: 0 };
+  return alloc;
+}
+function getSkillAlloc() {
+  const alloc = defaultSkillAlloc();
+  for (const key of Object.keys(SKILL_BY_KEY)) {
+    alloc[key] = {
+      cat: clampInt($('skill_cat_' + key)?.value || 0, 0, 3),
+      free: clampInt($('skill_free_' + key)?.value || 0, 0, 3),
+    };
+  }
+  return alloc;
+}
+function setSkillAlloc(alloc={}) {
+  for (const key of Object.keys(SKILL_BY_KEY)) {
+    if ($('skill_cat_' + key)) $('skill_cat_' + key).value = clampInt(alloc?.[key]?.cat || 0, 0, 3);
+    if ($('skill_free_' + key)) $('skill_free_' + key).value = clampInt(alloc?.[key]?.free || 0, 0, 3);
+  }
+  updateAll();
+}
+function skillTotals(abilities=computeAbilities(), alloc=getSkillAlloc()) {
+  const totals = {};
+  for (const [key, sk] of Object.entries(SKILL_BY_KEY)) {
+    const base = abilities[sk.ability] || 0;
+    const cat = alloc[key]?.cat || 0;
+    const free = alloc[key]?.free || 0;
+    totals[key] = { base, cat, free, add: cat + free, total: base + cat + free };
+  }
+  return totals;
+}
+function validateSkills(alloc=getSkillAlloc(), stats=getStats(), manual=getManualCategoryBonuses()) {
+  const errors = [];
+  const catSums = Object.fromEntries(SKILL_CATEGORIES.map(c => [c.key, 0]));
+  const catLimits = categoryPointLimits(stats, manual);
+  let freeSum = 0;
+  for (const [key, v] of Object.entries(alloc)) {
+    const sk = SKILL_BY_KEY[key];
+    const cat = v.cat || 0;
+    const free = v.free || 0;
+    catSums[sk.category] += cat;
+    freeSum += free;
+    if (cat + free > 3) errors.push(`${sk.name} の割り振りが+3を超えています。`);
+  }
+  for (const c of SKILL_CATEGORIES) if (catSums[c.key] > catLimits[c.key]) errors.push(`${c.name}ポイントが${catLimits[c.key]}点を超えています。`);
+  if (freeSum > 3) errors.push(`自由ポイントが3点を超えています。`);
+  return { errors, catSums, catLimits, freeSum };
+}
+function renderStatic() {
+  $('statInputs').innerHTML = STAT_ORDER.map(stat => `<input id="stat_${stat}" type="hidden" />`).join('');
+
+  $('abilityOutput').innerHTML = ABILITIES.map(a => `
+    <div class="ability-card">
+      <label for="ability_${a.key}" class="ability-name">${a.name}</label>
+      <input id="ability_${a.key}" data-ability-input="1" type="number" min="0" max="4" inputmode="numeric" value="0" />
+      <button type="button" class="ghost" data-reroll-ability="${a.key}">個別振り直し</button>
+    </div>
+  `).join('');
+
+  $('manualCategoryBonuses').innerHTML = SKILL_CATEGORIES.map(c => `
+    <div class="bonus-card">
+      <div class="bonus-line">
+        <label for="manualBonus_${c.key}">${c.name} 追加ボーナス</label>
+        <input id="manualBonus_${c.key}" type="number" min="0" max="99" inputmode="numeric" value="0" />
+      </div>
+      <div class="small">このカテゴリの分類ポイント上限に加算されます。</div>
+    </div>
+  `).join('');
+
+  $('skillArea').innerHTML = SKILL_CATEGORIES.map(cat => `
+    <div class="skill-category-card" data-cat="${cat.key}">
+      <h3>${cat.name} <span class="small">基礎能力：${ABILITY_NAMES[cat.ability]} / 分類P 0/2</span></h3>
+      <div class="skill-row header">
+        <div>技能</div><div>能力</div><div>分類P</div><div>自由P</div><div>技能値</div>
+      </div>
+      ${cat.skills.map(sk => `
+        <div class="skill-row">
+          <div class="skill-name">${sk.name}</div>
+          <div class="skill-cell base"><span id="skill_base_${sk.key}">0</span></div>
+          <div class="skill-cell cat"><input id="skill_cat_${sk.key}" data-skill-input="1" type="number" min="0" max="3" value="0" /></div>
+          <div class="skill-cell free"><input id="skill_free_${sk.key}" data-skill-input="1" type="number" min="0" max="3" value="0" /></div>
+          <div class="skill-cell total computed-value" id="skill_total_${sk.key}">0</div>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+
+
+  $('equipmentArea').innerHTML = EQUIPMENT_SLOTS.map(slot => {
+    const options = slot.typeOptions.map(op => `<option value="${op}">${op}</option>`).join('');
+    if (slot.kind === 'carry') {
+      return `
+        <div class="equipment-card" data-equipment-card="${slot.key}">
+          <h3>${slot.name}</h3>
+          <div class="equipment-fields three">
+            <div class="field equipment-wide">
+              <label for="equip_${slot.key}_itemSelect">所持品から選択</label>
+              <select id="equip_${slot.key}_itemSelect" data-equipment-input="1"><option value="">手入力</option></select>
+            </div>
+            <div class="field">
+              <label for="equip_${slot.key}_name">品名</label>
+              <input id="equip_${slot.key}_name" data-equipment-input="1" type="text" placeholder="例：ポーション" />
+            </div>
+            <div class="field">
+              <label for="equip_${slot.key}_type">種類</label>
+              <select id="equip_${slot.key}_type" data-equipment-input="1">${options}</select>
+            </div>
+            <div class="field">
+              <label for="equip_${slot.key}_count">個数</label>
+              <input id="equip_${slot.key}_count" data-equipment-input="1" type="number" min="0" max="99" value="1" />
+            </div>
+            <div class="field equipment-wide">
+              <label for="equip_${slot.key}_description">説明</label>
+              <textarea id="equip_${slot.key}_description" data-equipment-input="1" placeholder="見た目や雰囲気など"></textarea>
+            </div>
+            <div class="field equipment-wide">
+              <label for="equip_${slot.key}_note">効果</label>
+              <textarea id="equip_${slot.key}_note" data-equipment-input="1" placeholder="数値・ルール処理など"></textarea>
+            </div>
+          </div>
+        </div>`;
+    }
+    return `
+      <div class="equipment-card" data-equipment-card="${slot.key}">
+        <h3>${slot.name}</h3>
+        <div class="equipment-fields compact">
+          <div class="field equipment-wide">
+            <label for="equip_${slot.key}_itemSelect">所持品から選択</label>
+            <select id="equip_${slot.key}_itemSelect" data-equipment-input="1"><option value="">手入力</option></select>
+          </div>
+          <div class="field">
+            <label for="equip_${slot.key}_name">装備名</label>
+            <input id="equip_${slot.key}_name" data-equipment-input="1" type="text" placeholder="例：鉄の片手剣" />
+          </div>
+          <div class="field">
+            <label for="equip_${slot.key}_type">種類</label>
+            <select id="equip_${slot.key}_type" data-equipment-input="1">${options}</select>
+          </div>
+          <div class="field">
+            <label for="equip_${slot.key}_power">威力</label>
+            <input id="equip_${slot.key}_power" data-equipment-input="1" type="text" placeholder="例：1D6+1" />
+          </div>
+          <div class="field">
+            <label for="equip_${slot.key}_hit">命中補正</label>
+            <input id="equip_${slot.key}_hit" data-equipment-input="1" type="text" placeholder="例：+1 / -1" />
+          </div>
+          <div class="field">
+            <label for="equip_${slot.key}_defense">常時防御値</label>
+            <input id="equip_${slot.key}_defense" data-equipment-input="1" type="text" placeholder="例：2" />
+          </div>
+          <div class="field">
+            <label for="equip_${slot.key}_guard">防御行動値</label>
+            <input id="equip_${slot.key}_guard" data-equipment-input="1" type="text" placeholder="例：1D6+1" />
+          </div>
+          <div class="field">
+            <label for="equip_${slot.key}_evade">回避補正</label>
+            <input id="equip_${slot.key}_evade" data-equipment-input="1" type="text" placeholder="例：+1 / -1" />
+          </div>
+          <div class="field">
+            <label for="equip_${slot.key}_offhand">副手追撃値</label>
+            <input id="equip_${slot.key}_offhand" data-equipment-input="1" type="text" placeholder="例：+2" />
+          </div>
+          <div class="field equipment-wide">
+            <label for="equip_${slot.key}_description">説明</label>
+            <textarea id="equip_${slot.key}_description" data-equipment-input="1" placeholder="見た目や雰囲気など"></textarea>
+          </div>
+          <div class="field equipment-wide">
+            <label for="equip_${slot.key}_note">効果</label>
+            <textarea id="equip_${slot.key}_note" data-equipment-input="1" placeholder="数値・ルール処理など"></textarea>
+          </div>
+          <div id="equip_${slot.key}_spellFields" class="spellbook-fields equipment-wide">
+            <div class="button-row" style="margin:0 0 8px;">
+              <span id="equip_${slot.key}_spellLabel" class="spell-slot-badge">術式枠</span>
+              <span class="small">所持品に登録されている術式から選択してください。</span>
+            </div>
+            <div class="field equipment-wide">
+              <label for="equip_${slot.key}_setSpells">セット術式</label>
+              <select id="equip_${slot.key}_setSpells" class="spell-set-select" data-equipment-input="1" multiple size="6"></select>
+              <input id="equip_${slot.key}_knownSpells" data-equipment-input="1" type="hidden" value="" />
+              <div id="equip_${slot.key}_spellHelp" class="small">所持品に対応する術式がない場合は、所持品タブで術式を登録してください。</div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }).join('') + `
+    <div class="equipment-card equipment-wide">
+      <h3>装備メモ</h3>
+      <div class="field">
+        <label for="equipmentMemo">メモ</label>
+        <textarea id="equipmentMemo" data-equipment-input="1" placeholder="装備セット、魔導書/祈祷書のセット枠、携行品補足など"></textarea>
+      </div>
+    </div>`;
+}
+function updateAbilities() {
+  return computeAbilities();
+}
+function updateCategoryBonuses() {
+  const details = computeAutoCategoryBonusDetails();
+  $('autoCategoryBonuses').innerHTML = details.length ? details.map(d =>
+    `<span class="pill">${d.categoryName} +1</span>`
+  ).join('') : '<span class="pill empty">自動技能ボーナスなし</span>';
+}
+function updateSkills() {
+  const abilities = computeAbilities();
+  const alloc = getSkillAlloc();
+  const totals = skillTotals(abilities, alloc);
+  for (const [key, t] of Object.entries(totals)) {
+    if ($('skill_base_' + key)) $('skill_base_' + key).textContent = t.base;
+    if ($('skill_total_' + key)) $('skill_total_' + key).textContent = t.total;
+  }
+  const check = validateSkills(alloc, getStats(), getManualCategoryBonuses());
+  for (const cat of SKILL_CATEGORIES) {
+    const el = document.querySelector(`[data-cat="${cat.key}"] h3 .small`);
+    if (el) el.textContent = `基礎能力：${ABILITY_NAMES[cat.ability]} / 分類P ${check.catSums[cat.key]}/${check.catLimits[cat.key]}`;
+  }
+  if (check.errors.length) {
+    $('skillPointStatus').className = 'status-box error';
+    $('skillPointStatus').textContent = '技能ポイントに問題があります。\n' + check.errors.join('\n') + `\n自由P ${check.freeSum}/3`;
+  } else {
+    $('skillPointStatus').className = 'status-box ok';
+    $('skillPointStatus').textContent = `技能ポイントOK。自由P ${check.freeSum}/3`;
+  }
+}
+function makeSummary() {
+  const data = collectData(false);
+  const abilities = data.abilities || computeAbilities();
+  const totals = skillTotals(abilities, data.skills);
+  const manualBonus = data.manualCategoryBonuses || emptyCategoryBonus();
+  const autoBonus = computeAutoCategoryBonuses(data.stats || {});
+  const catLimits = categoryPointLimits(data.stats || {}, manualBonus);
+  const res = computeResources(abilities, data.resources || getResourceState());
+  const lines = [];
+  lines.push(`【リクラフト・アルケミア キャラクター】`);
+  lines.push(`名前：${data.name || '未設定'}`);
+  if (data.gender || data.age) lines.push(`性別：${data.gender || ''} / 年齢：${data.age || ''}`);
+  lines.push('');
+  lines.push('■ 能力値');
+  lines.push(ABILITIES.map(a => `${a.name}:${abilities[a.key]}`).join(' / '));
+  lines.push('');
+  lines.push('■ HP・MP');
+  lines.push(`HP:${res.currentHp}/${res.maxHp} / MP:${res.currentMp}/${res.maxMp}`);
+  const combat = computeCombatStats(abilities, data.skills || defaultSkillAlloc(), data.equipment || {});
+  lines.push(`常時防御値:${combat.defenseTotal} / 回避値:${combat.evasionTotal}`);
+  if (combat.dualWield?.available) lines.push(`二刀攻撃:${combat.dualWield.rightMain} / ${combat.dualWield.leftMain}`);
+  lines.push('');
+  lines.push('■ 装備');
+  pushEquipmentSummaryLines(lines, data.equipment || {});
+  lines.push('');
+  lines.push(`■ 技能カテゴリポイント`);
+  lines.push(SKILL_CATEGORIES.map(c => `${c.name}:${catLimits[c.key]}（基本2+自動${autoBonus[c.key] || 0}+追加${manualBonus[c.key] || 0}）`).join(' / '));
+  lines.push('');
+  lines.push('■ 技能値');
+  for (const cat of SKILL_CATEGORIES) {
+    lines.push(`［${cat.name}］`);
+    for (const sk of cat.skills) {
+      const t = totals[sk.key];
+      lines.push(`${sk.name}: ${t.total}（能力${t.base}+割振${t.add}）`);
+    }
+  }
+  pushInventorySummaryLines(lines, data.inventory || {});
+  if (data.memo) { lines.push(''); lines.push('■ メモ'); lines.push(data.memo); }
+  return lines.join('\n');
+}
+
+function getResourceState() {
+  return {
+    hpBonus: clampInt($('hpBonus')?.value || 0, -99, 999),
+    mpBonus: clampInt($('mpBonus')?.value || 0, -99, 999),
+    currentHp: clampInt($('currentHp')?.value || 0, 0, 999),
+    currentMp: clampInt($('currentMp')?.value || 0, 0, 999),
+  };
+}
+function setResourceState(resources={}) {
+  if ($('hpBonus')) $('hpBonus').value = clampInt(resources?.hpBonus || 0, -99, 999);
+  if ($('mpBonus')) $('mpBonus').value = clampInt(resources?.mpBonus || 0, -99, 999);
+  if ($('currentHp')) $('currentHp').value = resources?.currentHp ?? '';
+  if ($('currentMp')) $('currentMp').value = resources?.currentMp ?? '';
+}
+
+function pushEquipmentSummaryLines(lines, equipment={}) {
+  for (const slot of EQUIPMENT_SLOTS) {
+    const item = (equipment || {})[slot.key] || {};
+    if (!(item.name || (item.type && item.type !== 'なし') || item.setSpells)) continue;
+    lines.push(`${slot.name}: ${item.name || '未設定'}${item.type ? ' / ' + item.type : ''}${item.count ? ' ×' + item.count : ''}${item.offhand ? ' / 副手追撃:' + item.offhand : ''}`);
+    if (item.setSpells) lines.push(`  セット術式: ${String(item.setSpells).replace(/\n/g, '、')}`);
+  }
+}
+function pushInventorySummaryLines(lines, inventory={}) {
+  const items = normalizeInventoryState(inventory).items;
+  if (!items.length) return;
+  lines.push('');
+  lines.push('■ 所持・預けアイテム');
+  for (const item of items) {
+    if (!(item.name || item.category || item.note)) continue;
+    lines.push(`${item.name || '未設定'}${item.count ? ' ×' + item.count : ''}${item.location ? ' / ' + item.location : ''}${item.kind ? ' / ' + item.kind : ''}${item.rank ? ' / ' + item.rank : ''}${item.cost ? ' / コスト:' + item.cost : ''}`);
+    if (item.category || item.price) lines.push(`  ${[item.category ? 'カテゴリ:' + item.category : '', item.price ? '価格/売価:' + item.price : ''].filter(Boolean).join(' / ')}`);
+    if (item.description) lines.push(`  ${String(item.description).replace(/\n/g, ' ')}`);
+    if (item.note) lines.push(`  ${String(item.note).replace(/\n/g, ' ')}`);
+  }
+}
+
+function parseFlatBonus(value) {
+  const s = String(value ?? '').trim();
+  if (!s) return 0;
+  if (/^[+-]?\d+$/.test(s)) return parseInt(s, 10) || 0;
+  return 0;
+}
+function getPresetForItem(item={}) {
+  return EQUIPMENT_PRESETS[normalizeEquipmentType(item.type || 'なし')] || EQUIPMENT_PRESETS['なし'];
+}
+function computeEquipmentDefense(equipment=getEquipmentState()) {
+  let total = 0;
+  for (const slot of EQUIPMENT_SLOTS) {
+    if (slot.kind === 'carry') continue;
+    const item = (equipment || {})[slot.key] || {};
+    const preset = getPresetForItem(item);
+    total += parseFlatBonus(item.defense !== undefined && item.defense !== '' ? item.defense : preset.defense);
+  }
+  return total;
+}
+function computeEquipmentEvade(equipment=getEquipmentState()) {
+  let total = 0;
+  for (const slot of EQUIPMENT_SLOTS) {
+    if (slot.kind === 'carry') continue;
+    const item = (equipment || {})[slot.key] || {};
+    const preset = getPresetForItem(item);
+    total += parseFlatBonus(item.evade !== undefined && item.evade !== '' ? item.evade : preset.evade);
+  }
+  return total;
+}
+
+function signedNumberText(value) {
+  const raw = String(value ?? '').trim();
+  if (!raw) return '';
+  const n = Number(raw.replace(/^\+/, ''));
+  if (Number.isFinite(n)) return (n >= 0 ? '+' : '') + n;
+  return raw;
+}
+function parseFlatBonus(value) {
+  const n = Number(String(value ?? '').trim().replace(/^\+/, ''));
+  return Number.isFinite(n) ? n : 0;
+}
+function canUseAsDualWeapon(item) {
+  const type = normalizeEquipmentType(item?.type || 'なし');
+  if (!type || type === 'なし' || TWO_HAND_TYPES.has(type)) return false;
+  return parseFlatBonus(item?.offhand) > 0;
+}
+function computeDualWieldStats(equipment=getEquipmentState()) {
+  const right = equipment?.rightHand || {};
+  const left = equipment?.leftHand || {};
+  const rightOk = canUseAsDualWeapon(right);
+  const leftOk = canUseAsDualWeapon(left);
+  if (!rightOk || !leftOk) return { available:false };
+  const leftBonus = signedNumberText(left.offhand || EQUIPMENT_PRESETS[normalizeEquipmentType(left.type)]?.offhand || '');
+  const rightBonus = signedNumberText(right.offhand || EQUIPMENT_PRESETS[normalizeEquipmentType(right.type)]?.offhand || '');
+  return {
+    available:true,
+    rightMain:`右手主武器：命中${signedNumberText(right.hit || 0)}-1 / 副手追撃${leftBonus}`,
+    leftMain:`左手主武器：命中${signedNumberText(left.hit || 0)}-1 / 副手追撃${rightBonus}`,
+    bestOffhandBonus: Math.max(parseFlatBonus(left.offhand), parseFlatBonus(right.offhand))
+  };
+}
+function computeCombatStats(abilities=computeAbilities(), alloc=getSkillAlloc(), equipment=getEquipmentState()) {
+  const totals = skillTotals(abilities, alloc);
+  const defenseTotal = computeEquipmentDefense(equipment);
+  const evadeSkill = totals.evade?.total || 0;
+  const evadeModifier = computeEquipmentEvade(equipment);
+  const evasionTotal = 5 + evadeSkill + evadeModifier;
+  return { defenseTotal, evasionTotal, evadeSkill, evadeModifier, dualWield: computeDualWieldStats(equipment) };
+}
+function updateCombatStats() {
+  const combat = computeCombatStats(computeAbilities(), getSkillAlloc(), getEquipmentState());
+  const el = $('derivedCombatStats');
+  if (el) {
+    el.innerHTML = `
+      <div class="ability-card computed-card">
+        <div class="ability-name">常時防御値</div>
+        <div class="computed-value big">${combat.defenseTotal}</div>
+      </div>
+      <div class="ability-card computed-card">
+        <div class="ability-name">回避値</div>
+        <div class="computed-value big">${combat.evasionTotal}</div>
+      </div>
+      ${combat.dualWield?.available ? `
+      <div class="ability-card computed-card">
+        <div class="ability-name">二刀攻撃</div>
+        <div class="small">${esc(combat.dualWield.rightMain)}<br>${esc(combat.dualWield.leftMain)}</div>
+      </div>` : ''}
+    `;
+  }
+  return combat;
+}
+
+function computeResources(abilities=computeAbilities(), resources=getResourceState()) {
+  const maxHp = Math.max(1, 10 + (abilities.body || 0) * 3 + (abilities.will || 0) + (resources.hpBonus || 0));
+  const maxMp = Math.max(0, 8 + (abilities.will || 0) * 3 + (abilities.intellect || 0) + (resources.mpBonus || 0));
+  return {
+    maxHp,
+    maxMp,
+    currentHp: resources.currentHp || maxHp,
+    currentMp: resources.currentMp || maxMp,
+    hpBonus: resources.hpBonus || 0,
+    mpBonus: resources.mpBonus || 0,
+  };
+}
+function updateResources() {
+  const res = computeResources(computeAbilities(), getResourceState());
+  if ($('maxHp')) $('maxHp').textContent = res.maxHp;
+  if ($('maxMp')) $('maxMp').textContent = res.maxMp;
+  if ($('currentHp') && !$('currentHp').value) $('currentHp').value = res.maxHp;
+  if ($('currentMp') && !$('currentMp').value) $('currentMp').value = res.maxMp;
+  return res;
+}
+
+function updateSummary() { /* 出力欄はボタンから開くため常時表示しない */ }
+function updateAll() { updateAbilities(); updateCategoryBonuses(); updateResources(); updateSkills(); updateCombatStats(); updateSpellSlotHints(); updateSummary(); }
+
+function spellContainerKind(type) {
+  const t = normalizeEquipmentType(type || 'なし');
+  if (t === '魔導書') return { kind:'magic', label:'魔法', pointKey:'magic', baseSlots:1, growsWithPoint:true };
+  if (t === '祈祷書') return { kind:'prayer', label:'祈祷', pointKey:'prayer', baseSlots:1, growsWithPoint:true };
+  if (t === '魔印') return { kind:'magic', label:'魔法', pointKey:'magic', baseSlots:1, growsWithPoint:false };
+  if (t === '聖印') return { kind:'prayer', label:'祈祷', pointKey:'prayer', baseSlots:1, growsWithPoint:false };
+  return null;
+}
+function getSkillPointTotal(skillKey, alloc=getSkillAlloc()) {
+  const row = alloc?.[skillKey] || {};
+  return (Number(row.cat) || 0) + (Number(row.free) || 0);
+}
+function selectedSpellSlotBase(slotKey, info) {
+  const row = findCsItemById($('equip_' + slotKey + '_itemSelect')?.value || '');
+  const n = Number(row && row.spellSlots);
+  if (Number.isFinite(n) && n > 0) return Math.floor(n);
+  return info?.baseSlots || 0;
+}
+function spellSlotLimitForType(type, alloc=getSkillAlloc(), slotKey='') {
+  const info = spellContainerKind(type);
+  if (!info) return 0;
+  const base = slotKey ? selectedSpellSlotBase(slotKey, info) : info.baseSlots;
+  return base + (info.growsWithPoint ? getSkillPointTotal(info.pointKey, alloc) : 0);
+}
+function splitFormulaList(text) {
+  return String(text || '').split(/[\n,、，\/]+/).map(v => v.trim()).filter(Boolean);
+}
+function selectedSpellNames(slotKey) {
+  const el = $('equip_' + slotKey + '_setSpells');
+  if (!el) return [];
+  if (el.tagName === 'SELECT') return Array.from(el.selectedOptions || []).map(o => o.value).filter(Boolean);
+  return splitFormulaList(el.value || '');
+}
+function spellTypeAliases(label) {
+  if (label === '魔法') return ['魔法'];
+  if (label === '祈祷') return ['祈祷'];
+  return [label];
+}
+function ownedSpellRowsForInfo(info) {
+  if (!info) return [];
+  const aliases = spellTypeAliases(info.label);
+  return (inventoryItemsState || []).map(item => normalizeInventoryItem(item)).filter(item => {
+    if (item.kind !== '術式' || !item.name) return false;
+    const cat = String(item.category || '').trim();
+    return aliases.includes(cat);
+  }).sort((a,b) => String(a.rank || '').localeCompare(String(b.rank || ''), 'ja') || String(a.name || '').localeCompare(String(b.name || ''), 'ja'));
+}
+function spellOptionLabel(item) {
+  const meta = [item.cost ? 'コスト ' + item.cost : '', item.target ? '対象 ' + item.target : ''].filter(Boolean).join(' / ');
+  return meta ? `${item.name}（${meta}）` : item.name;
+}
+function setSpellSelectValues(slotKey, values) {
+  const el = $('equip_' + slotKey + '_setSpells');
+  if (!el) return;
+  const names = Array.isArray(values) ? values : splitFormulaList(values || '');
+  el.dataset.pendingSpells = names.join('\n');
+  if (el.tagName === 'SELECT') {
+    const set = new Set(names);
+    Array.from(el.options || []).forEach(opt => { opt.selected = set.has(opt.value); });
+  } else {
+    el.value = names.join('\n');
+  }
+}
+function refreshSpellSetSelect(slotKey, info=null) {
+  const el = $('equip_' + slotKey + '_setSpells');
+  if (!el || el.tagName !== 'SELECT') return;
+  const type = $('equip_' + slotKey + '_type')?.value || 'なし';
+  const spellInfo = info || spellContainerKind(type);
+  const current = selectedSpellNames(slotKey);
+  const pending = splitFormulaList(el.dataset.pendingSpells || '');
+  const keep = current.length ? current : pending;
+  const rows = ownedSpellRowsForInfo(spellInfo);
+  if (!spellInfo) {
+    el.innerHTML = '';
+    el.dataset.pendingSpells = '';
+    return;
+  }
+  const options = rows.map(row => `<option value="${esc(row.name)}">${esc(spellOptionLabel(row))}</option>`);
+  el.innerHTML = options.length ? options.join('') : '<option value="" disabled>所持品に対応する術式がありません</option>';
+  const keepSet = new Set(keep);
+  Array.from(el.options || []).forEach(opt => { opt.selected = keepSet.has(opt.value); });
+  el.dataset.pendingSpells = keep.join('\n');
+}
+function refreshSpellSetSelects() {
+  for (const slot of EQUIPMENT_SLOTS) {
+    if (slot.kind !== 'carry') refreshSpellSetSelect(slot.key);
+  }
+}
+function enforceSpellSetLimit(slotKey) {
+  const el = $('equip_' + slotKey + '_setSpells');
+  if (!el || el.tagName !== 'SELECT') return;
+  const type = $('equip_' + slotKey + '_type')?.value || 'なし';
+  const limit = spellSlotLimitForType(type, getSkillAlloc(), slotKey);
+  if (!limit) return;
+  const selected = Array.from(el.options || []).filter(o => o.selected && o.value);
+  if (selected.length <= limit) return;
+  selected.slice(limit).forEach(o => { o.selected = false; });
+  showToast(`セットできる術式は${limit}件までです。`, 'warn');
+}
+function updateSpellSlotHints() {
+  const alloc = getSkillAlloc();
+  for (const slot of EQUIPMENT_SLOTS) {
+    if (slot.kind === 'carry') continue;
+    const type = $('equip_' + slot.key + '_type')?.value || 'なし';
+    const info = spellContainerKind(type);
+    const box = $('equip_' + slot.key + '_spellFields');
+    if (!box) continue;
+    box.classList.toggle('active', !!info);
+    refreshSpellSetSelect(slot.key, info);
+    const label = $('equip_' + slot.key + '_spellLabel');
+    const help = $('equip_' + slot.key + '_spellHelp');
+    if (info && label) {
+      const limit = spellSlotLimitForType(type, alloc, slot.key);
+      const used = selectedSpellNames(slot.key).length;
+      const skillPoint = getSkillPointTotal(info.pointKey, alloc);
+      const base = selectedSpellSlotBase(slot.key, info);
+      const formula = info.growsWithPoint ? `基本${base}+${info.label}P${skillPoint}` : `固定${base}`;
+      label.textContent = `${info.label}枠 ${limit}（${formula}） / セット${used}件`;
+      label.classList.toggle('warning', used > limit);
+      if (help) help.textContent = ownedSpellRowsForInfo(info).length ? `${info.label}の所持術式から選択してください。` : `所持品に${info.label}術式がありません。所持品タブで術式を登録してください。`;
+    }
+  }
+  updateEquipmentFieldAvailability();
+}
+function defaultEquipment() {
+  const equipment = {};
+  for (const slot of EQUIPMENT_SLOTS) {
+    equipment[slot.key] = slot.kind === 'carry'
+      ? { itemId:'', name:'', type:'なし', count:1, description:'', note:'' }
+      : { itemId:'', name:'', type:'なし', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', knownSpells:'', setSpells:'', description:'', note:'' };
+  }
+  equipment.memo = '';
+  return equipment;
+}
+function getEquipmentState() {
+  const equipment = defaultEquipment();
+  for (const slot of EQUIPMENT_SLOTS) {
+    const base = equipment[slot.key];
+    base.itemId = $('equip_' + slot.key + '_itemSelect')?.value || '';
+    base.name = $('equip_' + slot.key + '_name')?.value?.trim() || '';
+    base.type = $('equip_' + slot.key + '_type')?.value || 'なし';
+    base.description = $('equip_' + slot.key + '_description')?.value || '';
+    base.note = $('equip_' + slot.key + '_note')?.value || '';
+    if (slot.kind === 'carry') {
+      base.count = clampInt($('equip_' + slot.key + '_count')?.value || 1, 0, 99);
+    } else {
+      const isBook = isSpellBookType(base.type);
+      base.power = isBook ? '' : ($('equip_' + slot.key + '_power')?.value?.trim() || '');
+      base.hit = isBook ? '' : ($('equip_' + slot.key + '_hit')?.value?.trim() || '');
+      base.defense = isBook ? '' : ($('equip_' + slot.key + '_defense')?.value?.trim() || '');
+      base.guard = isBook ? '' : ($('equip_' + slot.key + '_guard')?.value?.trim() || '');
+      base.evade = isBook ? '' : ($('equip_' + slot.key + '_evade')?.value?.trim() || '');
+      base.offhand = isBook ? '' : ($('equip_' + slot.key + '_offhand')?.value?.trim() || '');
+      if (spellContainerKind(base.type)) {
+        base.knownSpells = '';
+        base.setSpells = selectedSpellNames(slot.key).join('\n');
+      } else {
+        base.knownSpells = '';
+        base.setSpells = '';
+      }
+    }
+  }
+  equipment.memo = $('equipmentMemo')?.value || '';
+  return equipment;
+}
+function setEquipmentState(equipment={}) {
+  const defaults = defaultEquipment();
+  const eq = { ...defaults, ...(equipment || {}) };
+  for (const slot of EQUIPMENT_SLOTS) {
+    const item = { ...defaults[slot.key], ...(eq[slot.key] || {}) };
+    if ($('equip_' + slot.key + '_itemSelect')) {
+      const selectedId = item.itemId || findCsItemIdByName(item.name || '');
+      $('equip_' + slot.key + '_itemSelect').value = selectedId && Array.from($('equip_' + slot.key + '_itemSelect').options).some(o=>o.value===selectedId) ? selectedId : '';
+    }
+    if ($('equip_' + slot.key + '_name')) $('equip_' + slot.key + '_name').value = item.name || '';
+    if ($('equip_' + slot.key + '_type')) $('equip_' + slot.key + '_type').value = normalizeEquipmentType(item.type || 'なし');
+    if ($('equip_' + slot.key + '_description')) $('equip_' + slot.key + '_description').value = item.description || '';
+    if ($('equip_' + slot.key + '_note')) $('equip_' + slot.key + '_note').value = item.note || '';
+    if (slot.kind === 'carry') {
+      if ($('equip_' + slot.key + '_count')) $('equip_' + slot.key + '_count').value = item.count ?? 1;
+    } else {
+      if ($('equip_' + slot.key + '_power')) $('equip_' + slot.key + '_power').value = item.power || '';
+      if ($('equip_' + slot.key + '_hit')) $('equip_' + slot.key + '_hit').value = item.hit || '';
+      if ($('equip_' + slot.key + '_defense')) $('equip_' + slot.key + '_defense').value = item.defense || '';
+      if ($('equip_' + slot.key + '_guard')) $('equip_' + slot.key + '_guard').value = item.guard || '';
+      if ($('equip_' + slot.key + '_evade')) $('equip_' + slot.key + '_evade').value = item.evade || '';
+      if ($('equip_' + slot.key + '_offhand')) $('equip_' + slot.key + '_offhand').value = item.offhand || '';
+      if ($('equip_' + slot.key + '_knownSpells')) $('equip_' + slot.key + '_knownSpells').value = '';
+      setSpellSelectValues(slot.key, item.setSpells || '');
+      const hasManualDetail = !!(item.power || item.hit || item.defense || item.guard || item.evade || item.offhand || item.setSpells || item.description || item.note);
+      if (!hasManualDetail && normalizeEquipmentType(item.type || 'なし') !== 'なし') applyEquipmentPreset(slot.key);
+    }
+  }
+  if ($('equipmentMemo')) $('equipmentMemo').value = eq.memo || '';
+  updateEquipmentHandLocks(false);
+  updateSpellSlotHints();
+}
+function normalizeEquipmentType(type) {
+  return type === '槍' ? '片手槍' : (type || 'なし');
+}
+function applyEquipmentPreset(slotKey) {
+  const typeEl = $('equip_' + slotKey + '_type');
+  if (!typeEl) return;
+  const normalized = normalizeEquipmentType(typeEl.value);
+  if (typeEl.value !== normalized) typeEl.value = normalized;
+  const preset = EQUIPMENT_PRESETS[normalized] || EQUIPMENT_PRESETS['なし'];
+  for (const key of ['power','hit','defense','guard','evade','offhand','description','note']) {
+    const el = $('equip_' + slotKey + '_' + key);
+    if (el) el.value = preset[key] || '';
+  }
+  if (!spellContainerKind(normalized)) {
+    const known = $('equip_' + slotKey + '_knownSpells');
+    if (known) known.value = '';
+    setSpellSelectValues(slotKey, []);
+  }
+  updateEquipmentFieldAvailability();
+  updateSpellSlotHints();
+}
+function clearHandSlot(slotKey) {
+  for (const suffix of ['itemSelect','name','power','hit','defense','guard','evade','offhand','description','note']) {
+    const el = $('equip_' + slotKey + '_' + suffix);
+    if (el) el.value = '';
+  }
+  const typeEl = $('equip_' + slotKey + '_type');
+  if (typeEl) typeEl.value = 'なし';
+}
+function setHandSlotDisabled(slotKey, disabled) {
+  const card = document.querySelector(`[data-equipment-card="${slotKey}"]`);
+  if (card) card.classList.toggle('hand-disabled', disabled && currentMode !== 'view');
+  for (const suffix of ['itemSelect','name','type','power','hit','defense','guard','evade','offhand','knownSpells','setSpells','description','note']) {
+    const el = $('equip_' + slotKey + '_' + suffix);
+    if (el) el.disabled = disabled || currentMode === 'view';
+  }
+}
+function isSpellBookType(type) {
+  const t = normalizeEquipmentType(type || 'なし');
+  return t === '魔導書' || t === '祈祷書';
+}
+function updateEquipmentFieldAvailability() {
+  for (const slot of EQUIPMENT_SLOTS) {
+    if (slot.kind === 'carry') continue;
+    const type = normalizeEquipmentType($('equip_' + slot.key + '_type')?.value || 'なし');
+    const card = document.querySelector(`[data-equipment-card="${slot.key}"]`);
+    const baseDisabled = currentMode === 'view' || !!card?.classList.contains('hand-disabled');
+    const book = isSpellBookType(type);
+    for (const suffix of ['itemSelect','name','type','description','note']) {
+      const el = $('equip_' + slot.key + '_' + suffix);
+      if (el) el.disabled = baseDisabled;
+    }
+    for (const suffix of ['power','hit','defense','guard','evade','offhand']) {
+      const el = $('equip_' + slot.key + '_' + suffix);
+      if (!el) continue;
+      el.disabled = baseDisabled || book;
+      el.closest('.field')?.classList.toggle('field-disabled-by-type', book);
+      if (book && currentMode !== 'view') el.value = '';
+    }
+    const setEl = $('equip_' + slot.key + '_setSpells');
+    if (setEl) setEl.disabled = baseDisabled || !spellContainerKind(type);
+  }
+}
+function updateEquipmentHandLocks(clearOpposite=true) {
+  const rightType = normalizeEquipmentType($('equip_rightHand_type')?.value || 'なし');
+  const leftType = normalizeEquipmentType($('equip_leftHand_type')?.value || 'なし');
+  const rightTwo = selectedCsItemIsTwoHand('rightHand') || TWO_HAND_TYPES.has(rightType);
+  const leftTwo = selectedCsItemIsTwoHand('leftHand') || TWO_HAND_TYPES.has(leftType);
+  if (rightTwo) {
+    if (clearOpposite) clearHandSlot('leftHand');
+    setHandSlotDisabled('rightHand', false);
+    setHandSlotDisabled('leftHand', true);
+  } else if (leftTwo) {
+    if (clearOpposite) clearHandSlot('rightHand');
+    setHandSlotDisabled('leftHand', false);
+    setHandSlotDisabled('rightHand', true);
+  } else {
+    setHandSlotDisabled('rightHand', false);
+    setHandSlotDisabled('leftHand', false);
+  }
+  updateEquipmentFieldAvailability();
+}
+function showEditorTab(tab) {
+  const map = { ability:'tabAbility', skills:'tabSkills', equipment:'tabEquipment', inventory:'tabInventory' };
+  for (const page of document.querySelectorAll('.editor-tab-page')) page.classList.remove('active');
+  for (const btn of document.querySelectorAll('.editor-tab-btn')) btn.classList.toggle('active', btn.dataset.editorTab === tab);
+  const target = $(map[tab] || 'tabAbility');
+  if (target) target.classList.add('active');
+}
+
+const INVENTORY_LOCATION_FILTERS = ['全て'];
+const INVENTORY_LOCATION_OPTIONS = ['所持'];
+const INVENTORY_KIND_FILTERS = ['全て','武器/防具/装飾品','携行品','素材','レシピ','術式','重要品','その他'];
+const INVENTORY_KIND_OPTIONS = ['アイテム','素材','武器','防具','装飾品','術式','レシピ','重要品','その他'];
+const INVENTORY_KIND_TOKEN = { '武器':'weapon', '防具':'armor', '装飾品':'accessory', 'アイテム':'item', '素材':'material', '術式':'spell', 'レシピ':'recipe', '重要品':'important', 'その他':'other' };
+let inventoryViewFilter = { location:'全て', kind:'全て', search:'' };
+let inventoryItemsState = [];
+
+function defaultInventory() { return { items: [] }; }
+function normalizeInventoryState(inventory) {
+  const src = Array.isArray(inventory) ? inventory : (Array.isArray(inventory?.items) ? inventory.items : []);
+  return { items: src.filter(Boolean).map(item => normalizeInventoryItem(item)) };
+}
+function defaultInventoryLocation() { return '所持'; }
+function defaultInventoryKind() {
+  if (inventoryViewFilter.kind === '素材') return '素材';
+  if (inventoryViewFilter.kind === '武器/防具/装飾品') return '武器';
+  if (inventoryViewFilter.kind === '術式') return '術式';
+  if (inventoryViewFilter.kind === 'レシピ') return 'レシピ';
+  if (inventoryViewFilter.kind === '重要品') return '重要品';
+  if (inventoryViewFilter.kind === 'その他') return 'その他';
+  return 'アイテム';
+}
+function normalizeInventoryLocation(location) { return '所持'; }
+function normalizeInventoryKind(kind) {
+  if (kind === '武器/防具') return '武器';
+  return INVENTORY_KIND_OPTIONS.includes(kind) ? kind : 'アイテム';
+}
+function mergeTextUnique(...values) {
+  const seen = new Set();
+  const parts = [];
+  values.forEach(value => {
+    String(value ?? '').split(/\n+/).map(v => v.trim()).filter(Boolean).forEach(line => {
+      if (!seen.has(line)) { seen.add(line); parts.push(line); }
+    });
+  });
+  return parts.join('\n');
+}
+function inferEquipSlotForInventory(item={}) {
+  const explicit = String(item.equipSlot || '').trim();
+  if (explicit) return explicit;
+  const kind = normalizeInventoryKind(item.kind || 'アイテム');
+  if (kind === '武器') return '右手/左手';
+  if (kind === '防具') return '鎧';
+  if (kind === '装飾品') return '装飾品';
+  return '';
+}
+function emptyInventoryItem() {
+  return { id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), name:'', kind:defaultInventoryKind(), category:'', count:1, location:'所持', rank:'', price:'', equipSlot:'', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', spellSlots:'', target:'', cost:'', description:'', effect:'', recipeResult:'', materials:'', note:'' };
+}
+function normalizeInventoryItem(item={}) {
+  const kind = normalizeInventoryKind(item.kind || 'アイテム');
+  const oldDescription = item['fla' + 'vor' + 'Text'];
+  return {
+    id: item.id || ('inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6)),
+    name: String(item.name || '').trim(),
+    kind,
+    category: String(item.category || item.itemCategory || item.materialCategory || '').trim(),
+    count: clampInt(item.count ?? item.quantity ?? 1, 0, 9999),
+    location: '所持',
+    rank: String(item.rank || '').trim(),
+    price: String(item.price || '').trim(),
+    equipSlot: inferEquipSlotForInventory({ ...item, kind }),
+    power: String(item.power || '').trim(),
+    hit: String(item.hit || item.hitMod || '').trim(),
+    defense: String(item.defense || item.alwaysDefense || '').trim(),
+    guard: String(item.guard || item.guardValue || '').trim(),
+    evade: String(item.evade || item.evasionMod || '').trim(),
+    offhand: String(item.offhand || item.offhandBonus || '').trim(),
+    spellSlots: String(item.spellSlots || item.slotCount || item.registerSlots || item.maxStack || '').trim(),
+    target: String(item.target || '').trim(),
+    cost: String(item.cost || item.mpCost || '').trim(),
+    description: mergeTextUnique(item.description, oldDescription),
+    effect: String(item.effect || '').trim(),
+    recipeResult: String(item.recipeResult || item.resultItem || '').trim(),
+    materials: String(item.materials || item.requiredMaterials || '').trim(),
+    note: ''
+  };
+}
+function getInventoryState() {
+  const items = inventoryItemsState.map(item => normalizeInventoryItem(item)).filter(item => item.name || item.category || item.description || item.effect || item.count > 0);
+  return { items };
+}
+function setInventoryState(inventory=defaultInventory()) {
+  inventoryItemsState = normalizeInventoryState(inventory).items;
+  renderInventoryTabs();
+  renderInventory();
+}
+function renderInventoryTabs() {
+  const locationArea = $('inventoryLocationTabs');
+  const kindArea = $('inventoryKindTabs');
+  if (locationArea) {
+    locationArea.innerHTML = INVENTORY_LOCATION_FILTERS.map(v => `<button type="button" class="ghost ${inventoryViewFilter.location === v ? 'active' : ''}" data-inventory-filter="location" data-value="${esc(v)}">${esc(v)}</button>`).join('');
+  }
+  if (kindArea) {
+    kindArea.innerHTML = INVENTORY_KIND_FILTERS.map(v => `<button type="button" class="ghost ${inventoryViewFilter.kind === v ? 'active' : ''}" data-inventory-filter="kind" data-value="${esc(v)}">${esc(v)}</button>`).join('');
+  }
+}
+function itemMatchesInventoryKindFilter(kind, filter) {
+  if (!filter || filter === '全て') return true;
+  if (filter === '武器/防具/装飾品') return kind === '武器' || kind === '防具' || kind === '装飾品';
+  if (filter === '携行品') return ['アイテム','素材','術式','重要品','その他'].includes(kind);
+  return kind === filter;
+}
+function applyInventoryFilters() {
+  const rows = Array.from(document.querySelectorAll('[data-inventory-row]'));
+  const search = String(inventoryViewFilter.search || $('inventorySearchInput')?.value || '').trim().toLowerCase();
+  let visible = 0;
+  for (const card of rows) {
+    const loc = normalizeInventoryLocation(card.dataset.inventoryLocation || '所持');
+    const kind = normalizeInventoryKind(card.dataset.inventoryKind || 'アイテム');
+    const haystack = String(card.dataset.inventorySearch || '').toLowerCase();
+    const locationOk = inventoryViewFilter.location === '全て' || loc === inventoryViewFilter.location;
+    const kindOk = itemMatchesInventoryKindFilter(kind, inventoryViewFilter.kind);
+    const searchOk = !search || haystack.includes(search);
+    const show = locationOk && kindOk && searchOk;
+    card.classList.toggle('inventory-hidden', !show);
+    if (show) visible++;
+  }
+  const filterStatus = $('inventoryFilterStatus');
+  if (filterStatus) {
+    const loc = '所持品';
+    const kind = inventoryViewFilter.kind === '全て' ? '全区分' : inventoryViewFilter.kind;
+    const searchText = search ? ` / 検索「${search}」` : '';
+    filterStatus.textContent = `${loc} / ${kind}${searchText}：${visible}件表示（全${rows.length}件）`;
+  }
+  if ($('inventoryEmptyStatus')) $('inventoryEmptyStatus').style.display = rows.length ? 'none' : '';
+}
+function setInventoryFilter(type, value) {
+  if (type === 'location') inventoryViewFilter.location = value || '全て';
+  if (type === 'kind') inventoryViewFilter.kind = value || '全て';
+  if (type === 'search') inventoryViewFilter.search = value || '';
+  renderInventoryTabs();
+  applyInventoryFilters();
+}
+function inventoryOptions(value, list) {
+  return list.map(v => `<option value="${esc(v)}" ${String(value || '') === v ? 'selected' : ''}>${esc(v)}</option>`).join('');
+}
+function renderInventory() {
+  const area = $('inventoryArea');
+  if (!area) return;
+  inventoryItemsState = (inventoryItemsState || []).map(item => normalizeInventoryItem(item));
+  area.innerHTML = inventoryItemsState.map((item, index) => {
+    const title = item.name || '未設定アイテム';
+    const description = item.description || '';
+    const effectText = item.effect || '';
+    const equipMeta = [item.equipSlot, item.power ? '威力 ' + item.power : '', item.hit ? '命中 ' + item.hit : '', item.defense ? '防御 ' + item.defense : ''].filter(Boolean).join(' / ') || '—';
+    const spellMeta = item.kind === '術式' ? [item.cost ? 'コスト：' + item.cost : '', item.target ? '対象：' + item.target : ''].filter(Boolean).join(' / ') : '';
+    const recipeMeta = item.kind === 'レシピ' ? [item.recipeResult ? '完成品：' + item.recipeResult : '', item.materials ? '必要素材：' + item.materials : ''].filter(Boolean).join('\n') : '';
+    const spellSlotMeta = item.spellSlots ? `術式登録枠：${item.spellSlots}` : '';
+    const searchText = [title, item.kind, item.category, item.rank, item.price, item.equipSlot, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.spellSlots, item.target, item.cost, item.description, item.effect, item.recipeResult, item.materials].filter(Boolean).join(' ');
+    return `
+    <details class="inventory-card" open data-inventory-row="${index}" data-inventory-id="${esc(item.id || '')}" data-inventory-location="所持" data-inventory-kind="${esc(item.kind || 'アイテム')}" data-inventory-search="${esc(searchText)}">
+      <summary class="inventory-card-head">
+        <div><div class="inventory-title">${esc(title)}</div><div class="small">所持品 / ${esc(item.kind || 'アイテム')}</div></div>
+        <div class="button-row" style="margin:0;">
+          <button type="button" class="ghost" data-inventory-action="edit" data-index="${index}">編集</button>
+          <button type="button" class="ghost" data-inventory-action="duplicate" data-index="${index}">複製</button>
+          <button type="button" class="danger" data-inventory-action="delete" data-index="${index}">削除</button>
+        </div>
+      </summary>
+      <div class="inventory-card-meta">
+        <div class="meta-item"><span class="meta-label">カテゴリ</span>${esc(item.category || '—')}</div>
+        <div class="meta-item"><span class="meta-label">個数</span>${esc(item.count ?? 0)}</div>
+        <div class="meta-item"><span class="meta-label">ランク</span>${esc(item.rank || '—')}</div>
+        <div class="meta-item"><span class="meta-label">価格/売価</span>${esc(item.price || '—')}</div>
+        <div class="meta-item meta-wide"><span class="meta-label">装備/使用データ</span><div class="inventory-note">${esc([equipMeta, spellSlotMeta].filter(Boolean).join('\n'))}</div></div>
+        ${spellMeta ? `<div class="meta-item meta-wide"><span class="meta-label">術式データ</span><div class="inventory-note">${esc(spellMeta)}</div></div>` : ''}
+        ${recipeMeta ? `<div class="meta-item meta-wide"><span class="meta-label">レシピ</span><div class="inventory-note">${esc(recipeMeta)}</div></div>` : ''}
+        ${description ? `<div class="meta-item meta-wide"><span class="meta-label">説明</span><div class="inventory-note">${esc(description)}</div></div>` : ''}
+        ${effectText ? `<div class="meta-item meta-wide"><span class="meta-label">効果</span><div class="inventory-note">${esc(effectText)}</div></div>` : ''}
+      </div>
+    </details>`;
+  }).join('');
+  if ($('inventoryEmptyStatus')) $('inventoryEmptyStatus').style.display = inventoryItemsState.length ? 'none' : '';
+  setReadOnly(currentMode === 'view');
+  renderInventoryTabs();
+  applyInventoryFilters();
+  refreshEquipmentItemSelects();
+  refreshSpellSetSelects();
+}
+
+function fillInventoryDialogOptions(item) {
+  if ($('inventoryFormKind')) $('inventoryFormKind').innerHTML = inventoryOptions(item.kind, INVENTORY_KIND_OPTIONS);
+  if ($('inventoryFormEquipSlot')) $('inventoryFormEquipSlot').value = item.equipSlot || '';
+}
+function updateInventoryFormVisibility() {
+  const kind = $('inventoryFormKind')?.value || 'アイテム';
+  const token = INVENTORY_KIND_TOKEN[kind] || 'item';
+  for (const el of document.querySelectorAll('[data-inventory-kind-field]')) {
+    const show = String(el.dataset.inventoryKindField || '').split(/\s+/).includes(token);
+    el.style.display = show ? '' : 'none';
+  }
+}
+function openInventoryDialog(index=-1) {
+  if (currentMode === 'view') return;
+  const existing = index >= 0 ? inventoryItemsState[index] : null;
+  const item = normalizeInventoryItem(existing || emptyInventoryItem());
+  if ($('inventoryEditIndex')) $('inventoryEditIndex').value = String(index);
+  if ($('inventoryDialogTitle')) $('inventoryDialogTitle').textContent = index >= 0 ? '所持品を編集' : '所持品を追加';
+  fillInventoryDialogOptions(item);
+  if ($('inventoryFormName')) $('inventoryFormName').value = item.name || '';
+  if ($('inventoryFormCount')) $('inventoryFormCount').value = item.count ?? 1;
+  if ($('inventoryFormRank')) $('inventoryFormRank').value = item.rank || '';
+  if ($('inventoryFormPrice')) $('inventoryFormPrice').value = item.price || '';
+  if ($('inventoryFormCategory')) $('inventoryFormCategory').value = item.category || '';
+  if ($('inventoryFormEquipSlot')) $('inventoryFormEquipSlot').value = item.equipSlot || '';
+  if ($('inventoryFormPower')) $('inventoryFormPower').value = item.power || '';
+  if ($('inventoryFormHit')) $('inventoryFormHit').value = item.hit || '';
+  if ($('inventoryFormDefense')) $('inventoryFormDefense').value = item.defense || '';
+  if ($('inventoryFormGuard')) $('inventoryFormGuard').value = item.guard || '';
+  if ($('inventoryFormEvade')) $('inventoryFormEvade').value = item.evade || '';
+  if ($('inventoryFormOffhand')) $('inventoryFormOffhand').value = item.offhand || '';
+  if ($('inventoryFormSpellSlots')) $('inventoryFormSpellSlots').value = item.spellSlots || '';
+  if ($('inventoryFormTarget')) $('inventoryFormTarget').value = item.target || '';
+  if ($('inventoryFormCost')) $('inventoryFormCost').value = item.cost || '';
+  if ($('inventoryFormDescription')) $('inventoryFormDescription').value = item.description || '';
+  if ($('inventoryFormEffect')) $('inventoryFormEffect').value = item.effect || '';
+  if ($('inventoryFormRecipeResult')) $('inventoryFormRecipeResult').value = item.recipeResult || '';
+  if ($('inventoryFormMaterials')) $('inventoryFormMaterials').value = item.materials || '';
+  updateInventoryFormVisibility();
+  if ($('inventoryDialogStatus')) { $('inventoryDialogStatus').className = 'status-box'; $('inventoryDialogStatus').textContent = '必要項目を入力してください。'; }
+  $('inventoryDialog')?.showModal();
+}
+function collectInventoryDialogItem() {
+  return normalizeInventoryItem({
+    id: '',
+    name: $('inventoryFormName')?.value || '',
+    kind: $('inventoryFormKind')?.value || defaultInventoryKind(),
+    category: $('inventoryFormCategory')?.value || '',
+    count: $('inventoryFormCount')?.value || 1,
+    location: '所持',
+    rank: $('inventoryFormRank')?.value || '',
+    price: $('inventoryFormPrice')?.value || '',
+    equipSlot: $('inventoryFormEquipSlot')?.value || '',
+    power: $('inventoryFormPower')?.value || '',
+    hit: $('inventoryFormHit')?.value || '',
+    defense: $('inventoryFormDefense')?.value || '',
+    guard: $('inventoryFormGuard')?.value || '',
+    evade: $('inventoryFormEvade')?.value || '',
+    offhand: $('inventoryFormOffhand')?.value || '',
+    spellSlots: $('inventoryFormSpellSlots')?.value || '',
+    target: $('inventoryFormTarget')?.value || '',
+    cost: $('inventoryFormCost')?.value || '',
+    description: $('inventoryFormDescription')?.value || '',
+    effect: $('inventoryFormEffect')?.value || '',
+    recipeResult: $('inventoryFormRecipeResult')?.value || '',
+    materials: $('inventoryFormMaterials')?.value || '',
+    note: ''
+  });
+}
+function saveInventoryDialog() {
+  const index = Number($('inventoryEditIndex')?.value ?? -1);
+  const item = collectInventoryDialogItem();
+  if (!item.name && !item.category && !item.description && !item.effect) {
+    if ($('inventoryDialogStatus')) { $('inventoryDialogStatus').className = 'status-box error'; $('inventoryDialogStatus').textContent = '名称・カテゴリ・説明・効果のいずれかを入力してください。'; }
+    return;
+  }
+  if (index >= 0 && inventoryItemsState[index]) {
+    item.id = inventoryItemsState[index].id || item.id || ('inv_' + Date.now().toString(36));
+    inventoryItemsState[index] = item;
+  } else {
+    item.id = item.id || ('inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6));
+    inventoryItemsState.push(item);
+  }
+  renderInventory();
+  updateSummary();
+  $('inventoryDialog')?.close();
+}
+function addInventoryItem(item=null) {
+  if (item) {
+    inventoryItemsState.push(normalizeInventoryItem(item));
+    renderInventory();
+    updateSummary();
+    return;
+  }
+  openInventoryDialog(-1);
+}
+
+function hasMasterToken(row, token) {
+  const hay = [row && row.tags, row && row.usageTags, row && row.notes, row && row.effect].map(v => String(v || '')).join(',');
+  return hay.split(/[、,，\s]+/).map(v => v.trim()).includes(token);
+}
+const INITIAL_MASTER_TOKEN = '初期所持品';
+function formatMpCost(value) {
+  const s = String(value ?? '').trim();
+  if (!s) return '';
+  if (/^MP\s*/i.test(s)) return s.replace(/^MP\s*/i, 'MP');
+  return 'MP' + s;
+}
+function dbItemTypeToInventoryKind(row) {
+  const type = String(row && (row.itemType || row.dataKind) || '').trim();
+  const cat = String(row && row.itemCategory || '').trim();
+  if (['魔導書','祈祷書'].includes(cat)) return '武器';
+  if (type === '術式装備') return '武器';
+  if (type === '武器') return '武器';
+  if (type === '防具') return '防具';
+  if (type === '装飾品') return '装飾品';
+  if (type === '素材') return '素材';
+  return 'アイテム';
+}
+function dbItemToInventoryItem(row) {
+  const kind = dbItemTypeToInventoryKind(row);
+  const mappedCategory = row.itemCategory || row.materialCategory || row.itemType || '';
+  return normalizeInventoryItem({
+    id: row.id || row.name,
+    name: row.name || '',
+    kind,
+    category: mappedCategory,
+    count: 1,
+    rank: row.rank || '',
+    price: row.price || '',
+    equipSlot: row.equipSlot || '',
+    power: row.power || '',
+    hit: row.hitMod || '',
+    defense: row.alwaysDefense || '',
+    guard: row.guardValue || '',
+    evade: row.evasionMod || '',
+    offhand: row.offhandBonus || '',
+    spellSlots: row.maxStack || row.spellSlots || '',
+    target: row.target || '',
+    cost: formatMpCost(row.mpCost || row.cost || ''),
+    description: mergeTextUnique(row.description, row['fla' + 'vor' + 'Text']),
+    effect: String(row.effect || '').trim(),
+    note: ''
+  });
+}
+function dbSpellToInventoryItem(row) {
+  return normalizeInventoryItem({
+    id: row.id || row.name,
+    name: row.name || '',
+    kind: '術式',
+    category: row.type || '',
+    count: 1,
+    rank: row.rank || '',
+    price: row.scrollPrice || '',
+    target: row.target || '',
+    cost: formatMpCost(row.mpCost || ''),
+    description: mergeTextUnique(row.description, row['fla' + 'vor' + 'Text']),
+    effect: String(row.effect || '').trim(),
+    note: ''
+  });
+}
+function setDbCharacterSheetMaster(res={}) {
+  DB_INITIAL_ITEM_MASTER = Array.isArray(res.cs_items) ? res.cs_items : [];
+  DB_INITIAL_SPELL_MASTER = Array.isArray(res.spells) ? res.spells : [];
+  DB_RECIPE_MASTER = Array.isArray(res.recipes) ? res.recipes : [];
+}
+async function loadCharacterSheetMasterFromDbForInitial() {
+  const res = await cloudRequest('characterSheetMaster', {});
+  setDbCharacterSheetMaster(res || {});
+  return res || {};
+}
+async function addInitialWeaponSet() {
+  if (currentMode === 'view') return;
+  if (!gasUrl()) {
+    showToast('初期所持品はDBから取得します。先にGAS WebアプリURLを設定してください。', 'warn');
+    return;
+  }
+  let master;
+  try {
+    master = await loadCharacterSheetMasterFromDbForInitial();
+  } catch (e) {
+    showToast('初期所持品のDB読み込みに失敗しました：' + e.message, 'error');
+    return;
+  }
+  const itemRows = (master.cs_items || []).filter(row => hasMasterToken(row, INITIAL_MASTER_TOKEN));
+  const spellRows = (master.spells || []).filter(row => hasMasterToken(row, INITIAL_MASTER_TOKEN));
+  const presets = itemRows.map(dbItemToInventoryItem).concat(spellRows.map(dbSpellToInventoryItem));
+  if (!presets.length) {
+    showToast('DBに初期所持品タグ付きのアイテム/術式が見つかりません。統合DB管理ツールで初期データをDBへ登録してください。', 'warn');
+    return;
+  }
+  const oldPlaceholderNames = new Set(['短剣','片手剣','片手斧','片手槌','片手槍','杖','弓','弩','両手剣','大槌','長槍']);
+  const removedInitialWeaponIds = new Set(['wpn_magical_tool','wpn_large_magical_tool']);
+  const removedInitialWeaponNames = new Set(['マジックワンド','ヘヴィマジックロッド']);
+  const removedInitialCategories = new Set(['魔導具','大型魔導具']);
+  const beforeCleanup = inventoryItemsState.length;
+  inventoryItemsState = inventoryItemsState.filter(item => {
+    const normalized = normalizeInventoryItem(item);
+    const name = String(normalized.name || '').trim();
+    const category = String(normalized.category || '').trim();
+    const id = String(normalized.id || '').trim();
+    const isOldPlaceholder = oldPlaceholderNames.has(name) && (!category || category === name || ['片手武器','射撃武器','両手武器'].includes(category));
+    const isRemovedWeapon = removedInitialWeaponIds.has(id) || removedInitialWeaponNames.has(name) || removedInitialCategories.has(category);
+    return !isOldPlaceholder && !isRemovedWeapon;
+  });
+  const replaced = beforeCleanup - inventoryItemsState.length;
+  let added = 0;
+  for (const base of presets) {
+    const key = String(base.id || base.name || '').trim();
+    const exists = inventoryItemsState.some(item => {
+      const normalized = normalizeInventoryItem(item);
+      return String(normalized.id || '').trim() === key || String(normalized.name || '').trim() === base.name;
+    });
+    if (exists) continue;
+    inventoryItemsState.push(normalizeInventoryItem(base));
+    added++;
+  }
+  renderInventory();
+  updateSummary();
+  const message = replaced && added ? `旧初期装備${replaced}件を差し替え、DBから初期所持品を${added}件登録しました。`
+    : replaced ? `旧初期装備${replaced}件を差し替えました。`
+    : added ? `DBから初期所持品を${added}件登録しました。`
+    : '初期所持品は登録済みです。';
+  showToast(message, (added || replaced) ? 'ok' : 'warn');
+}
+
+function duplicateInventoryItem(index) {
+  const src = inventoryItemsState[index];
+  if (!src) return;
+  inventoryItemsState.splice(index + 1, 0, { ...src, id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), name: src.name ? src.name + ' コピー' : '' });
+  renderInventory();
+  updateSummary();
+}
+function deleteInventoryItem(index) {
+  inventoryItemsState.splice(index, 1);
+  renderInventory();
+  updateSummary();
+}
+function sortInventoryItems() {
+  inventoryItemsState.sort((a,b) => String(a.kind || '').localeCompare(String(b.kind || ''), 'ja') || String(a.name || '').localeCompare(String(b.name || ''), 'ja'));
+  renderInventory();
+  updateSummary();
+}
+function emptyCharacter() {
+  const stats = Object.fromEntries(STAT_ORDER.map(k => [k, '']));
+  const abilities = Object.fromEntries(ABILITIES.map(a => [a.key, 0]));
+  return { id: uuid(), name: '', gender: '', age: '', stats, abilities, skills: defaultSkillAlloc(), manualCategoryBonuses: emptyCategoryBonus(), resources: { hpBonus:0, mpBonus:0, currentHp:'', currentMp:'' }, equipment: defaultEquipment(), inventory: defaultInventory(), memo: '', createdAt: nowIso(), updatedAt: nowIso() };
+}
+function collectData(updateTime=true) {
+  const base = currentCharacter || emptyCharacter();
+  const abilities = computeAbilities();
+  return {
+    ...base,
+    name: $('charName').value.trim(),
+    gender: $('charGender').value.trim(),
+    age: $('charAge').value.trim(),
+    stats: getStats(),
+    abilities,
+    skills: getSkillAlloc(),
+    manualCategoryBonuses: getManualCategoryBonuses(),
+    resources: computeResources(abilities, getResourceState()),
+    equipment: getEquipmentState(),
+    inventory: getInventoryState(),
+    combatStats: computeCombatStats(abilities, getSkillAlloc(), getEquipmentState()),
+    memo: $('charMemo').value,
+    updatedAt: updateTime ? nowIso() : base.updatedAt,
+  };
+}
+function applyData(data) {
+  currentCharacter = { ...emptyCharacter(), ...(data || {}) };
+  $('charName').value = currentCharacter.name || '';
+  $('charGender').value = currentCharacter.gender || '';
+  $('charAge').value = currentCharacter.age || '';
+  if ($('playerKey')) $('playerKey').value = currentStorage === 'cloud' ? currentCloudPlayerKey : '';
+  if ($('newPlayerKey')) $('newPlayerKey').value = '';
+  setStats(currentCharacter.stats || {}, false);
+  setAbilityValues(currentCharacter.abilities || computeAbilitiesFromStats(currentCharacter.stats || {}));
+  setSkillAlloc(currentCharacter.skills || {});
+  setManualCategoryBonuses(currentCharacter.manualCategoryBonuses || {});
+  setResourceState(currentCharacter.resources || {});
+  setInventoryState(currentCharacter.inventory || {});
+  setEquipmentState(currentCharacter.equipment || {});
+  $('charMemo').value = currentCharacter.memo || '';
+  updateAll();
+}
+function setReadOnly(readOnly) {
+  const ids = ['charName','charGender','charAge','playerKey','newPlayerKey','charMemo','currentHp','currentMp','hpBonus','mpBonus','equipmentMemo'];
+  for (const id of ids) if ($(id)) $(id).disabled = readOnly;
+  for (const stat of STAT_ORDER) if ($('stat_' + stat)) $('stat_' + stat).disabled = readOnly;
+  for (const a of ABILITIES) if ($('ability_' + a.key)) $('ability_' + a.key).disabled = readOnly;
+  for (const c of SKILL_CATEGORIES) if ($('manualBonus_' + c.key)) $('manualBonus_' + c.key).disabled = readOnly;
+  for (const key of Object.keys(SKILL_BY_KEY)) {
+    if ($('skill_cat_' + key)) $('skill_cat_' + key).disabled = readOnly;
+    if ($('skill_free_' + key)) $('skill_free_' + key).disabled = readOnly;
+  }
+  for (const el of document.querySelectorAll('[data-equipment-input]')) el.disabled = readOnly;
+  for (const el of document.querySelectorAll('[data-inventory-input]')) el.disabled = readOnly;
+  for (const btn of document.querySelectorAll('[data-inventory-action]')) btn.disabled = readOnly;
+  if ($('addInventoryItemBtn')) $('addInventoryItemBtn').disabled = readOnly;
+  if ($('sortInventoryItemBtn')) $('sortInventoryItemBtn').disabled = readOnly;
+  if ($('addInitialWeaponSetBtn')) $('addInitialWeaponSetBtn').disabled = readOnly;
+  const editOnly = ['saveBtn','rollBtn','txtFileBtn'];
+  for (const id of editOnly) if ($(id)) $(id).disabled = readOnly;
+  for (const btn of document.querySelectorAll('[data-reroll-ability]')) btn.disabled = readOnly;
+  updateEquipmentHandLocks(false);
+  $('toggleViewEditBtn').style.display = readOnly ? '' : 'none';
+}
+function setView(name) {
+  for (const v of document.querySelectorAll('.view')) v.classList.remove('active');
+  $(name + 'View').classList.add('active');
+  document.body.classList.toggle('editor-active', name === 'editor');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function storageLabel() { return currentStorage === 'cloud' ? 'クラウド保存' : 'ローカル保存'; }
+async function openList(storage) {
+  currentStorage = storage;
+  $('listTitle').textContent = `${storageLabel()}：作成リスト`;
+  $('listSub').textContent = storage === 'cloud' ? 'プレイヤーキーに紐づくキャラクターだけを表示します。必要に応じてローカルへ変換できます。' : '選択した保存フォルダ内のキャラクターJSONを表示します。必要に応じてクラウドへ変換できます。';
+  if ($('changeCloudKeyBtn')) $('changeCloudKeyBtn').style.display = storage === 'cloud' ? '' : 'none';
+  if ($('changeLocalFolderBtn')) $('changeLocalFolderBtn').style.display = storage === 'local' ? '' : 'none';
+  if ($('syncToCloudBtn')) $('syncToCloudBtn').style.display = storage === 'local' ? '' : 'none';
+  if ($('syncToLocalBtn')) $('syncToLocalBtn').style.display = storage === 'cloud' ? '' : 'none';
+  setView('list');
+  await refreshList();
+}
+function openEditor(mode, data=null) {
+  currentMode = mode;
+  applyData(data || emptyCharacter());
+  const title = mode === 'new' ? '新規作成' : mode === 'view' ? 'キャラクター閲覧' : 'キャラクター編集';
+  $('editorTitle').textContent = title;
+  $('editorSub').textContent = `${storageLabel()} / ID: ${currentCharacter.id}`;
+  setReadOnly(mode === 'view');
+  $('editorStatus').className = 'status-box';
+  $('editorStatus').textContent = mode === 'view' ? '閲覧モードです。編集する場合は「編集に切替」を押してください。' : '編集中です。保存先に応じて保存できます。';
+  if ($('editorActionBar')) $('editorActionBar').classList.add('collapsed');
+  showEditorTab('ability');
+  setView('editor');
+}
+
+
+
+function openFileHandleDb() {
+  if (!('indexedDB' in window)) return Promise.resolve(null);
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(FILE_HANDLE_DB, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(FILE_HANDLE_STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function getStoredFileHandle(id) {
+  const db = await openFileHandleDb();
+  if (!db) return null;
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(FILE_HANDLE_STORE, 'readonly');
+    const req = tx.objectStore(FILE_HANDLE_STORE).get(id);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function setStoredFileHandle(id, handle) {
+  const db = await openFileHandleDb();
+  if (!db) throw new Error('このブラウザではローカル保存先を記憶できません。');
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(FILE_HANDLE_STORE, 'readwrite');
+    tx.objectStore(FILE_HANDLE_STORE).put(handle, id);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+async function ensureHandlePermission(handle, mode='readwrite') {
+  if (!handle || !handle.queryPermission) return true;
+  let perm = await handle.queryPermission({ mode });
+  if (perm === 'granted') return true;
+  perm = await handle.requestPermission({ mode });
+  return perm === 'granted';
+}
+function assertLocalFolderSupport() {
+  if (!('showDirectoryPicker' in window)) throw new Error('このブラウザではフォルダ選択によるローカル保存を使用できません。Chrome / Edge などの対応ブラウザで開いてください。');
+}
+async function chooseLocalDirectory() {
+  assertLocalFolderSupport();
+  const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+  const ok = await ensureHandlePermission(handle, 'readwrite');
+  if (!ok) throw new Error('保存フォルダへの読み書き許可がありません。');
+  await setStoredFileHandle(LOCAL_DIR_HANDLE_ID, handle);
+  return handle;
+}
+async function getLocalDirectory(options={}) {
+  assertLocalFolderSupport();
+  const ask = options.ask !== false;
+  let handle = await getStoredFileHandle(LOCAL_DIR_HANDLE_ID);
+  if (!handle && ask) handle = await chooseLocalDirectory();
+  if (!handle) throw new Error('ローカル保存フォルダが未選択です。');
+  const ok = await ensureHandlePermission(handle, 'readwrite');
+  if (!ok) {
+    if (!ask) throw new Error('ローカル保存フォルダへのアクセス許可がありません。保存先変更から選択し直してください。');
+    handle = await chooseLocalDirectory();
+  }
+  return handle;
+}
+function localFileName(id) { return safeName(id || uuid()) + '.json'; }
+async function writeJsonToHandle(handle, data) {
+  const writable = await handle.createWritable();
+  await writable.write(JSON.stringify(data, null, 2));
+  await writable.close();
+}
+async function saveLocal(data) {
+  const dir = await getLocalDirectory({ ask:true });
+  const fileHandle = await dir.getFileHandle(localFileName(data.id), { create:true });
+  await writeJsonToHandle(fileHandle, { ...data, storageType:'local' });
+  return { saved:true, directorySaved:true, folderName:dir.name };
+}
+async function readJsonFileHandle(fileHandle) {
+  const file = await fileHandle.getFile();
+  const text = await file.text();
+  return JSON.parse(text);
+}
+async function listLocalItems() {
+  const dir = await getLocalDirectory({ ask:true });
+  const items = [];
+  for await (const [name, entry] of dir.entries()) {
+    if (entry.kind !== 'file' || !name.toLowerCase().endsWith('.json')) continue;
+    try {
+      const data = await readJsonFileHandle(entry);
+      if (!data || !data.id) continue;
+      items.push({ id:data.id, name:data.name || '無名のキャラクター', updatedAt:data.updatedAt, createdAt:data.createdAt, fileName:name });
+    } catch (e) {
+      // キャラクターJSONではないファイルは無視する
+    }
+  }
+  items.sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
+  return { items, folderName:dir.name };
+}
+async function loadLocal(id) {
+  const dir = await getLocalDirectory({ ask:true });
+  const fileHandle = await dir.getFileHandle(localFileName(id), { create:false });
+  return await readJsonFileHandle(fileHandle);
+}
+async function deleteLocal(id) {
+  const dir = await getLocalDirectory({ ask:true });
+  await dir.removeEntry(localFileName(id));
+}
+function stripRuntimeOnlyData(data) {
+  const clone = JSON.parse(JSON.stringify(data || {}));
+  delete clone.playerKey;
+  delete clone.newPlayerKey;
+  return clone;
+}
+function getCloudAuth() {
+  return {
+    playerKey: ($('playerKey')?.value || currentCloudPlayerKey || '').trim(),
+    newPlayerKey: ($('newPlayerKey')?.value || '').trim(),
+  };
+}
+function buildShareUrl(id) {
+  const raw = gasUrl();
+  if (!raw) throw new Error('共有URLの発行にはクラウド接続先が必要です。');
+  const u = new URL(raw);
+  u.searchParams.set('view', id);
+  return u.toString();
+}
+function gasUrl() { return (localStorage.getItem(GAS_URL_KEY) || DEFAULT_GAS_WEB_APP_URL || '').trim(); }
+function setGasUrl(url) { localStorage.setItem(GAS_URL_KEY, url.trim()); }
+function masterAdminKey() { return ''; }
+function setMasterAdminKey(key) { /* v37: カテゴリ系マスタは管理キーに関係なく参照する */ }
+function equipmentScopeKey() { return 'global'; }
+const CLOUD_JSONP_ACTIONS = new Set(['list','load','equipmentCategories','equipmentCategoriesMeta','characterSheetMaster']);
+function cloudJsonpRequest(action, payload={}) {
+  return new Promise((resolve,reject)=>{
+    const raw = gasUrl();
+    if (!raw) { reject(new Error('GAS WebアプリURLが未設定です。')); return; }
+    const callback = 'recraftCharDbCb_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    const script = document.createElement('script');
+    const timer = setTimeout(()=>{
+      cleanup(); reject(new Error('DB読み込みがタイムアウトしました。GASの再デプロイとWebアプリURLを確認してください。'));
+    }, 20000);
+    function cleanup(){
+      clearTimeout(timer);
+      try { delete window[callback]; } catch(e) { window[callback] = undefined; }
+      if (script.parentNode) script.parentNode.removeChild(script);
+    }
+    window[callback] = (json)=>{ cleanup(); resolve(json); };
+    try {
+      const u = new URL(raw);
+      u.searchParams.set('api','1');
+      u.searchParams.set('action', action);
+      u.searchParams.set('callback', callback);
+      Object.entries(payload || {}).forEach(([k,v])=>{
+        if (v === undefined || v === null) return;
+        if (typeof v === 'object') u.searchParams.set(k, JSON.stringify(v));
+        else u.searchParams.set(k, String(v));
+      });
+      script.onerror = ()=>{ cleanup(); reject(new Error('DB読み込みに失敗しました。WebアプリURL・公開設定・GASコードを確認してください。')); };
+      script.src = u.toString();
+      document.head.appendChild(script);
+    } catch(e) { cleanup(); reject(e); }
+  });
+}
+async function cloudNoCorsPost(action, payload={}) {
+  const url = gasUrl();
+  if (!url) throw new Error('GAS WebアプリURLが未設定です。');
+  const body = new URLSearchParams();
+  body.set('action', action);
+  body.set('payload', JSON.stringify(payload));
+  await fetch(url, { method: 'POST', mode: 'no-cors', body });
+  return { ok: true, sentNoCors: true };
+}
+async function cloudRequest(action, payload={}) {
+  const url = gasUrl();
+  if (!url) throw new Error('GAS WebアプリURLが未設定です。');
+
+  // 外部HTML / GitHub Pages / file:// から Apps Script の ContentService を読むと、
+  // CORS制限で POST の返答を取得できず Failed to fetch になることがあります。
+  // 読み込み系はJSONP、保存/削除系は no-cors POST に寄せて回避します。
+  if (CLOUD_JSONP_ACTIONS.has(action)) {
+    const json = await cloudJsonpRequest(action, payload);
+    if (!json.ok) throw new Error(json.error || 'DB読み込みに失敗しました。');
+    return json;
+  }
+  if (action === 'save' || action === 'delete') {
+    return await cloudNoCorsPost(action, payload);
+  }
+
+  const body = new URLSearchParams();
+  body.set('action', action);
+  body.set('payload', JSON.stringify(payload));
+  try {
+    const res = await fetch(url, { method: 'POST', body });
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || 'クラウド処理に失敗しました。');
+    return json;
+  } catch (e) {
+    throw e;
+  }
+}
+
+function boolLike(value) {
+  const s = String(value ?? '').trim().toUpperCase();
+  return s === 'TRUE' || s === '1' || s === 'YES' || s === 'Y' || s === '両手' || s === '有効';
+}
+function enabledLike(value) {
+  const s = String(value ?? '').trim().toUpperCase();
+  return s !== 'FALSE' && s !== '0' && s !== 'NO' && s !== 'N' && s !== '無効';
+}
+function equipmentSlotKind(row) {
+  const explicit = String(row && row.slotKind || '').trim();
+  if (['hand','armor','accessory','carry'].includes(explicit)) return explicit;
+  const slot = String(row && row.equipSlot || '').trim();
+  if (slot.includes('鎧')) return 'armor';
+  if (slot.includes('装飾')) return 'accessory';
+  if (slot.includes('携行')) return 'carry';
+  if (slot.includes('なし')) return 'none';
+  return 'hand';
+}
+function isTwoHandEquipment(row) {
+  const slot = String(row && row.equipSlot || '').trim();
+  const cat = String(row && row.itemCategory || '').trim();
+  const h = String(row && row.hands || '').trim();
+  return slot === '両手' || cat.includes('両手') || h === '2' || h === '両手' || boolLike(row && row.isTwoHand);
+}
+function uniqueNames(rows, slotKind) {
+  const names = rows
+    .filter(row => equipmentSlotKind(row) === slotKind && enabledLike(row.enabled))
+    .sort((a,b) => Number(a.sortOrder || 9999) - Number(b.sortOrder || 9999))
+    .map(row => String(row.name || '').trim())
+    .filter(Boolean);
+  const result = [];
+  for (const name of names) if (!result.includes(name)) result.push(name);
+  if (!result.includes('なし')) result.unshift('なし');
+  return result;
+}
+
+function csItemVisible(row) {
+  const s = String(row && row.csVisible !== undefined ? row.csVisible : 'TRUE').trim().toUpperCase();
+  return s !== 'FALSE' && s !== '0' && s !== 'NO' && s !== 'N' && s !== '非表示';
+}
+function csItemKey(row) {
+  return String(row && (row.id || row.name) || '').trim();
+}
+function inventoryItemKey(row) { return csItemKey(row); }
+function equipmentCandidateRows() {
+  return (inventoryItemsState || []).map(item => normalizeInventoryItem(item)).filter(item => item.name && item.kind !== 'レシピ');
+}
+function findCsItemById(id) {
+  const key = String(id || '').trim();
+  if (!key) return null;
+  return equipmentCandidateRows().find(row => inventoryItemKey(row) === key) || null;
+}
+function findCsItemIdByName(name) {
+  const n = String(name || '').trim();
+  if (!n) return '';
+  const row = equipmentCandidateRows().find(item => String(item.name || '').trim() === n);
+  return row ? inventoryItemKey(row) : '';
+}
+function slotKindForCsItem(row) {
+  const kind = normalizeInventoryKind(row && row.kind || 'アイテム');
+  const slot = String(row && row.equipSlot || '').trim();
+  if (kind === '防具' && slot.includes('鎧')) return 'armor';
+  if (kind === '装飾品' || slot.includes('装飾')) return 'accessory';
+  if (slot.includes('携行') || ['アイテム','素材','重要品','その他','術式'].includes(kind)) return 'carry';
+  if (kind === '武器' || kind === '防具') return 'hand';
+  return 'none';
+}
+function isTwoHandCsItem(row) {
+  return String(row && row.equipSlot || '').trim() === '両手';
+}
+function itemMatchesEquipmentSlot(row, slot) {
+  if (!row || !slot) return false;
+  const kind = slotKindForCsItem(row);
+  if (slot.kind === 'hand') return kind === 'hand';
+  return kind === slot.kind;
+}
+function applyCsItemMaster(rows, {save=false, silent=false}={}) {
+  // v50: 装備・携行品の候補はDBアイテムではなくキャラクターの所持品から生成する。
+  CS_ITEM_MASTER = [];
+  if (save) localStorage.removeItem(CS_ITEM_CACHE_KEY);
+  refreshEquipmentItemSelects();
+  return true;
+}
+function loadCachedCsItems() { /* v50: 所持品を候補にするためDBアイテム候補キャッシュは使いません。 */ }
+function refreshEquipmentItemSelects() {
+  for (const slot of EQUIPMENT_SLOTS) {
+    const select = $('equip_' + slot.key + '_itemSelect');
+    if (!select) continue;
+    const current = select.value || '';
+    const items = equipmentCandidateRows().filter(row => itemMatchesEquipmentSlot(row, slot));
+    const options = ['<option value="">手入力</option>'].concat(items.map(row => {
+      const key = inventoryItemKey(row);
+      const label = [row.name, row.kind, row.category].filter(Boolean).join(' / ');
+      return `<option value="${esc(key)}">${esc(label)}</option>`;
+    }));
+    select.innerHTML = options.join('');
+    const fallbackId = !current ? findCsItemIdByName($('equip_' + slot.key + '_name')?.value || '') : '';
+    const nextValue = current || fallbackId;
+    select.value = nextValue && Array.from(select.options).some(o=>o.value===nextValue) ? nextValue : '';
+  }
+}
+function setTypeSelectValue(slotKey, value) {
+  const select = $('equip_' + slotKey + '_type');
+  if (!select) return;
+  const v = normalizeEquipmentType(value || 'なし');
+  if (![...select.options].some(o => o.value === v)) {
+    select.insertAdjacentHTML('beforeend', `<option value="${esc(v)}">${esc(v)}</option>`);
+  }
+  select.value = v;
+}
+function applyCsItemToEquipmentSlot(slotKey) {
+  const select = $('equip_' + slotKey + '_itemSelect');
+  const row = findCsItemById(select?.value || '');
+  if (!row) return;
+  const typeValue = row.category || row.kind || 'なし';
+  if ($('equip_' + slotKey + '_name')) $('equip_' + slotKey + '_name').value = row.name || '';
+  setTypeSelectValue(slotKey, typeValue);
+  if ($('equip_' + slotKey + '_count')) $('equip_' + slotKey + '_count').value = Math.min(Number(row.count) || 1, 99);
+  const map = { power:'power', hit:'hit', defense:'defense', guard:'guard', evade:'evade', offhand:'offhand' };
+  for (const [suffix, field] of Object.entries(map)) {
+    const el = $('equip_' + slotKey + '_' + suffix);
+    if (el) el.value = row[field] || '';
+  }
+  const description = row.description || '';
+  const effectText = row.effect || '';
+  if ($('equip_' + slotKey + '_description')) $('equip_' + slotKey + '_description').value = description;
+  if ($('equip_' + slotKey + '_note')) $('equip_' + slotKey + '_note').value = effectText;
+  if (!spellContainerKind(typeValue)) {
+    if ($('equip_' + slotKey + '_knownSpells')) $('equip_' + slotKey + '_knownSpells').value = '';
+    setSpellSelectValues(slotKey, []);
+  } else {
+    refreshSpellSetSelect(slotKey, spellContainerKind(typeValue));
+  }
+  updateEquipmentHandLocks(true);
+  updateCombatStats();
+  updateSpellSlotHints();
+  updateSummary();
+}
+function selectedCsItemIsTwoHand(slotKey) {
+  const row = findCsItemById($('equip_' + slotKey + '_itemSelect')?.value || '');
+  return !!(row && isTwoHandCsItem(row));
+}
+
+function applyEquipmentCategoryMaster(rows, {save=false, silent=false, meta=null, auto=false}={}) {
+  if (!Array.isArray(rows) || !rows.length) return false;
+  const active = rows.filter(row => row && row.name && enabledLike(row.enabled));
+  if (!active.length) return false;
+  const namesByKind = {
+    hand: uniqueNames(active, 'hand'),
+    armor: uniqueNames(active, 'armor'),
+    accessory: uniqueNames(active, 'accessory'),
+    carry: uniqueNames(active, 'carry')
+  };
+  for (const slot of EQUIPMENT_SLOTS) {
+    if (namesByKind[slot.kind] && namesByKind[slot.kind].length) slot.typeOptions = namesByKind[slot.kind];
+  }
+  TWO_HAND_TYPES.clear();
+  for (const row of active) {
+    const name = String(row.name || '').trim();
+    if (!name || name === 'なし') continue;
+    EQUIPMENT_PRESETS[name] = {
+      power: row.power || '',
+      hit: row.hitMod || '',
+      defense: row.alwaysDefense || '',
+      guard: row.guardValue || '',
+      evade: row.evasionMod || '0',
+      offhand: row.offhandBonus || '',
+      description: row.description || row['fla' + 'vor' + 'Text'] || '',
+      note: row.effect || ''
+    };
+    if (isTwoHandEquipment(row)) TWO_HAND_TYPES.add(name);
+  }
+  const cacheMeta = { ...(meta || buildEquipmentCategoryLocalMeta(active)), scopeKey: equipmentScopeKey() };
+  if (save) {
+    localStorage.setItem(EQUIPMENT_CATEGORY_CACHE_KEY, JSON.stringify({ rows: active, meta: cacheMeta }));
+    localStorage.setItem(EQUIPMENT_CATEGORY_CACHE_META_KEY, JSON.stringify(cacheMeta));
+  }
+  refreshEquipmentTypeSelects();
+  const status = $('equipmentCategoryStatus');
+  if (status) {
+    const suffix = auto ? ' / 自動更新済み' : '';
+    status.textContent = `所持品から選択カテゴリ：${active.length}件反映済み${suffix}`;
+  }
+  if (!silent) showToast(auto ? `所持品から選択カテゴリを自動更新しました（${active.length}件）` : `所持品から選択カテゴリを反映しました（${active.length}件）`, 'ok');
+  return true;
+}
+function refreshEquipmentTypeSelects() {
+  for (const slot of EQUIPMENT_SLOTS) {
+    const select = $('equip_' + slot.key + '_type');
+    if (!select) continue;
+    const current = normalizeEquipmentType(select.value || 'なし');
+    select.innerHTML = slot.typeOptions.map(op => `<option value="${esc(op)}">${esc(op)}</option>`).join('');
+    select.value = slot.typeOptions.includes(current) ? current : 'なし';
+  }
+  updateEquipmentHandLocks(false);
+  updateCombatStats();
+}
+
+function buildEquipmentCategoryLocalMeta(rows) {
+  const compact = (rows || []).map(row => ({
+    id: row.id || '', name: row.name || '', itemCategory: row.itemCategory || '', equipSlot: row.equipSlot || '',
+    skill: row.skill || '', power: row.power || '', hitMod: row.hitMod || '',
+    alwaysDefense: row.alwaysDefense || '', guardValue: row.guardValue || '', evasionMod: row.evasionMod || '', offhandBonus: row.offhandBonus || '',
+    description: row.description || row['fla' + 'vor' + 'Text'] || '', effect: row.effect || '', sortOrder: row.sortOrder || '', enabled: row.enabled || ''
+  }));
+  return { hash: simpleHash(JSON.stringify(compact)), count: rows.length, generatedAt: nowIso(), source: 'local', scopeKey: equipmentScopeKey() };
+}
+function simpleHash(text) {
+  let h = 0;
+  for (let i = 0; i < text.length; i++) h = ((h << 5) - h + text.charCodeAt(i)) | 0;
+  return String(h >>> 0);
+}
+function readCachedEquipmentCategoryPayload() {
+  try {
+    const raw = localStorage.getItem(EQUIPMENT_CATEGORY_CACHE_KEY);
+    if (!raw) return { rows: [], meta: null };
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      const meta = JSON.parse(localStorage.getItem(EQUIPMENT_CATEGORY_CACHE_META_KEY) || 'null');
+      return { rows: parsed, meta };
+    }
+    const meta = parsed.meta || JSON.parse(localStorage.getItem(EQUIPMENT_CATEGORY_CACHE_META_KEY) || 'null');
+    return { rows: parsed.rows || [], meta };
+  } catch (e) {
+    localStorage.removeItem(EQUIPMENT_CATEGORY_CACHE_KEY);
+    localStorage.removeItem(EQUIPMENT_CATEGORY_CACHE_META_KEY);
+    return { rows: [], meta: null };
+  }
+}
+
+function loadCachedEquipmentCategories() {
+  const cached = readCachedEquipmentCategoryPayload();
+  if (Array.isArray(cached.rows) && cached.rows.length) applyEquipmentCategoryMaster(cached.rows, {silent:true, meta:cached.meta});
+}
+async function loadEquipmentCategoriesFromDb({silent=false, auto=false}={}) {
+  const res = await cloudRequest('characterSheetMaster', {});
+  setDbCharacterSheetMaster(res || {});
+  const rows = res.equipment_categories || [];
+  if (!rows.length) throw new Error('DBの装備カテゴリが空です。先に統合DB管理ツールで「DBシート作成」と「DBへ登録」を行ってください。');
+  applyEquipmentCategoryMaster(rows, {save:true, silent:true, auto, meta:res.equipment_categories_meta || res.meta});
+  applyCsItemMaster(res.cs_items || [], {save:true, silent:true});
+  const status = $('equipmentCategoryStatus');
+  if (status) status.textContent = `所持品から選択カテゴリ：${rows.length}件 / DBアイテム：${(res.cs_items || []).length}件 / DB術式：${(res.spells || []).length}件${auto ? ' / 自動更新済み' : ''}`;
+  if (!silent) showToast(auto ? '所持品から選択カテゴリを自動更新しました。' : '所持品から選択カテゴリを反映しました。', 'ok');
+  return { rows, items: res.cs_items || [], meta: res.equipment_categories_meta || res.meta || null };
+}
+async function autoSyncEquipmentCategoriesFromDb() {
+  const status = $('equipmentCategoryStatus');
+  if (!gasUrl()) {
+    if (status) status.textContent = status.textContent || 'GAS URL設定後、所持品から選択カテゴリを自動確認します。';
+    return;
+  }
+  try {
+    if (status) status.textContent = '所持品から選択カテゴリを確認中…';
+    await loadEquipmentCategoriesFromDb({silent:true, auto:true});
+  } catch (e) {
+    if (status) status.textContent = 'DB自動確認に失敗：' + e.message;
+  }
+}
+
+
+async function listItems() {
+  if (currentStorage === 'local') return await listLocalItems();
+  if (!currentCloudPlayerKey) throw new Error('クラウドリスト表示にはプレイヤーキーが必要です。保存先選択画面で入力してください。');
+  const res = await cloudRequest('list', { playerKey: currentCloudPlayerKey });
+  return { items: res.items || [] };
+}
+async function loadItem(id) {
+  if (currentStorage === 'local') return await loadLocal(id);
+  if (!currentCloudPlayerKey) throw new Error('クラウド読み込みにはプレイヤーキーが必要です。');
+  const res = await cloudRequest('load', { id, playerKey: currentCloudPlayerKey });
+  return res.data;
+}
+async function deleteItem(id) {
+  if (currentStorage === 'local') return await deleteLocal(id);
+  const playerKey = currentCloudPlayerKey || prompt('削除用のプレイヤーキーを入力してください。') || '';
+  if (!String(playerKey).trim()) throw new Error('削除にはプレイヤーキーが必要です。');
+  await cloudRequest('delete', { id, playerKey });
+}
+async function saveItem(data) {
+  if (currentStorage === 'local') return await saveLocal(stripRuntimeOnlyData(data));
+  const auth = getCloudAuth();
+  if (!auth.playerKey && !auth.newPlayerKey) throw new Error('クラウド保存にはプレイヤーキーが必要です。');
+  await cloudRequest('save', { data: stripRuntimeOnlyData(data), playerKey: auth.playerKey, newPlayerKey: auth.newPlayerKey });
+  if (auth.newPlayerKey) {
+    currentCloudPlayerKey = auth.newPlayerKey;
+    if ($('playerKey')) $('playerKey').value = auth.newPlayerKey;
+    if ($('newPlayerKey')) $('newPlayerKey').value = '';
+    if ($('cloudPlayerKeyInput')) $('cloudPlayerKeyInput').value = auth.newPlayerKey;
+  }
+  return { saved:true, cloudSaved:true };
+}
+async function refreshList() {
+  $('characterList').innerHTML = '';
+  $('listStatus').className = 'status-box';
+  $('listStatus').textContent = 'リストを読み込み中です。';
+  try {
+    const listResult = await listItems();
+    const items = Array.isArray(listResult) ? listResult : (listResult.items || []);
+    if (currentStorage === 'local' && listResult.folderName) {
+      $('listSub').textContent = `保存フォルダ：${listResult.folderName}`;
+    } else if (currentStorage === 'cloud') {
+      $('listSub').textContent = 'プレイヤーキー設定済み：このキーに紐づくキャラクターだけを表示中';
+    }
+    if (!items.length) {
+      $('listStatus').className = 'status-box warn';
+      $('listStatus').textContent = '保存済みキャラクターはありません。新規作成できます。';
+      return;
+    }
+    $('listStatus').className = 'status-box ok';
+    $('listStatus').textContent = `${items.length}件のキャラクターがあります。`;
+    $('characterList').innerHTML = items.map(item => `
+      <div class="list-item" data-id="${esc(item.id)}">
+        <div class="list-title">${esc(item.name || '無名のキャラクター')}</div>
+        <div class="list-meta">更新：${formatDate(item.updatedAt)} / ID: ${esc(item.id)}</div>
+        <div class="button-row">
+          <button data-action="edit" data-id="${esc(item.id)}">編集</button>
+          <button class="blue" data-action="view" data-id="${esc(item.id)}">閲覧</button>
+          <button class="secondary" data-action="export" data-id="${esc(item.id)}">出力</button>
+          <button class="blue" data-action="share" data-id="${esc(item.id)}">共有</button>
+          ${currentStorage === 'local' ? `<button class="blue" data-action="toCloud" data-id="${esc(item.id)}">クラウドへ保存</button>` : `<button class="secondary" data-action="toLocal" data-id="${esc(item.id)}">ローカルへ保存</button>`}
+          <button class="danger" data-action="delete" data-id="${esc(item.id)}">削除</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    $('listStatus').className = 'status-box error';
+    $('listStatus').textContent = e.message;
+  }
+}
+
+async function promptCloudPlayerKey(message='クラウド保存用のプレイヤーキーを入力してください。') {
+  const key = prompt(message) || '';
+  if (!key.trim()) throw new Error('クラウド保存にはプレイヤーキーが必要です。');
+  return key.trim();
+}
+function requireCloudConnection() {
+  if (!gasUrl()) throw new Error('クラウド接続先が未設定です。保存先選択画面でGAS WebアプリURLを設定してください。');
+}
+async function saveDataToCloud(data, playerKey) {
+  requireCloudConnection();
+  if (!String(playerKey || '').trim()) throw new Error('クラウド保存にはプレイヤーキーが必要です。');
+  const clean = stripRuntimeOnlyData({ ...data, storageType:'cloud', updatedAt: nowIso() });
+  await cloudRequest('save', { data: clean, playerKey });
+  return clean;
+}
+async function saveDataToLocalFolder(data) {
+  const clean = stripRuntimeOnlyData({ ...data, storageType:'local', updatedAt: nowIso() });
+  await saveLocal(clean);
+  return clean;
+}
+async function convertOneToCloud(id, options={}) {
+  const playerKey = options.playerKey || await promptCloudPlayerKey('このキャラクターをクラウドへ保存するためのプレイヤーキーを入力してください。');
+  const data = await loadLocal(id);
+  await saveDataToCloud(data, playerKey);
+  return data;
+}
+async function convertOneToLocal(id) {
+  if (!currentCloudPlayerKey) throw new Error('クラウド読み込みにはプレイヤーキーが必要です。');
+  const res = await cloudRequest('load', { id, playerKey: currentCloudPlayerKey });
+  const data = res.data;
+  await saveDataToLocalFolder(data);
+  return data;
+}
+async function convertAllLocalToCloud() {
+  try {
+    requireCloudConnection();
+    const listResult = await listLocalItems();
+    const items = listResult.items || [];
+    if (!items.length) throw new Error('ローカル保存フォルダに変換できるキャラクターがありません。');
+    const playerKey = await promptCloudPlayerKey('ローカル内のキャラクターをクラウドへ保存するためのプレイヤーキーを入力してください。\n既存クラウドデータを更新する場合も同じキーを使います。');
+    if (!confirm(`${items.length}件をクラウドへ保存します。よろしいですか？`)) return;
+    let ok = 0, failed = 0;
+    const errors = [];
+    for (const item of items) {
+      try { await convertOneToCloud(item.id, { playerKey }); ok++; }
+      catch (e) { failed++; errors.push(`${item.name || item.id}: ${e.message}`); }
+    }
+    $('listStatus').className = failed ? 'status-box warn' : 'status-box ok';
+    $('listStatus').textContent = `ローカル→クラウド変換完了：成功${ok}件 / 失敗${failed}件` + (errors.length ? '\n' + errors.slice(0, 6).join('\n') : '');
+    showToast(`ローカル→クラウド変換完了：成功${ok}件 / 失敗${failed}件`, failed ? 'warn' : 'ok');
+  } catch (e) {
+    $('listStatus').className = 'status-box error';
+    $('listStatus').textContent = e.message;
+    showToast(e.message, 'error');
+  }
+}
+async function convertAllCloudToLocal() {
+  try {
+    assertLocalFolderSupport();
+    if (!currentCloudPlayerKey) throw new Error('クラウドリスト取得にはプレイヤーキーが必要です。');
+    const res = await cloudRequest('list', { playerKey: currentCloudPlayerKey });
+    const items = res.items || [];
+    if (!items.length) throw new Error('クラウドに変換できるキャラクターがありません。');
+    await getLocalDirectory({ ask:true });
+    if (!confirm(`${items.length}件をローカル保存フォルダへ保存します。よろしいですか？`)) return;
+    let ok = 0, failed = 0;
+    const errors = [];
+    for (const item of items) {
+      try { await convertOneToLocal(item.id); ok++; }
+      catch (e) { failed++; errors.push(`${item.name || item.id}: ${e.message}`); }
+    }
+    $('listStatus').className = failed ? 'status-box warn' : 'status-box ok';
+    $('listStatus').textContent = `クラウド→ローカル変換完了：成功${ok}件 / 失敗${failed}件` + (errors.length ? '\n' + errors.slice(0, 6).join('\n') : '');
+    showToast(`クラウド→ローカル変換完了：成功${ok}件 / 失敗${failed}件`, failed ? 'warn' : 'ok');
+  } catch (e) {
+    $('listStatus').className = 'status-box error';
+    $('listStatus').textContent = e.message;
+    showToast(e.message, 'error');
+  }
+}
+async function convertListItem(action, id) {
+  try {
+    if (action === 'toCloud') {
+      const data = await convertOneToCloud(id);
+      $('listStatus').className = 'status-box ok';
+      $('listStatus').textContent = `「${data.name || '無名のキャラクター'}」をクラウドへ保存しました。`;
+      showToast('クラウドへ保存しました。', 'ok');
+    } else if (action === 'toLocal') {
+      const data = await convertOneToLocal(id);
+      $('listStatus').className = 'status-box ok';
+      $('listStatus').textContent = `「${data.name || '無名のキャラクター'}」をローカル保存フォルダへ保存しました。`;
+      showToast('ローカルへ保存しました。', 'ok');
+    }
+  } catch (e) {
+    $('listStatus').className = 'status-box error';
+    $('listStatus').textContent = e.message;
+  }
+}
+
+function formatDate(iso) {
+  if (!iso) return '-';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString('ja-JP');
+}
+
+function rollSet() {
+  const set = {};
+  for (const stat of STAT_ORDER) set[stat] = roll(diceExpr(stat));
+  return set;
+}
+
+function parseIacharaText(text) {
+  const result = { stats: {}, name: '', gender: '', age: '' };
+  const nameMatch = text.match(/名前\s*[:：]\s*([^\n\r]+)/);
+  if (nameMatch) result.name = nameMatch[1].trim();
+  const ageMatch = text.match(/年齢\s*[:：]\s*([^\/\n\r]+)/);
+  if (ageMatch) result.age = ageMatch[1].trim();
+  const genderMatch = text.match(/性別\s*[:：]\s*([^\/\n\r]+)/);
+  if (genderMatch) result.gender = genderMatch[1].trim();
+  const lines = text.split(/\r?\n/);
+  for (const line of lines) {
+    const m = line.match(/^\s*(STR|CON|POW|DEX|APP|SIZ|INT|EDU)\s+(-?\d+)\s+(-?\d+)?/i);
+    if (m) {
+      const stat = m[1].toUpperCase();
+      // いあきゃら表は「現在値 能力値 増加分 一時的」の順。
+      // 超過ボーナス判定には18/21で丸める前の現在値を使う。
+      result.stats[stat] = Number(m[2]);
+    }
+  }
+  if (Object.keys(result.stats).length < 8) {
+    for (const stat of STAT_ORDER) {
+      const reg = new RegExp(stat + '\\s*[:：=]\\s*(-?\\d+)', 'i');
+      const m = text.match(reg);
+      if (m) result.stats[stat] = Number(m[1]);
+    }
+  }
+  return result;
+}
+function applyParsedText(text, options={}) {
+  const quiet = !!options.quiet;
+  const parsed = parseIacharaText(text || '');
+  const missing = STAT_ORDER.filter(k => !Number.isFinite(parsed.stats[k]));
+  if (missing.length) {
+    if (!quiet) {
+      $('parseStatus').className = 'status-box error';
+      $('parseStatus').textContent = '能力値の読み取りに失敗しました。不足: ' + missing.join(', ');
+    }
+    return false;
+  }
+  if (parsed.name) $('charName').value = parsed.name;
+  if (parsed.gender) $('charGender').value = parsed.gender;
+  if (parsed.age) $('charAge').value = parsed.age;
+  setStats(parsed.stats, true);
+  updateAll();
+  $('parseStatus').className = 'status-box ok';
+  $('parseStatus').textContent = `読み取り成功：${parsed.name || '名前なし'}。能力値と技能ボーナスを反映しました。`;
+  return true;
+}
+async function readTextFile(file) {
+  const buf = await file.arrayBuffer();
+  let text = new TextDecoder('utf-8').decode(buf);
+  if (text.includes('\uFFFD')) {
+    try { text = new TextDecoder('shift_jis').decode(buf); } catch (e) {}
+  }
+  return text;
+}
+
+function generateTokenExport(data=collectData(false)) {
+  const abilities = resolveAbilities(data);
+  const res = computeResources(abilities, data.resources || getResourceState());
+  const combat = computeCombatStats(abilities, data.skills || defaultSkillAlloc(), data.equipment || getEquipmentState());
+  const params = ABILITIES.map(a => ({ label:a.name, value:String(abilities[a.key] ?? 0) }));
+  const token = {
+    kind: 'character',
+    data: {
+      name: data.name || '無名のキャラクター',
+      initiative: abilities.sense || 0,
+      status: [
+        { label:'HP', value:res.currentHp, max:res.maxHp },
+        { label:'MP', value:res.currentMp, max:res.maxMp },
+        { label:'常時防御値', value:combat.defenseTotal, max:combat.defenseTotal },
+        { label:'回避値', value:combat.evasionTotal, max:combat.evasionTotal },
+      ],
+      params,
+      commands: generatePaletteExport(data),
+    },
+  };
+  return JSON.stringify(token, null, 2);
+}
+function makeSummaryFromData(data) {
+  const abilities = resolveAbilities(data);
+  const totals = skillTotals(abilities, data.skills || defaultSkillAlloc());
+  const res = computeResources(abilities, data.resources || {});
+  const lines = [];
+  lines.push(`【リクラフト・アルケミア キャラクター】`);
+  lines.push(`名前：${data.name || '未設定'}`);
+  if (data.gender || data.age) lines.push(`性別：${data.gender || ''} / 年齢：${data.age || ''}`);
+  lines.push('');
+  lines.push('■ 能力値');
+  lines.push(ABILITIES.map(a => `${a.name}:${abilities[a.key]}`).join(' / '));
+  lines.push('');
+  lines.push('■ HP・MP');
+  lines.push(`HP:${res.currentHp}/${res.maxHp} / MP:${res.currentMp}/${res.maxMp}`);
+  const combat = computeCombatStats(abilities, data.skills || defaultSkillAlloc(), data.equipment || {});
+  lines.push(`常時防御値:${combat.defenseTotal} / 回避値:${combat.evasionTotal}`);
+  if (combat.dualWield?.available) lines.push(`二刀攻撃:${combat.dualWield.rightMain} / ${combat.dualWield.leftMain}`);
+  lines.push('');
+  lines.push('■ 装備');
+  pushEquipmentSummaryLines(lines, data.equipment || {});
+  lines.push('');
+  lines.push('■ 技能値');
+  for (const cat of SKILL_CATEGORIES) {
+    lines.push(`［${cat.name}］`);
+    for (const sk of cat.skills) {
+      const t = totals[sk.key];
+      lines.push(`${sk.name}: ${t.total}`);
+    }
+  }
+  pushInventorySummaryLines(lines, data.inventory || {});
+  if (data.memo) { lines.push(''); lines.push('■ メモ'); lines.push(data.memo); }
+  return lines.join('\n');
+}
+function generatePaletteExport(data=collectData(false)) {
+  const abilities = resolveAbilities(data);
+  const totals = skillTotals(abilities, data.skills || defaultSkillAlloc());
+  const lines = [];
+  for (const cat of SKILL_CATEGORIES) {
+    for (const sk of cat.skills) {
+      const v = totals[sk.key]?.total || 0;
+      lines.push(`2D6+${v}>= 【${sk.name}】`);
+    }
+  }
+  return lines.join('\n');
+}
+function getOutputPayload(kind, data=outputTargetData || collectData(false)) {
+  if (kind === 'token') {
+    return { text: generateTokenExport(data), label: '駒出力' };
+  }
+  return { text: generatePaletteExport(data), label: 'チャットパレット' };
+}
+function setOutputStatus(message, ok=true) {
+  const box = $('outputCopyStatus');
+  if (box) {
+    box.className = 'status-box ' + (ok ? 'ok' : 'error');
+    box.textContent = message;
+  }
+  showToast(message, ok ? 'ok' : 'error');
+}
+async function copyTextDirect(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.position = 'fixed';
+  ta.style.left = '-9999px';
+  ta.style.top = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  const ok = document.execCommand('copy');
+  ta.remove();
+  if (!ok) throw new Error('clipboard copy failed');
+}
+async function copyOutput(kind, data=outputTargetData || collectData(false)) {
+  const payload = getOutputPayload(kind, data);
+  try {
+    await copyTextDirect(payload.text);
+    setOutputStatus(`${payload.label}をクリップボードにコピーしました。`, true);
+    const dlg = $('outputDialog'); if (dlg?.open) dlg.close();
+  } catch (e) {
+    setOutputStatus('クリップボードへのコピーに失敗しました。ブラウザの権限設定を確認してください。', false);
+  }
+}
+function openOutputDialog(data=collectData(false)) {
+  outputTargetData = data;
+  setOutputStatus('出力種別を選択してください。', true);
+  const dlg = $('outputDialog');
+  if (dlg && dlg.showModal) dlg.showModal();
+  else alert('このブラウザでは出力ダイアログを開けません。');
+}
+async function copySummary() {
+  const text = makeSummary();
+  try { await navigator.clipboard.writeText(text); $('editorStatus').className = 'status-box ok'; $('editorStatus').textContent = 'サマリーをコピーしました。'; showToast('サマリーをコピーしました。', 'ok'); }
+  catch { $('editorStatus').className = 'status-box warn'; $('editorStatus').textContent = 'コピーに失敗しました。'; showToast('コピーに失敗しました。', 'warn'); }
+}
+
+
+async function copyShareData() {
+  const data = collectData(true);
+  if (!data.name) {
+    $('editorStatus').className = 'status-box error';
+    $('editorStatus').textContent = '共有URLを発行する前にキャラクター名を入力してください。';
+    return;
+  }
+  try {
+    // 共有URLはクラウド保存済みデータをGASの閲覧ページで開く形式。
+    const auth = getCloudAuth();
+    if (!auth.playerKey && !auth.newPlayerKey) throw new Error('共有URLの発行にはプレイヤーキーが必要です。');
+    await cloudRequest('save', { data: stripRuntimeOnlyData(data), playerKey: auth.playerKey, newPlayerKey: auth.newPlayerKey });
+    if (auth.newPlayerKey) {
+      currentCloudPlayerKey = auth.newPlayerKey;
+      if ($('playerKey')) $('playerKey').value = auth.newPlayerKey;
+      if ($('newPlayerKey')) $('newPlayerKey').value = '';
+      if ($('cloudPlayerKeyInput')) $('cloudPlayerKeyInput').value = auth.newPlayerKey;
+    }
+    const url = buildShareUrl(data.id);
+    await copyTextDirect(url);
+    currentCharacter = data;
+    $('editorStatus').className = 'status-box ok';
+    $('editorStatus').textContent = '共有用の閲覧URLをクリップボードにコピーしました。';
+    showToast('共有URLをコピーしました。', 'ok');
+  } catch (e) {
+    $('editorStatus').className = 'status-box error';
+    $('editorStatus').textContent = e.message || '共有URLの発行に失敗しました。';
+    showToast($('editorStatus').textContent, 'error');
+  }
+}
+
+async function copyShareUrlForListItem(id) {
+  try {
+    if (currentStorage === 'cloud') {
+      const url = buildShareUrl(id);
+      await copyTextDirect(url);
+      showToast('共有URLをコピーしました。', 'ok');
+      $('listStatus').className = 'status-box ok';
+      $('listStatus').textContent = '共有URLをクリップボードにコピーしました。';
+      return;
+    }
+    const data = await loadLocal(id);
+    const playerKey = currentCloudPlayerKey || await promptCloudPlayerKey('共有URLを発行するため、クラウド保存用のプレイヤーキーを入力してください。');
+    currentCloudPlayerKey = playerKey;
+    if ($('cloudPlayerKeyInput')) $('cloudPlayerKeyInput').value = playerKey;
+    await saveDataToCloud(data, playerKey);
+    const url = buildShareUrl(data.id);
+    await copyTextDirect(url);
+    showToast('クラウドへ保存して共有URLをコピーしました。', 'ok');
+    $('listStatus').className = 'status-box ok';
+    $('listStatus').textContent = 'クラウドへ保存し、共有URLをクリップボードにコピーしました。';
+  } catch (e) {
+    $('listStatus').className = 'status-box error';
+    $('listStatus').textContent = e.message;
+    showToast(e.message, 'error');
+  }
+}
+
+async function onSave() {
+  const data = collectData(true);
+  if (!data.name) {
+    $('editorStatus').className = 'status-box error';
+    $('editorStatus').textContent = 'キャラクター名を入力してください。';
+    showToast('キャラクター名を入力してください。', 'error');
+    return;
+  }
+  const check = validateSkills(data.skills, data.stats, data.manualCategoryBonuses || emptyCategoryBonus());
+  if (check.errors.length) {
+    $('editorStatus').className = 'status-box error';
+    $('editorStatus').textContent = '技能ポイントに問題があるため保存前に確認してください。\n' + check.errors.join('\n');
+    showToast('技能ポイントに問題があるため保存できません。', 'error');
+    return;
+  }
+  try {
+    const result = await saveItem(data);
+    currentCharacter = data;
+    currentMode = 'edit';
+    $('editorStatus').className = result?.reason ? 'status-box warn' : 'status-box ok';
+    if (currentStorage === 'local') {
+      $('editorStatus').textContent = `保存しました。保存フォルダ${result?.folderName ? '「' + result.folderName + '」' : ''}へJSONを書き込みました。`;
+      showToast('ローカルへ保存しました。', 'ok');
+    } else {
+      $('editorStatus').textContent = 'クラウドへ保存しました。';
+      showToast('クラウドへ保存しました。', 'ok');
+    }
+  } catch (e) {
+    $('editorStatus').className = 'status-box error';
+    $('editorStatus').textContent = e.message;
+    showToast(e.message, 'error');
+  }
+}
+
+function bindEvents() {
+  $('gasUrlInput').value = gasUrl();
+  try { localStorage.removeItem(APP_NAME + '.master.adminKey'); } catch(e) {}
+  $('saveGasUrlBtn').addEventListener('click', () => {
+    setGasUrl($('gasUrlInput').value);
+    $('homeStatus').className = 'status-box ok';
+    $('homeStatus').textContent = 'クラウド接続先を保存しました。';
+    showToast('クラウド接続先を保存しました。', 'ok');
+    autoSyncEquipmentCategoriesFromDb();
+  });
+  if ($('loadEquipmentCategoriesBtn')) $('loadEquipmentCategoriesBtn').addEventListener('click', async () => { try { await loadEquipmentCategoriesFromDb(); } catch (e) { showToast(e.message, 'error'); const st=$('equipmentCategoryStatus'); if(st) st.textContent=e.message; } });
+  $('chooseLocalBtn').addEventListener('click', async () => { try { await openList('local'); } catch (e) { $('homeStatus').className = 'status-box error'; $('homeStatus').textContent = e.message; showToast(e.message, 'error'); } });
+  $('chooseCloudBtn').addEventListener('click', () => {
+    setGasUrl($('gasUrlInput').value);
+    currentCloudPlayerKey = ($('cloudPlayerKeyInput')?.value || '').trim();
+    if (!gasUrl()) { $('homeStatus').className = 'status-box error'; $('homeStatus').textContent = 'クラウド保存にはGAS WebアプリURLが必要です。'; showToast('クラウド保存にはGAS WebアプリURLが必要です。', 'error'); return; }
+    if (!currentCloudPlayerKey) { $('homeStatus').className = 'status-box error'; $('homeStatus').textContent = 'クラウドリスト表示にはプレイヤーキーが必要です。'; showToast('クラウドリスト表示にはプレイヤーキーが必要です。', 'error'); return; }
+    openList('cloud');
+  });
+  $('backHomeBtn').addEventListener('click', () => setView('home'));
+  $('changeCloudKeyBtn').addEventListener('click', async () => {
+    const next = prompt('表示するクラウドキャラクターのプレイヤーキーを入力してください。', currentCloudPlayerKey || '') || '';
+    if (!next.trim()) { showToast('プレイヤーキーが未入力です。', 'warn'); return; }
+    currentCloudPlayerKey = next.trim();
+    if ($('cloudPlayerKeyInput')) $('cloudPlayerKeyInput').value = currentCloudPlayerKey;
+    await refreshList();
+    showToast('プレイヤーキーを変更しました。', 'ok');
+  });
+  $('changeLocalFolderBtn').addEventListener('click', async () => { try { await chooseLocalDirectory(); await refreshList(); showToast('保存先フォルダを変更しました。', 'ok'); } catch (e) { $('listStatus').className = 'status-box error'; $('listStatus').textContent = e.message; showToast(e.message, 'error'); } });
+  $('syncToCloudBtn').addEventListener('click', convertAllLocalToCloud);
+  $('syncToLocalBtn').addEventListener('click', convertAllCloudToLocal);
+  $('refreshListBtn').addEventListener('click', refreshList);
+  $('newCharacterBtn').addEventListener('click', () => openEditor('new', emptyCharacter()));
+  $('backListBtn').addEventListener('click', () => { setView('list'); refreshList(); });
+  $('toggleViewEditBtn').addEventListener('click', () => { currentMode = 'edit'; setReadOnly(false); $('editorTitle').textContent = 'キャラクター編集'; $('editorStatus').className = 'status-box'; $('editorStatus').textContent = '編集モードに切り替えました。'; showToast('編集モードに切り替えました。', 'ok'); });
+  $('saveBtn').addEventListener('click', onSave);
+  $('rollBtn').addEventListener('click', rollAllConvertedAbilities);
+  $('abilityOutput').addEventListener('click', e => { const btn = e.target.closest('[data-reroll-ability]'); if (!btn) return; rerollOneAbility(btn.dataset.rerollAbility); });
+  $('txtFileBtn').addEventListener('click', () => $('txtFileInput').click());
+  $('txtFileInput').addEventListener('change', async e => {
+    const file = e.target.files?.[0]; if (!file) return;
+    const text = await readTextFile(file);
+    applyParsedText(text);
+    e.target.value = '';
+  });
+  $('outputBtn').addEventListener('click', () => openOutputDialog(collectData(false)));
+  $('shareBtn').addEventListener('click', copyShareData);
+  $('actionBarToggleBtn').addEventListener('click', () => $('editorActionBar').classList.toggle('collapsed'));
+  document.querySelectorAll('.editor-tab-btn').forEach(btn => btn.addEventListener('click', () => showEditorTab(btn.dataset.editorTab)));
+  $('makeTokenOutputBtn').addEventListener('click', () => copyOutput('token'));
+  $('makePaletteOutputBtn').addEventListener('click', () => copyOutput('palette'));
+  $('closeOutputDialogBtn').addEventListener('click', () => $('outputDialog').close());
+  if ($('addInventoryItemBtn')) $('addInventoryItemBtn').addEventListener('click', () => addInventoryItem());
+  if ($('addInitialWeaponSetBtn')) $('addInitialWeaponSetBtn').addEventListener('click', addInitialWeaponSet);
+  if ($('sortInventoryItemBtn')) $('sortInventoryItemBtn').addEventListener('click', sortInventoryItems);
+  if ($('inventorySearchInput')) $('inventorySearchInput').addEventListener('input', e => setInventoryFilter('search', e.target.value || ''));
+  if ($('inventoryFormKind')) $('inventoryFormKind').addEventListener('change', updateInventoryFormVisibility);
+  if ($('saveInventoryDialogBtn')) $('saveInventoryDialogBtn').addEventListener('click', saveInventoryDialog);
+  if ($('cancelInventoryDialogBtn')) $('cancelInventoryDialogBtn').addEventListener('click', () => $('inventoryDialog')?.close());
+  if ($('inventoryArea')) $('inventoryArea').addEventListener('click', e => {
+    const btn = e.target.closest('[data-inventory-action]'); if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const index = Number(btn.dataset.index || 0);
+    if (btn.dataset.inventoryAction === 'edit') openInventoryDialog(index);
+    if (btn.dataset.inventoryAction === 'delete') deleteInventoryItem(index);
+    if (btn.dataset.inventoryAction === 'duplicate') duplicateInventoryItem(index);
+  });
+  if ($('inventoryLocationTabs')) $('inventoryLocationTabs').addEventListener('click', e => {
+    const btn = e.target.closest('[data-inventory-filter="location"]'); if (!btn) return;
+    setInventoryFilter('location', btn.dataset.value || '全て');
+  });
+  if ($('inventoryKindTabs')) $('inventoryKindTabs').addEventListener('click', e => {
+    const btn = e.target.closest('[data-inventory-filter="kind"]'); if (!btn) return;
+    setInventoryFilter('kind', btn.dataset.value || '全て');
+  });
+  $('characterList').addEventListener('click', async e => {
+    const btn = e.target.closest('button[data-action]'); if (!btn) return;
+    const action = btn.dataset.action, id = btn.dataset.id;
+    try {
+      if (action === 'delete') {
+        if (!confirm('このキャラクターを削除しますか？')) return;
+        await deleteItem(id); await refreshList(); showToast('削除しました。', 'ok'); return;
+      }
+      if (action === 'share') { await copyShareUrlForListItem(id); return; }
+      if (action === 'toCloud' || action === 'toLocal') { await convertListItem(action, id); return; }
+      const data = await loadItem(id);
+      if (action === 'export') { openOutputDialog(data); return; }
+      openEditor(action === 'view' ? 'view' : 'edit', data);
+    } catch (err) {
+      $('listStatus').className = 'status-box error';
+      $('listStatus').textContent = err.message;
+      showToast(err.message, 'error');
+    }
+  });
+  document.addEventListener('input', e => {
+    if (e.target.matches('#charName,#charGender,#charAge,#playerKey,#newPlayerKey,#charMemo')) { updateSummary(); return; }
+    if (e.target.dataset.equipmentInput) { updateCombatStats(); updateSpellSlotHints(); updateSummary(); return; }
+    if (e.target.dataset.inventoryInput) { applyInventoryFilters(); updateSummary(); return; }
+    if (e.target.id?.startsWith('stat_') || e.target.dataset.abilityInput || e.target.dataset.skillInput || e.target.id?.startsWith('manualBonus_') || ['currentHp','currentMp','hpBonus','mpBonus'].includes(e.target.id)) updateAll();
+  });
+  document.addEventListener('change', e => {
+    if (e.target.id?.startsWith('equip_') && e.target.id.endsWith('_setSpells')) {
+      const slotKey = e.target.id.replace(/^equip_/, '').replace(/_setSpells$/, '');
+      enforceSpellSetLimit(slotKey);
+      updateSpellSlotHints();
+      updateSummary();
+      return;
+    }
+    if (e.target.id?.startsWith('equip_') && e.target.id.endsWith('_itemSelect')) {
+      const slotKey = e.target.id.replace(/^equip_/, '').replace(/_itemSelect$/, '');
+      applyCsItemToEquipmentSlot(slotKey);
+      return;
+    }
+    if (e.target.id?.startsWith('equip_') && e.target.id.endsWith('_type')) {
+      const slotKey = e.target.id.replace(/^equip_/, '').replace(/_type$/, '');
+      const itemSelect = $('equip_' + slotKey + '_itemSelect');
+      if (itemSelect) itemSelect.value = '';
+      applyEquipmentPreset(slotKey);
+      refreshSpellSetSelect(slotKey, spellContainerKind($('equip_' + slotKey + '_type')?.value || 'なし'));
+      if (slotKey === 'rightHand' || slotKey === 'leftHand') updateEquipmentHandLocks(true);
+      updateCombatStats();
+      updateSpellSlotHints();
+      updateSummary();
+    }
+  });
+}
+
+function init() { loadCachedEquipmentCategories(); loadCachedCsItems(); renderStatic(); refreshEquipmentItemSelects(); bindEvents(); applyData(emptyCharacter()); setView('home'); autoSyncEquipmentCategoriesFromDb(); }
+init();
+</script>
+</body>
+</html>
