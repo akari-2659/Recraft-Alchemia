@@ -812,6 +812,7 @@
       <div class="field" data-inventory-kind-field="accessory"><label for="inventoryFormSpellSlots">術式登録枠</label><input id="inventoryFormSpellSlots" type="number" min="0" max="99" value="" placeholder="魔印/聖印用" /></div>
       <div class="field" data-inventory-kind-field="item spell"><label for="inventoryFormTarget">対象</label><input id="inventoryFormTarget" type="text" placeholder="例：味方1体 / 敵1体" /></div>
       <div class="field" data-inventory-kind-field="spell"><label for="inventoryFormCost">コスト</label><input id="inventoryFormCost" type="text" placeholder="例：MP1 / MP2" /></div>
+      <div class="field" data-inventory-kind-field="item spell"><label for="inventoryFormDamage">ダメージ</label><input id="inventoryFormDamage" type="text" placeholder="例：武器依存 / 1D6+魔法ポイント" /></div>
       <div class="field inventory-wide" data-inventory-kind-field="recipe"><label for="inventoryFormRecipeResult">完成品</label><input id="inventoryFormRecipeResult" type="text" placeholder="例：ポーション ×1" /></div>
       <div class="field inventory-wide" data-inventory-kind-field="recipe"><label for="inventoryFormMaterials">必要素材</label><textarea id="inventoryFormMaterials" placeholder="例：薬草×1、澄んだ水×1"></textarea></div>
       <div class="field inventory-wide" data-inventory-kind-field="weapon armor accessory item spell recipe important other"><label for="inventoryFormDescription">説明</label><textarea id="inventoryFormDescription" placeholder="見た目、雰囲気、使われ方など"></textarea></div>
@@ -1566,7 +1567,7 @@ function ownedSpellRowsForInfo(info) {
   }).sort((a,b) => String(a.rank || '').localeCompare(String(b.rank || ''), 'ja') || String(a.name || '').localeCompare(String(b.name || ''), 'ja'));
 }
 function spellOptionLabel(item) {
-  const meta = [item.cost ? 'コスト ' + item.cost : '', item.target ? '対象 ' + item.target : ''].filter(Boolean).join(' / ');
+  const meta = [item.cost ? 'コスト ' + item.cost : '', item.target ? '対象 ' + item.target : '', item.damage ? 'ダメージ ' + item.damage : ''].filter(Boolean).join(' / ');
   return meta ? `${item.name}（${meta}）` : item.name;
 }
 function setSpellSelectValues(slotKey, values) {
@@ -1853,7 +1854,7 @@ function inferEquipSlotForInventory(item={}) {
   return '';
 }
 function emptyInventoryItem() {
-  return { id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), name:'', kind:defaultInventoryKind(), category:'', count:1, location:'所持', rank:'', price:'', equipSlot:'', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', spellSlots:'', target:'', cost:'', description:'', effect:'', recipeResult:'', materials:'', note:'' };
+  return { id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), name:'', kind:defaultInventoryKind(), category:'', count:1, location:'所持', rank:'', price:'', equipSlot:'', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', spellSlots:'', target:'', cost:'', damage:'', description:'', effect:'', recipeResult:'', materials:'', note:'' };
 }
 function normalizeInventoryItem(item={}) {
   const kind = normalizeInventoryKind(item.kind || 'アイテム');
@@ -1877,6 +1878,7 @@ function normalizeInventoryItem(item={}) {
     spellSlots: String(item.spellSlots || item.slotCount || item.registerSlots || item.maxStack || '').trim(),
     target: String(item.target || '').trim(),
     cost: String(item.cost || item.mpCost || '').trim(),
+    damage: String(item.damage || '').trim(),
     description: mergeTextUnique(item.description, oldDescription),
     effect: String(item.effect || '').trim(),
     recipeResult: String(item.recipeResult || item.resultItem || '').trim(),
@@ -1885,7 +1887,7 @@ function normalizeInventoryItem(item={}) {
   };
 }
 function getInventoryState() {
-  const items = inventoryItemsState.map(item => normalizeInventoryItem(item)).filter(item => item.name || item.category || item.description || item.effect || item.count > 0);
+  const items = inventoryItemsState.map(item => normalizeInventoryItem(item)).filter(item => item.name || item.category || item.damage || item.description || item.effect || item.count > 0);
   return { items };
 }
 function setInventoryState(inventory=defaultInventory()) {
@@ -1952,10 +1954,11 @@ function renderInventory() {
     const description = item.description || '';
     const effectText = item.effect || '';
     const equipMeta = [item.equipSlot, item.power ? '威力 ' + item.power : '', item.hit ? '命中 ' + item.hit : '', item.defense ? '防御 ' + item.defense : ''].filter(Boolean).join(' / ') || '—';
-    const spellMeta = item.kind === '術式' ? [item.cost ? 'コスト：' + item.cost : '', item.target ? '対象：' + item.target : ''].filter(Boolean).join(' / ') : '';
+    const spellMeta = item.kind === '術式' ? [item.cost ? 'コスト：' + item.cost : '', item.target ? '対象：' + item.target : '', item.damage ? 'ダメージ：' + item.damage : ''].filter(Boolean).join(' / ') : '';
     const recipeMeta = item.kind === 'レシピ' ? [item.recipeResult ? '完成品：' + item.recipeResult : '', item.materials ? '必要素材：' + item.materials : ''].filter(Boolean).join('\n') : '';
+    const itemUseMeta = item.kind === 'アイテム' ? [item.target ? '対象：' + item.target : '', item.damage ? 'ダメージ：' + item.damage : ''].filter(Boolean).join(' / ') : '';
     const spellSlotMeta = item.spellSlots ? `術式登録枠：${item.spellSlots}` : '';
-    const searchText = [title, item.kind, item.category, item.rank, item.price, item.equipSlot, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.spellSlots, item.target, item.cost, item.description, item.effect, item.recipeResult, item.materials].filter(Boolean).join(' ');
+    const searchText = [title, item.kind, item.category, item.rank, item.price, item.equipSlot, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.spellSlots, item.target, item.cost, item.damage, item.description, item.effect, item.recipeResult, item.materials].filter(Boolean).join(' ');
     return `
     <details class="inventory-card" open data-inventory-row="${index}" data-inventory-id="${esc(item.id || '')}" data-inventory-location="所持" data-inventory-kind="${esc(item.kind || 'アイテム')}" data-inventory-search="${esc(searchText)}">
       <summary class="inventory-card-head">
@@ -1972,6 +1975,7 @@ function renderInventory() {
         <div class="meta-item"><span class="meta-label">ランク</span>${esc(item.rank || '—')}</div>
         <div class="meta-item"><span class="meta-label">価格/売価</span>${esc(item.price || '—')}</div>
         <div class="meta-item meta-wide"><span class="meta-label">装備/使用データ</span><div class="inventory-note">${esc([equipMeta, spellSlotMeta].filter(Boolean).join('\n'))}</div></div>
+        ${itemUseMeta ? `<div class="meta-item meta-wide"><span class="meta-label">使用データ</span><div class="inventory-note">${esc(itemUseMeta)}</div></div>` : ''}
         ${spellMeta ? `<div class="meta-item meta-wide"><span class="meta-label">術式データ</span><div class="inventory-note">${esc(spellMeta)}</div></div>` : ''}
         ${recipeMeta ? `<div class="meta-item meta-wide"><span class="meta-label">レシピ</span><div class="inventory-note">${esc(recipeMeta)}</div></div>` : ''}
         ${description ? `<div class="meta-item meta-wide"><span class="meta-label">説明</span><div class="inventory-note">${esc(description)}</div></div>` : ''}
@@ -2021,6 +2025,7 @@ function openInventoryDialog(index=-1) {
   if ($('inventoryFormSpellSlots')) $('inventoryFormSpellSlots').value = item.spellSlots || '';
   if ($('inventoryFormTarget')) $('inventoryFormTarget').value = item.target || '';
   if ($('inventoryFormCost')) $('inventoryFormCost').value = item.cost || '';
+  if ($('inventoryFormDamage')) $('inventoryFormDamage').value = item.damage || '';
   if ($('inventoryFormDescription')) $('inventoryFormDescription').value = item.description || '';
   if ($('inventoryFormEffect')) $('inventoryFormEffect').value = item.effect || '';
   if ($('inventoryFormRecipeResult')) $('inventoryFormRecipeResult').value = item.recipeResult || '';
@@ -2049,6 +2054,7 @@ function collectInventoryDialogItem() {
     spellSlots: $('inventoryFormSpellSlots')?.value || '',
     target: $('inventoryFormTarget')?.value || '',
     cost: $('inventoryFormCost')?.value || '',
+    damage: $('inventoryFormDamage')?.value || '',
     description: $('inventoryFormDescription')?.value || '',
     effect: $('inventoryFormEffect')?.value || '',
     recipeResult: $('inventoryFormRecipeResult')?.value || '',
@@ -2127,6 +2133,7 @@ function dbItemToInventoryItem(row) {
     spellSlots: row.maxStack || row.spellSlots || '',
     target: row.target || '',
     cost: formatMpCost(row.mpCost || row.cost || ''),
+    damage: row.damage || '',
     description: mergeTextUnique(row.description, row['fla' + 'vor' + 'Text']),
     effect: String(row.effect || '').trim(),
     note: ''
@@ -2143,6 +2150,7 @@ function dbSpellToInventoryItem(row) {
     price: row.scrollPrice || '',
     target: row.target || '',
     cost: formatMpCost(row.mpCost || ''),
+    damage: row.damage || '',
     description: mergeTextUnique(row.description, row['fla' + 'vor' + 'Text']),
     effect: String(row.effect || '').trim(),
     note: ''
