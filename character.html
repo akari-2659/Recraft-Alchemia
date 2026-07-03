@@ -837,7 +837,7 @@
       <div class="field" data-inventory-kind-field="weapon"><label for="inventoryFormOffhand">副手追撃値</label><input id="inventoryFormOffhand" type="text" placeholder="例：+2" /></div>
       <div class="field" data-inventory-kind-field="accessory"><label for="inventoryFormSpellSlots">術式登録枠</label><input id="inventoryFormSpellSlots" type="number" min="0" max="99" value="" placeholder="魔印/聖印用" /></div>
       <div class="field" data-inventory-kind-field="item spell"><label for="inventoryFormTarget">対象</label><input id="inventoryFormTarget" type="text" placeholder="例：味方1体 / 敵1体" /></div>
-      <div class="field" data-inventory-kind-field="spell"><label for="inventoryFormElement">属性</label><select id="inventoryFormElement"><option value="">未選択</option><option>物</option><option>火</option><option>水</option><option>風</option><option>雷</option><option>光</option><option>闇</option><option>無</option></select></div>
+      <div class="field" data-inventory-kind-field="weapon item spell"><label for="inventoryFormElement">属性</label><select id="inventoryFormElement"><option value="">未選択</option><option>物</option><option>火</option><option>水</option><option>風</option><option>雷</option><option>光</option><option>闇</option><option>無</option></select></div>
       <div class="field" data-inventory-kind-field="spell"><label for="inventoryFormCost">コスト</label><input id="inventoryFormCost" type="text" placeholder="例：MP1 / MP2" /></div>
       <div class="field inventory-wide" data-inventory-kind-field="recipe"><label for="inventoryFormRecipeResult">完成品</label><input id="inventoryFormRecipeResult" type="text" placeholder="例：ポーション ×1" /></div>
       <div class="field inventory-wide" data-inventory-kind-field="recipe"><label for="inventoryFormMaterials">必要素材</label><textarea id="inventoryFormMaterials" placeholder="例：薬草×1、澄んだ水×1"></textarea></div>
@@ -935,6 +935,11 @@ const SKILL_CATEGORIES = [
 ];
 const HAND_TYPE_OPTIONS = ['なし','短剣','片手剣','片手斧','片手槌','片手槍','杖','盾','大盾','魔導書','祈祷書','両手剣','大槌','長槍','弓','弩','大型弩'];
 const TWO_HAND_TYPES = new Set(['両手剣','大槌','長槍','弓','弩','大型弩']);
+const ELEMENT_TYPES = ['','物','火','水','風','雷','光','闇','無'];
+function elementSelectOptions(selected='') {
+  const current = String(selected || '').trim();
+  return ELEMENT_TYPES.map(v => `<option value="${esc(v)}" ${current === v ? 'selected' : ''}>${esc(v || '未選択')}</option>`).join('');
+}
 const EQUIPMENT_PRESETS = {
   'なし': { power:'', hit:'', defense:'', guard:'', evade:'0', offhand:'', description:'', note:'' },
   '短剣': { power:'1D6', hit:'+1', defense:'', guard:'', evade:'0', offhand:'2', description:'短い刃で素早く切り込む軽量武器。近い間合いで細かな動きに合わせやすい。', note:'' },
@@ -1271,6 +1276,10 @@ function renderStatic() {
             <select id="equip_${slot.key}_type" data-equipment-input="1">${options}</select>
           </div>
           <div class="field">
+            <label for="equip_${slot.key}_element">属性</label>
+            <select id="equip_${slot.key}_element" data-equipment-input="1">${elementSelectOptions()}</select>
+          </div>
+          <div class="field">
             <label for="equip_${slot.key}_power">威力</label>
             <input id="equip_${slot.key}_power" data-equipment-input="1" type="text" placeholder="例：1D6+1" />
           </div>
@@ -1416,7 +1425,7 @@ function pushEquipmentSummaryLines(lines, equipment={}) {
   for (const slot of EQUIPMENT_SLOTS) {
     const item = (equipment || {})[slot.key] || {};
     if (!(item.name || (item.type && item.type !== 'なし') || item.setSpells)) continue;
-    lines.push(`${slot.name}: ${item.name || '未設定'}${item.type ? ' / ' + item.type : ''}${item.count ? ' ×' + item.count : ''}${item.offhand ? ' / 副手追撃:' + item.offhand : ''}`);
+    lines.push(`${slot.name}: ${item.name || '未設定'}${item.type ? ' / ' + item.type : ''}${item.element ? ' / 属性:' + item.element : ''}${item.count ? ' ×' + item.count : ''}${item.offhand ? ' / 副手追撃:' + item.offhand : ''}`);
     if (item.setSpells) lines.push(`  セット術式: ${String(item.setSpells).replace(/\n/g, '、')}`);
   }
 }
@@ -1427,7 +1436,7 @@ function pushInventorySummaryLines(lines, inventory={}) {
   lines.push('■ 所持・預けアイテム');
   for (const item of items) {
     if (!(item.name || item.category || item.note)) continue;
-    lines.push(`${item.name || '未設定'}${item.count ? ' ×' + item.count : ''}${item.location ? ' / ' + item.location : ''}${item.kind ? ' / ' + item.kind : ''}${item.rank ? ' / ' + item.rank : ''}${item.cost ? ' / コスト:' + item.cost : ''}`);
+    lines.push(`${item.name || '未設定'}${item.count ? ' ×' + item.count : ''}${item.location ? ' / ' + item.location : ''}${item.kind ? ' / ' + item.kind : ''}${item.rank ? ' / ' + item.rank : ''}${item.element ? ' / 属性:' + item.element : ''}${item.cost ? ' / コスト:' + item.cost : ''}`);
     if (item.category || item.price) lines.push(`  ${[item.category ? 'カテゴリ:' + item.category : '', item.price ? '価格/売価:' + item.price : ''].filter(Boolean).join(' / ')}`);
     if (item.description) lines.push(`  ${String(item.description).replace(/\n/g, ' ')}`);
     if (item.note) lines.push(`  ${String(item.note).replace(/\n/g, ' ')}`);
@@ -1791,6 +1800,8 @@ function updateEquipmentSummaries() {
     const parts = [];
     if (name) parts.push(name);
     if (type && type !== 'なし') parts.push(type);
+    const element = $('equip_' + slot.key + '_element')?.value || '';
+    if (element) parts.push('属性:' + element);
     if (slot.kind === 'carry' && count) parts.push('×' + count);
     if (spellCount) parts.push('術式' + spellCount + '件');
     el.textContent = parts.length ? parts.join(' / ') : '未設定';
@@ -1800,8 +1811,8 @@ function defaultEquipment() {
   const equipment = {};
   for (const slot of EQUIPMENT_SLOTS) {
     equipment[slot.key] = slot.kind === 'carry'
-      ? { itemId:'', name:'', type:'なし', count:1, description:'', note:'' }
-      : { itemId:'', name:'', type:'なし', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', knownSpells:'', setSpells:'', description:'', checkType:'', role:'', source:'', tags:'', setItem:'', note:'' };
+      ? { itemId:'', name:'', type:'なし', count:1, element:'', description:'', note:'' }
+      : { itemId:'', name:'', type:'なし', element:'', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', knownSpells:'', setSpells:'', description:'', checkType:'', role:'', source:'', tags:'', setItem:'', note:'' };
   }
   equipment.memo = '';
   return equipment;
@@ -1813,6 +1824,7 @@ function getEquipmentState() {
     base.itemId = $('equip_' + slot.key + '_itemSelect')?.value || '';
     base.name = $('equip_' + slot.key + '_name')?.value?.trim() || '';
     base.type = $('equip_' + slot.key + '_type')?.value || 'なし';
+    base.element = $('equip_' + slot.key + '_element')?.value || '';
     base.description = $('equip_' + slot.key + '_description')?.value || '';
     base.note = $('equip_' + slot.key + '_note')?.value || '';
     if (slot.kind === 'carry') {
@@ -1848,6 +1860,7 @@ function setEquipmentState(equipment={}) {
     }
     if ($('equip_' + slot.key + '_name')) $('equip_' + slot.key + '_name').value = item.name || '';
     if ($('equip_' + slot.key + '_type')) $('equip_' + slot.key + '_type').value = normalizeEquipmentType(item.type || 'なし');
+    if ($('equip_' + slot.key + '_element')) $('equip_' + slot.key + '_element').value = item.element || '';
     if ($('equip_' + slot.key + '_description')) $('equip_' + slot.key + '_description').value = item.description || '';
     if ($('equip_' + slot.key + '_note')) $('equip_' + slot.key + '_note').value = item.note || '';
     if (slot.kind === 'carry') {
@@ -1861,7 +1874,7 @@ function setEquipmentState(equipment={}) {
       if ($('equip_' + slot.key + '_offhand')) $('equip_' + slot.key + '_offhand').value = item.offhand || '';
       if ($('equip_' + slot.key + '_knownSpells')) $('equip_' + slot.key + '_knownSpells').value = '';
       setSpellSelectValues(slot.key, item.setSpells || '');
-      const hasManualDetail = !!(item.power || item.hit || item.defense || item.guard || item.evade || item.offhand || item.setSpells || item.description || item.note);
+      const hasManualDetail = !!(item.element || item.power || item.hit || item.defense || item.guard || item.evade || item.offhand || item.setSpells || item.description || item.note);
       if (!hasManualDetail && normalizeEquipmentType(item.type || 'なし') !== 'なし') applyEquipmentPreset(slot.key);
     }
   }
@@ -1879,7 +1892,7 @@ function applyEquipmentPreset(slotKey) {
   const normalized = normalizeEquipmentType(typeEl.value);
   if (typeEl.value !== normalized) typeEl.value = normalized;
   const preset = EQUIPMENT_PRESETS[normalized] || EQUIPMENT_PRESETS['なし'];
-  for (const key of ['power','hit','defense','guard','evade','offhand','description','note']) {
+  for (const key of ['element','power','hit','defense','guard','evade','offhand','description','note']) {
     const el = $('equip_' + slotKey + '_' + key);
     if (el) el.value = preset[key] || '';
   }
@@ -1892,7 +1905,7 @@ function applyEquipmentPreset(slotKey) {
   updateSpellSlotHints();
 }
 function clearHandSlot(slotKey) {
-  for (const suffix of ['itemSelect','name','power','hit','defense','guard','evade','offhand','description','note']) {
+  for (const suffix of ['itemSelect','name','element','power','hit','defense','guard','evade','offhand','description','note']) {
     const el = $('equip_' + slotKey + '_' + suffix);
     if (el) el.value = '';
   }
@@ -1902,7 +1915,7 @@ function clearHandSlot(slotKey) {
 function setHandSlotDisabled(slotKey, disabled) {
   const card = document.querySelector(`[data-equipment-card="${slotKey}"]`);
   if (card) card.classList.toggle('hand-disabled', disabled && currentMode !== 'view');
-  for (const suffix of ['itemSelect','name','type','power','hit','defense','guard','evade','offhand','knownSpells','setSpells','description','note']) {
+  for (const suffix of ['itemSelect','name','type','element','power','hit','defense','guard','evade','offhand','knownSpells','setSpells','description','note']) {
     const el = $('equip_' + slotKey + '_' + suffix);
     if (el) el.disabled = disabled || currentMode === 'view';
   }
@@ -1918,7 +1931,7 @@ function updateEquipmentFieldAvailability() {
     const card = document.querySelector(`[data-equipment-card="${slot.key}"]`);
     const baseDisabled = currentMode === 'view' || !!card?.classList.contains('hand-disabled');
     const book = isSpellBookType(type);
-    for (const suffix of ['itemSelect','name','type','description','note']) {
+    for (const suffix of ['itemSelect','name','type','element','description','note']) {
       const el = $('equip_' + slot.key + '_' + suffix);
       if (el) el.disabled = baseDisabled;
     }
@@ -2118,10 +2131,10 @@ function renderInventory() {
     const title = item.name || '未設定アイテム';
     const description = item.description || '';
     const effectText = item.effect || '';
-    const equipMeta = [item.equipSlot, item.power ? '威力 ' + item.power : '', item.hit ? '命中 ' + item.hit : '', item.defense ? '防御 ' + item.defense : ''].filter(Boolean).join(' / ') || '—';
+    const equipMeta = [item.equipSlot, item.element ? '属性 ' + item.element : '', item.power ? '威力 ' + item.power : '', item.hit ? '命中 ' + item.hit : '', item.defense ? '防御 ' + item.defense : ''].filter(Boolean).join(' / ') || '—';
     const spellMeta = item.kind === '術式' ? [item.category ? '種別：' + item.category : '', item.element ? '属性：' + item.element : '', item.cost ? 'コスト：' + item.cost : '', item.target ? '対象：' + item.target : '', item.power ? 'ダメージ/威力：' + item.power : '', item.checkType ? '判定：' + item.checkType : '', item.role ? '役割：' + item.role : ''].filter(Boolean).join(' / ') : '';
     const recipeMeta = item.kind === 'レシピ' ? [item.recipeResult ? '完成品：' + item.recipeResult : '', item.materials ? '必要素材：' + item.materials : ''].filter(Boolean).join('\n') : '';
-    const itemUseMeta = item.kind === 'アイテム' ? [item.target ? '対象：' + item.target : '', item.power ? '威力：' + item.power : ''].filter(Boolean).join(' / ') : '';
+    const itemUseMeta = item.kind === 'アイテム' ? [item.target ? '対象：' + item.target : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : ''].filter(Boolean).join(' / ') : '';
     const spellSlotMeta = item.spellSlots ? `術式登録枠：${item.spellSlots}` : '';
     const searchText = [title, item.kind, item.category, item.rank, item.price, item.equipSlot, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.spellSlots, item.target, item.element, item.cost, item.power, item.description, item.effect, item.checkType, item.role, item.source, item.tags, item.recipeResult, item.materials].filter(Boolean).join(' ');
     return `
@@ -2910,7 +2923,7 @@ function refreshEquipmentItemSelects() {
     const items = equipmentCandidateRows().filter(row => itemMatchesEquipmentSlot(row, slot));
     const options = ['<option value="">手入力</option>'].concat(items.map(row => {
       const key = inventoryItemKey(row);
-      const label = [row.name, row.kind, row.category].filter(Boolean).join(' / ');
+      const label = [row.name, row.kind, row.category, row.element ? '属性:' + row.element : ''].filter(Boolean).join(' / ');
       return `<option value="${esc(key)}">${esc(label)}</option>`;
     }));
     select.innerHTML = options.join('');
@@ -2936,7 +2949,7 @@ function applyCsItemToEquipmentSlot(slotKey) {
   if ($('equip_' + slotKey + '_name')) $('equip_' + slotKey + '_name').value = row.name || '';
   setTypeSelectValue(slotKey, typeValue);
   if ($('equip_' + slotKey + '_count')) $('equip_' + slotKey + '_count').value = Math.min(Number(row.count) || 1, 99);
-  const map = { power:'power', hit:'hit', defense:'defense', guard:'guard', evade:'evade', offhand:'offhand' };
+  const map = { element:'element', power:'power', hit:'hit', defense:'defense', guard:'guard', evade:'evade', offhand:'offhand' };
   for (const [suffix, field] of Object.entries(map)) {
     const el = $('equip_' + slotKey + '_' + suffix);
     if (el) el.value = row[field] || '';
