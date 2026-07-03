@@ -1582,7 +1582,7 @@ function ownedSpellRowsForInfo(info) {
   }).sort((a,b) => String(a.rank || '').localeCompare(String(b.rank || ''), 'ja') || String(a.name || '').localeCompare(String(b.name || ''), 'ja'));
 }
 function spellOptionLabel(item) {
-  const meta = [item.cost ? 'コスト ' + item.cost : '', item.target ? '対象 ' + item.target : '', item.element ? '属性 ' + item.element : '', item.power ? '威力 ' + item.power : ''].filter(Boolean).join(' / ');
+  const meta = [item.cost ? 'コスト ' + item.cost : '', item.target ? '対象 ' + item.target : '', item.power ? '威力 ' + item.power : ''].filter(Boolean).join(' / ');
   return meta ? `${item.name}（${meta}）` : item.name;
 }
 function syncSpellSetHidden(slotKey) {
@@ -1921,7 +1921,7 @@ function inferEquipSlotForInventory(item={}) {
   return '';
 }
 function emptyInventoryItem() {
-  return { id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), masterId:'', masterSheet:'', masterSync:'', name:'', kind:defaultInventoryKind(), category:'', count:1, location:'所持', rank:'', price:'', equipSlot:'', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', spellSlots:'', target:'', cost:'', element:'', description:'', effect:'', recipeResult:'', materials:'', note:'' };
+  return { id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), masterId:'', masterSheet:'', masterSync:'', name:'', kind:defaultInventoryKind(), category:'', count:1, location:'所持', rank:'', price:'', equipSlot:'', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', spellSlots:'', target:'', element:'', cost:'', description:'', effect:'', recipeResult:'', materials:'', note:'' };
 }
 function normalizeInventoryItem(item={}) {
   const kind = normalizeInventoryKind(item.kind || 'アイテム');
@@ -1948,7 +1948,6 @@ function normalizeInventoryItem(item={}) {
     spellSlots: String(item.spellSlots || item.slotCount || item.registerSlots || item.maxStack || '').trim(),
     target: String(item.target || '').trim(),
     cost: String(item.cost || item.mpCost || '').trim(),
-    element: String(item.element || item.attribute || '').trim(),
     description: mergeTextUnique(item.description, oldDescription),
     effect: String(item.effect || '').trim(),
     recipeResult: String(item.recipeResult || item.resultItem || '').trim(),
@@ -2028,7 +2027,7 @@ function renderInventory() {
     const recipeMeta = item.kind === 'レシピ' ? [item.recipeResult ? '完成品：' + item.recipeResult : '', item.materials ? '必要素材：' + item.materials : ''].filter(Boolean).join('\n') : '';
     const itemUseMeta = item.kind === 'アイテム' ? [item.target ? '対象：' + item.target : '', item.power ? '威力：' + item.power : ''].filter(Boolean).join(' / ') : '';
     const spellSlotMeta = item.spellSlots ? `術式登録枠：${item.spellSlots}` : '';
-    const searchText = [title, item.kind, item.category, item.rank, item.price, item.equipSlot, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.spellSlots, item.target, item.cost, item.element, item.power, item.description, item.effect, item.recipeResult, item.materials].filter(Boolean).join(' ');
+    const searchText = [title, item.kind, item.category, item.rank, item.price, item.equipSlot, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.spellSlots, item.target, item.element, item.cost, item.power, item.description, item.effect, item.recipeResult, item.materials].filter(Boolean).join(' ');
     return `
     <details class="inventory-card" open data-inventory-row="${index}" data-inventory-id="${esc(item.id || '')}" data-inventory-location="所持" data-inventory-kind="${esc(item.kind || 'アイテム')}" data-inventory-search="${esc(searchText)}">
       <summary class="inventory-card-head">
@@ -2311,7 +2310,7 @@ function mergeMasterPresetIntoInventoryItem(existing={}, preset={}) {
 function isSameInventoryCore(a={}, b={}) {
   const aa = normalizeInventoryItem(a);
   const bb = normalizeInventoryItem(b);
-  const keys = ['masterId','masterSheet','masterSync','name','kind','category','rank','price','equipSlot','power','hit','defense','guard','evade','offhand','spellSlots','target','cost','description','effect','recipeResult','materials'];
+  const keys = ['masterId','masterSheet','masterSync','name','kind','category','rank','price','equipSlot','power','hit','defense','guard','evade','offhand','spellSlots','target','element','cost','description','effect','recipeResult','materials'];
   return keys.every(k => String(aa[k] ?? '') === String(bb[k] ?? '')) && Number(aa.count || 0) === Number(bb.count || 0);
 }
 async function syncInitialInventoryFromDb(options={}) {
