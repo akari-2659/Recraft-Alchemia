@@ -1384,7 +1384,7 @@ function makeSummary() {
   lines.push('■ HP・MP');
   lines.push(`HP:${res.currentHp}/${res.maxHp} / MP:${res.currentMp}/${res.maxMp}`);
   const combat = computeCombatStats(abilities, data.skills || defaultSkillAlloc(), data.equipment || {});
-  lines.push(`常時防御値:${combat.defenseTotal} / 回避値:${combat.evasionTotal}`);
+  lines.push(`防御:${combat.defenseTotal} / 回避:${combat.evasionTotal}`);
   if (combat.dualWield?.available) lines.push(`二刀攻撃:${combat.dualWield.rightMain} / ${combat.dualWield.leftMain}`);
   lines.push('');
   lines.push('■ 装備');
@@ -1828,6 +1828,10 @@ function getEquipmentState() {
     base.description = $('equip_' + slot.key + '_description')?.value || '';
     base.note = $('equip_' + slot.key + '_note')?.value || '';
     if (slot.kind === 'carry') {
+      if (carryEquipmentLooksLikeSpell(base)) {
+        resetCarryEquipmentItem(base);
+        continue;
+      }
       base.count = clampInt($('equip_' + slot.key + '_count')?.value || 1, 0, 99);
     } else {
       const isBook = isSpellBookType(base.type);
@@ -1853,9 +1857,14 @@ function setEquipmentState(equipment={}) {
   const defaults = defaultEquipment();
   const eq = { ...defaults, ...(equipment || {}) };
   for (const slot of EQUIPMENT_SLOTS) {
-    const item = { ...defaults[slot.key], ...(eq[slot.key] || {}) };
+    let item = { ...defaults[slot.key], ...(eq[slot.key] || {}) };
+    if (slot.kind === 'carry' && carryEquipmentLooksLikeSpell(item)) {
+      item = { ...defaults[slot.key] };
+    }
     if ($('equip_' + slot.key + '_itemSelect')) {
-      const selectedId = item.itemId || findCsItemIdByName(item.name || '');
+      let selectedId = item.itemId || findCsItemIdByName(item.name || '');
+      const selectedRow = selectedId ? findCsItemById(selectedId) : null;
+      if (slot.kind === 'carry' && selectedRow && isSpellInventoryItem(selectedRow)) selectedId = '';
       $('equip_' + slot.key + '_itemSelect').value = selectedId && Array.from($('equip_' + slot.key + '_itemSelect').options).some(o=>o.value===selectedId) ? selectedId : '';
     }
     if ($('equip_' + slot.key + '_name')) $('equip_' + slot.key + '_name').value = item.name || '';
@@ -2001,8 +2010,10 @@ function defaultInventoryKind() {
 }
 function normalizeInventoryLocation(location) { return '所持'; }
 function normalizeInventoryKind(kind) {
-  if (kind === '武器/防具') return '武器';
-  return INVENTORY_KIND_OPTIONS.includes(kind) ? kind : 'アイテム';
+  const raw = String(kind || '').trim();
+  if (raw === '武器/防具') return '武器';
+  if (raw.includes('術式') || ['魔法','祈祷','魔術','聖術'].includes(raw)) return '術式';
+  return INVENTORY_KIND_OPTIONS.includes(raw) ? raw : 'アイテム';
 }
 function mergeTextUnique(...values) {
   const seen = new Set();
@@ -2064,6 +2075,43 @@ function normalizeInventoryItem(item={}) {
     note: String(item.note || item.notes || '').trim()
   };
 }
+
+function isSpellInventoryItem(row={}) {
+  const kind = normalizeInventoryKind(row.kind || '');
+  const rawKind = String(row.kind || '').trim();
+  const masterSheet = String(row.masterSheet || row.sourceSheet || '').trim().toLowerCase();
+  const category = String(row.category || row.type || '').trim();
+  if (kind === '術式') return true;
+  if (masterSheet === 'spells' || masterSheet === 'spell') return true;
+  if (rawKind.includes('術式')) return true;
+  if (category.includes('術式') && !['武器','防具','装飾品'].includes(kind)) return true;
+  return false;
+}
+function findSpellInventoryItemByIdOrName(item={}) {
+  const id = String(item.itemId || item.id || item.masterId || '').trim();
+  const name = String(item.name || '').trim();
+  if (!id && !name) return null;
+  return (inventoryItemsState || [])
+    .map(row => normalizeInventoryItem(row))
+    .find(row => isSpellInventoryItem(row) && (
+      (id && (inventoryItemKey(row) === id || String(row.id || '').trim() === id || String(row.masterId || '').trim() === id)) ||
+      (name && String(row.name || '').trim() === name)
+    )) || null;
+}
+function carryEquipmentLooksLikeSpell(item={}) {
+  const type = String(item.type || item.category || '').trim();
+  const kind = String(item.kind || '').trim();
+  if (kind.includes('術式') || type.includes('術式')) return true;
+  return !!findSpellInventoryItemByIdOrName(item);
+}
+function resetCarryEquipmentItem(base) {
+  Object.assign(base, { itemId:'', name:'', type:'なし', count:1, element:'', description:'', note:'' });
+}
+
+function isCarrySlotKey(slotKey) {
+  const slot = EQUIPMENT_SLOTS.find(s => s.key === slotKey);
+  return !!slot && slot.kind === 'carry';
+}
 function getInventoryState() {
   const items = inventoryItemsState.map(item => normalizeInventoryItem(item)).filter(item => item.name || item.category || item.power || item.description || item.effect || item.count > 0);
   return { items };
@@ -2086,7 +2134,7 @@ function renderInventoryTabs() {
 function itemMatchesInventoryKindFilter(kind, filter) {
   if (!filter || filter === '全て') return true;
   if (filter === '武器/防具/装飾品') return kind === '武器' || kind === '防具' || kind === '装飾品';
-  if (filter === '携行品') return ['アイテム','素材','術式','重要品','その他'].includes(kind);
+  if (filter === '携行品') return ['アイテム','素材','重要品','その他'].includes(kind);
   return kind === filter;
 }
 function applyInventoryFilters() {
@@ -2876,7 +2924,9 @@ function csItemKey(row) {
 }
 function inventoryItemKey(row) { return csItemKey(row); }
 function equipmentCandidateRows() {
-  return (inventoryItemsState || []).map(item => normalizeInventoryItem(item)).filter(item => item.name && item.kind !== 'レシピ');
+  return (inventoryItemsState || [])
+    .map(item => normalizeInventoryItem(item))
+    .filter(item => item.name && item.kind !== 'レシピ' && !isSpellInventoryItem(item));
 }
 function findCsItemById(id) {
   const key = String(id || '').trim();
@@ -2892,7 +2942,7 @@ function findCsItemIdByName(name) {
 function slotKindForCsItem(row) {
   const kind = normalizeInventoryKind(row && row.kind || 'アイテム');
   const slot = String(row && row.equipSlot || '').trim();
-  if (kind === '術式') return 'none';
+  if (isSpellInventoryItem(row) || kind === '術式') return 'none';
   if (kind === '防具' && slot.includes('鎧')) return 'armor';
   if (kind === '装飾品' || slot.includes('装飾')) return 'accessory';
   if (slot.includes('携行') || ['アイテム','素材','重要品','その他'].includes(kind)) return 'carry';
@@ -2946,6 +2996,13 @@ function applyCsItemToEquipmentSlot(slotKey) {
   const select = $('equip_' + slotKey + '_itemSelect');
   const row = findCsItemById(select?.value || '');
   if (!row) return;
+  if (isCarrySlotKey(slotKey) && isSpellInventoryItem(row)) {
+    if (select) select.value = '';
+    showToast('携行品には術式を直接選択できません。魔導書/祈祷書などの術式枠から選択してください。', 'warn');
+    updateEquipmentSummaries();
+    updateSummary();
+    return;
+  }
   const typeValue = row.category || row.kind || 'なし';
   if ($('equip_' + slotKey + '_name')) $('equip_' + slotKey + '_name').value = row.name || '';
   setTypeSelectValue(slotKey, typeValue);
@@ -3345,8 +3402,8 @@ function generateTokenExport(data=collectData(false)) {
       status: [
         { label:'HP', value:res.currentHp, max:res.maxHp },
         { label:'MP', value:res.currentMp, max:res.maxMp },
-        { label:'常時防御値', value:combat.defenseTotal, max:combat.defenseTotal },
-        { label:'回避値', value:combat.evasionTotal, max:combat.evasionTotal },
+        { label:'防御', value:combat.defenseTotal, max:combat.defenseTotal },
+        { label:'回避', value:combat.evasionTotal, max:combat.evasionTotal },
       ],
       params,
       commands: generatePaletteExport(data),
@@ -3369,7 +3426,7 @@ function makeSummaryFromData(data) {
   lines.push('■ HP・MP');
   lines.push(`HP:${res.currentHp}/${res.maxHp} / MP:${res.currentMp}/${res.maxMp}`);
   const combat = computeCombatStats(abilities, data.skills || defaultSkillAlloc(), data.equipment || {});
-  lines.push(`常時防御値:${combat.defenseTotal} / 回避値:${combat.evasionTotal}`);
+  lines.push(`防御:${combat.defenseTotal} / 回避:${combat.evasionTotal}`);
   if (combat.dualWield?.available) lines.push(`二刀攻撃:${combat.dualWield.rightMain} / ${combat.dualWield.leftMain}`);
   lines.push('');
   lines.push('■ 装備');
@@ -3437,7 +3494,11 @@ function collectWeaponDamagePaletteLines(data={}) {
 function findPaletteSpellByName(items=[], name='') {
   const target = String(name || '').trim();
   if (!target) return null;
-  return items.find(row => row.kind === '術式' && String(row.name || '').trim() === target) || null;
+  const normalizedItems = (items || []).map(row => normalizeInventoryItem(row));
+  const owned = normalizedItems.find(row => isSpellInventoryItem(row) && String(row.name || '').trim() === target);
+  if (owned) return owned;
+  const dbSpell = (DB_INITIAL_SPELL_MASTER || []).map(row => dbSpellToInventoryItem(row)).find(row => String(row.name || '').trim() === target);
+  return dbSpell || null;
 }
 function collectSetSpellDamagePaletteLines(data={}) {
   const equipment = data.equipment || {};
