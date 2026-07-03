@@ -1938,7 +1938,7 @@ function normalizeInventoryItem(item={}) {
     rank: String(item.rank || '').trim(),
     price: String(item.price || '').trim(),
     equipSlot: inferEquipSlotForInventory({ ...item, kind }),
-    power: String(item.power || item.damage || item['威力'] || item['ダメージ'] || '').trim(),
+    power: String(item.power || '').trim(),
     hit: String(item.hit || item.hitMod || '').trim(),
     defense: String(item.defense || item.alwaysDefense || '').trim(),
     guard: String(item.guard || item.guardValue || '').trim(),
@@ -2193,7 +2193,7 @@ function dbItemToInventoryItem(row) {
     rank: row.rank || '',
     price: row.price || '',
     equipSlot: row.equipSlot || '',
-    power: row.power || row.damage || row['威力'] || row['ダメージ'] || '',
+    power: row.power || '',
     hit: row.hitMod || '',
     defense: row.alwaysDefense || '',
     guard: row.guardValue || '',
@@ -2222,7 +2222,7 @@ function dbSpellToInventoryItem(row) {
     price: row.scrollPrice || '',
     target: row.target || '',
     cost: formatMpCost(row.mpCost || ''),
-    power: row.power || row.damage || row['威力'] || row['ダメージ'] || '',
+    power: row.power || '',
     
     description: mergeTextUnique(row.description, row['fla' + 'vor' + 'Text']),
     effect: String(row.effect || '').trim(),
@@ -2330,9 +2330,6 @@ async function syncInitialInventoryFromDb(options={}) {
     return { added:0, updated:0, replaced:0, synced:0 };
   }
   const oldPlaceholderNames = new Set(['短剣','片手剣','片手斧','片手槌','片手槍','杖','弓','弩','両手剣','大槌','長槍']);
-  const removedInitialWeaponIds = new Set(['wpn_magical_tool','wpn_large_magical_tool']);
-  const removedInitialWeaponNames = new Set(['マジックワンド','ヘヴィマジックロッド']);
-  const removedInitialCategories = new Set(['魔導具','大型魔導具']);
   const beforeCleanup = inventoryItemsState.length;
   inventoryItemsState = inventoryItemsState.filter(item => {
     const normalized = normalizeInventoryItem(item);
@@ -2340,8 +2337,7 @@ async function syncInitialInventoryFromDb(options={}) {
     const category = String(normalized.category || '').trim();
     const id = String(normalized.id || '').trim();
     const isOldPlaceholder = oldPlaceholderNames.has(name) && (!category || category === name || ['片手武器','射撃武器','両手武器'].includes(category));
-    const isRemovedWeapon = removedInitialWeaponIds.has(id) || removedInitialWeaponNames.has(name) || removedInitialCategories.has(category);
-    return !isOldPlaceholder && !isRemovedWeapon;
+    return !isOldPlaceholder;
   });
   const replaced = beforeCleanup - inventoryItemsState.length;
   let added = 0;
@@ -2874,7 +2870,7 @@ function applyEquipmentCategoryMaster(rows, {save=false, silent=false, meta=null
     const name = String(row.name || '').trim();
     if (!name || name === 'なし') continue;
     EQUIPMENT_PRESETS[name] = {
-      power: row.power || row.damage || row['威力'] || row['ダメージ'] || '',
+      power: row.power || '',
       hit: row.hitMod || '',
       defense: row.alwaysDefense || '',
       guard: row.guardValue || '',
@@ -2914,7 +2910,7 @@ function refreshEquipmentTypeSelects() {
 function buildEquipmentCategoryLocalMeta(rows) {
   const compact = (rows || []).map(row => ({
     id: row.id || '', name: row.name || '', itemCategory: row.itemCategory || '', equipSlot: row.equipSlot || '',
-    skill: row.skill || '', power: row.power || row.damage || row['威力'] || row['ダメージ'] || '', hitMod: row.hitMod || '',
+    skill: row.skill || '', power: row.power || '', hitMod: row.hitMod || '',
     alwaysDefense: row.alwaysDefense || '', guardValue: row.guardValue || '', evasionMod: row.evasionMod || '', offhandBonus: row.offhandBonus || '',
     description: row.description || row['fla' + 'vor' + 'Text'] || '', effect: row.effect || '', sortOrder: row.sortOrder || '', enabled: row.enabled || ''
   }));
