@@ -2892,9 +2892,10 @@ function findCsItemIdByName(name) {
 function slotKindForCsItem(row) {
   const kind = normalizeInventoryKind(row && row.kind || 'アイテム');
   const slot = String(row && row.equipSlot || '').trim();
+  if (kind === '術式') return 'none';
   if (kind === '防具' && slot.includes('鎧')) return 'armor';
   if (kind === '装飾品' || slot.includes('装飾')) return 'accessory';
-  if (slot.includes('携行') || ['アイテム','素材','重要品','その他','術式'].includes(kind)) return 'carry';
+  if (slot.includes('携行') || ['アイテム','素材','重要品','その他'].includes(kind)) return 'carry';
   if (kind === '武器' || kind === '防具') return 'hand';
   return 'none';
 }
@@ -3386,6 +3387,82 @@ function makeSummaryFromData(data) {
   if (data.memo) { lines.push(''); lines.push('■ メモ'); lines.push(data.memo); }
   return lines.join('\n');
 }
+function normalizePaletteFormula(value) {
+  return String(value || '').trim().replace(/[ｄＤ]/g, 'D').replace(/d/g, 'D');
+}
+function paletteInventoryItems(data={}) {
+  return normalizeInventoryState(data.inventory || {}).items || [];
+}
+function paletteItemKey(item={}) {
+  return String(item.id || item.masterId || item.name || '').trim();
+}
+function findPaletteInventoryItem(items=[], item={}) {
+  const id = String(item.itemId || '').trim();
+  const name = String(item.name || '').trim();
+  if (id) {
+    const byId = items.find(row => paletteItemKey(row) === id || String(row.id || '').trim() === id || String(row.masterId || '').trim() === id);
+    if (byId) return byId;
+  }
+  if (name) return items.find(row => String(row.name || '').trim() === name) || null;
+  return null;
+}
+function isPaletteTwoHandEquipment(item={}, source=null) {
+  const type = normalizeEquipmentType(item.type || source?.category || 'なし');
+  const slotText = String(source?.equipSlot || item.equipSlot || '').trim();
+  return slotText === '両手' || slotText.includes('両手') || TWO_HAND_TYPES.has(type);
+}
+function collectWeaponDamagePaletteLines(data={}) {
+  const equipment = data.equipment || {};
+  const items = paletteInventoryItems(data);
+  const result = [];
+  const used = new Set();
+  for (const spec of [{ key:'rightHand', label:'右手' }, { key:'leftHand', label:'左手' }]) {
+    const item = equipment[spec.key] || {};
+    const source = findPaletteInventoryItem(items, item);
+    const type = normalizeEquipmentType(item.type || source?.category || source?.kind || 'なし');
+    if (!item.name && (!type || type === 'なし')) continue;
+    if (spellContainerKind(type)) continue;
+    const formula = normalizePaletteFormula(item.power || source?.power || '');
+    if (!formula) continue;
+    const twoHand = isPaletteTwoHandEquipment(item, source);
+    const label = twoHand ? '両手武器ダメージ' : `${spec.label}武器ダメージ`;
+    const key = label + '::' + formula;
+    if (used.has(key)) continue;
+    used.add(key);
+    result.push(`${formula} 【${label}】`);
+    if (twoHand) break;
+  }
+  return result;
+}
+function findPaletteSpellByName(items=[], name='') {
+  const target = String(name || '').trim();
+  if (!target) return null;
+  return items.find(row => row.kind === '術式' && String(row.name || '').trim() === target) || null;
+}
+function collectSetSpellDamagePaletteLines(data={}) {
+  const equipment = data.equipment || {};
+  const items = paletteInventoryItems(data);
+  const result = [];
+  const used = new Set();
+  for (const slot of EQUIPMENT_SLOTS) {
+    if (slot.kind === 'carry') continue;
+    const item = equipment[slot.key] || {};
+    const type = normalizeEquipmentType(item.type || 'なし');
+    if (!spellContainerKind(type)) continue;
+    const names = splitFormulaList(item.setSpells || item.knownSpells || '');
+    for (const name of names) {
+      const spell = findPaletteSpellByName(items, name) || normalizeInventoryItem({ name, kind:'術式' });
+      const formula = normalizePaletteFormula(spell.power || spell.damage || '');
+      if (!formula) continue;
+      const label = String(spell.name || name).trim();
+      const key = label + '::' + formula;
+      if (used.has(key)) continue;
+      used.add(key);
+      result.push(`${formula} 【${label}】`);
+    }
+  }
+  return result;
+}
 function generatePaletteExport(data=collectData(false)) {
   const abilities = resolveAbilities(data);
   const totals = skillTotals(abilities, data.skills || defaultSkillAlloc());
@@ -3395,6 +3472,11 @@ function generatePaletteExport(data=collectData(false)) {
       const v = totals[sk.key]?.total || 0;
       lines.push(`2D6+${v}>= 【${sk.name}】`);
     }
+  }
+  const damageLines = collectWeaponDamagePaletteLines(data).concat(collectSetSpellDamagePaletteLines(data));
+  if (damageLines.length) {
+    lines.push('');
+    lines.push(...damageLines);
   }
   return lines.join('\n');
 }
