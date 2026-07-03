@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v58</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v59</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -204,6 +204,16 @@
 
   .formula-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
   @media (min-width: 760px) { .formula-grid { grid-template-columns: 1fr 1fr; } }
+  .spell-detail { border: 1px solid rgba(221, 203, 176, .82); background: rgba(255, 253, 248, .7); border-radius: 12px; padding: 0; margin-top: 6px; overflow: hidden; }
+  .spell-detail > summary { list-style: none; cursor: pointer; padding: 8px 10px; font-weight: 900; color: var(--accent2); background: rgba(184,119,56,.07); }
+  .spell-detail > summary::-webkit-details-marker { display: none; }
+  .spell-detail > summary::before { content: "▶"; display: inline-block; margin-right: 6px; transition: transform .12s ease; }
+  .spell-detail[open] > summary::before { transform: rotate(90deg); }
+  .spell-detail-body { padding: 9px 10px 10px; }
+  .spell-detail-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .spell-detail-pill { display: inline-flex; border: 1px solid rgba(184,119,56,.22); background: rgba(184,119,56,.06); border-radius: 999px; padding: 3px 8px; font-size: .78rem; font-weight: 800; color: var(--accent2); }
+  .spell-detail-text { white-space: pre-wrap; margin-top: 6px; font-size: .86rem; }
+  .spell-detail-empty { color: var(--muted); font-size: .82rem; }
   .spellbook-fields { display: none; border-top: 1px dashed rgba(221, 203, 176, .85); margin-top: 8px; padding-top: 10px; }
   .spellbook-fields.active { display: block; }
   .spell-slot-list { display: grid; gap: 8px; }
@@ -424,7 +434,7 @@
     grid-template-columns: 1fr;
     gap: 12px;
   }
-  @media (min-width: 780px) { .equipment-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 780px) { .equipment-grid { grid-template-columns: 1fr; } }
   .equipment-card {
     border: 1px solid rgba(221, 203, 176, .9);
     border-radius: 14px;
@@ -442,6 +452,13 @@
     font-size: .78rem;
     color: var(--muted);
   }
+  .equipment-card > summary { list-style: none; cursor: pointer; margin: -12px -12px 12px; padding: 12px; border-radius: 14px 14px 0 0; background: rgba(184,119,56,.07); border-bottom: 1px solid rgba(221,203,176,.72); }
+  .equipment-card > summary::-webkit-details-marker { display: none; }
+  .equipment-card-head { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+  .equipment-card-head::before { content: "▼"; color: var(--accent2); font-weight: 900; margin-top: 2px; transition: transform .16s ease; }
+  .equipment-card:not([open]) .equipment-card-head::before { transform: rotate(-90deg); }
+  .equipment-card-title { color: var(--accent2); font-weight: 900; font-size: 1.03rem; }
+  .equipment-summary { color: var(--muted); font-size: .82rem; text-align: right; line-height: 1.4; }
   .equipment-card h3 { color: var(--accent2); }
   .equipment-fields {
     display: grid;
@@ -1202,8 +1219,8 @@ function renderStatic() {
     const options = slot.typeOptions.map(op => `<option value="${op}">${op}</option>`).join('');
     if (slot.kind === 'carry') {
       return `
-        <div class="equipment-card" data-equipment-card="${slot.key}">
-          <h3>${slot.name}</h3>
+        <details class="equipment-card" data-equipment-card="${slot.key}" open>
+          <summary><div class="equipment-card-head"><div class="equipment-card-title">${slot.name}</div><div class="equipment-summary" id="equip_${slot.key}_summary">未設定</div></div></summary>
           <div class="equipment-fields three">
             <div class="field equipment-wide">
               <label for="equip_${slot.key}_itemSelect">所持品から選択</label>
@@ -1230,11 +1247,11 @@ function renderStatic() {
               <textarea id="equip_${slot.key}_note" data-equipment-input="1" placeholder="数値・ルール処理など"></textarea>
             </div>
           </div>
-        </div>`;
+        </details>`;
     }
     return `
-      <div class="equipment-card" data-equipment-card="${slot.key}">
-        <h3>${slot.name}</h3>
+      <details class="equipment-card" data-equipment-card="${slot.key}" open>
+        <summary><div class="equipment-card-head"><div class="equipment-card-title">${slot.name}</div><div class="equipment-summary" id="equip_${slot.key}_summary">未設定</div></div></summary>
         <div class="equipment-fields compact">
           <div class="field equipment-wide">
             <label for="equip_${slot.key}_itemSelect">所持品から選択</label>
@@ -1294,15 +1311,15 @@ function renderStatic() {
             </div>
           </div>
         </div>
-      </div>`;
+      </details>`;
   }).join('') + `
-    <div class="equipment-card equipment-wide">
-      <h3>装備メモ</h3>
+    <details class="equipment-card equipment-wide" open>
+      <summary><div class="equipment-card-head"><div class="equipment-card-title">装備メモ</div><div class="equipment-summary">補足</div></div></summary>
       <div class="field">
         <label for="equipmentMemo">メモ</label>
         <textarea id="equipmentMemo" data-equipment-input="1" placeholder="装備セット、魔導書/祈祷書のセット枠、携行品補足など"></textarea>
       </div>
-    </div>`;
+    </details>`;
 }
 function updateAbilities() {
   return computeAbilities();
@@ -1526,7 +1543,7 @@ function updateResources() {
 }
 
 function updateSummary() { /* 出力欄はボタンから開くため常時表示しない */ }
-function updateAll() { updateAbilities(); updateCategoryBonuses(); updateResources(); updateSkills(); updateCombatStats(); updateSpellSlotHints(); updateSummary(); }
+function updateAll() { updateAbilities(); updateCategoryBonuses(); updateResources(); updateSkills(); updateCombatStats(); updateSpellSlotHints(); updateEquipmentSummaries(); updateSummary(); }
 
 function spellContainerKind(type) {
   const t = normalizeEquipmentType(type || 'なし');
@@ -1572,6 +1589,51 @@ function spellTypeAliases(label) {
   if (label === '祈祷') return ['祈祷'];
   return [label];
 }
+function spellDisplayMeta(item={}) {
+  const row = normalizeInventoryItem(item || {});
+  return [
+    row.category ? '種別 ' + row.category : '',
+    row.element ? '属性 ' + row.element : '',
+    row.cost ? 'コスト ' + row.cost : '',
+    row.power ? 'ダメージ/威力 ' + row.power : '',
+    row.target ? '対象 ' + row.target : '',
+    row.checkType ? '判定 ' + row.checkType : '',
+    row.rank ? 'ランク ' + row.rank : ''
+  ].filter(Boolean);
+}
+function spellDetailHtml(item, {open=false}={}) {
+  const row = normalizeInventoryItem(item || {});
+  if (!row.name) return '<div class="spell-detail-empty">術式を選択すると、ここに詳細を表示します。</div>';
+  const meta = spellDisplayMeta(row);
+  const description = row.description || '';
+  const effect = row.effect || '';
+  const role = row.role || '';
+  const body = [
+    meta.length ? `<div class="spell-detail-meta">${meta.map(v => `<span class="spell-detail-pill">${esc(v)}</span>`).join('')}</div>` : '',
+    description ? `<div class="spell-detail-text"><strong>説明：</strong>${esc(description)}</div>` : '',
+    effect ? `<div class="spell-detail-text"><strong>効果：</strong>${esc(effect)}</div>` : '',
+    role ? `<div class="spell-detail-text"><strong>役割：</strong>${esc(role)}</div>` : ''
+  ].filter(Boolean).join('') || '<div class="spell-detail-empty">この術式には詳細が登録されていません。</div>';
+  return `<details class="spell-detail" ${open ? 'open' : ''}><summary>${esc(row.name)} の詳細</summary><div class="spell-detail-body">${body}</div></details>`;
+}
+function findOwnedSpellByName(name, info=null) {
+  const target = String(name || '').trim();
+  if (!target) return null;
+  const rows = info ? ownedSpellRowsForInfo(info) : (inventoryItemsState || []).map(item => normalizeInventoryItem(item)).filter(item => item.kind === '術式');
+  return rows.find(row => String(row.name || '').trim() === target) || null;
+}
+function updateSpellSlotDetails(slotKey) {
+  const type = $('equip_' + slotKey + '_type')?.value || 'なし';
+  const info = spellContainerKind(type);
+  const list = $('equip_' + slotKey + '_spellSlotList');
+  if (!list) return;
+  for (const sel of Array.from(list.querySelectorAll('select.spell-slot-select'))) {
+    const detail = sel.closest('.spell-slot-row')?.querySelector('.spell-slot-detail-box');
+    if (!detail) continue;
+    const row = findOwnedSpellByName(sel.value, info);
+    detail.innerHTML = row ? spellDetailHtml(row) : '<div class="spell-detail-empty">術式を選択すると、ここに説明・効果を表示します。</div>';
+  }
+}
 function ownedSpellRowsForInfo(info) {
   if (!info) return [];
   const aliases = spellTypeAliases(info.label);
@@ -1582,8 +1644,9 @@ function ownedSpellRowsForInfo(info) {
   }).sort((a,b) => String(a.rank || '').localeCompare(String(b.rank || ''), 'ja') || String(a.name || '').localeCompare(String(b.name || ''), 'ja'));
 }
 function spellOptionLabel(item) {
-  const meta = [item.cost ? 'コスト ' + item.cost : '', item.target ? '対象 ' + item.target : '', item.power ? '威力 ' + item.power : ''].filter(Boolean).join(' / ');
-  return meta ? `${item.name}（${meta}）` : item.name;
+  const row = normalizeInventoryItem(item || {});
+  const meta = [row.element ? '属性 ' + row.element : '', row.cost ? 'コスト ' + row.cost : '', row.target ? '対象 ' + row.target : '', row.power ? 'ダメージ/威力 ' + row.power : ''].filter(Boolean).join(' / ');
+  return meta ? `${row.name}（${meta}）` : row.name;
 }
 function syncSpellSetHidden(slotKey) {
   const hidden = $('equip_' + slotKey + '_setSpells');
@@ -1646,11 +1709,13 @@ function refreshSpellSetSelect(slotKey, info=null) {
       const options = ['<option value="">術式を選択してください</option>'].concat(rowOptions.map(opt =>
         `<option value="${esc(opt.value)}" ${opt.value === selectedValue ? 'selected' : ''}>${esc(opt.label)}</option>`
       ));
-      return `<div class="spell-slot-row"><label>${i + 1}枠目</label><select class="spell-slot-select" data-slot-key="${esc(slotKey)}" data-slot-index="${i}" data-equipment-input="1">${options.join('')}</select></div>`;
+      const detailRow = findOwnedSpellByName(selectedValue, spellInfo);
+      return `<div class="spell-slot-row"><label>${i + 1}枠目</label><select class="spell-slot-select" data-slot-key="${esc(slotKey)}" data-slot-index="${i}" data-equipment-input="1">${options.join('')}</select><div class="spell-slot-detail-box">${detailRow ? spellDetailHtml(detailRow) : '<div class="spell-detail-empty">術式を選択すると、ここに説明・効果を表示します。</div>'}</div></div>`;
     }).join('');
     if (!rows.length) list.insertAdjacentHTML('beforeend', '<div class="small">所持品に対応する術式がありません。</div>');
     list.dataset.pendingSpells = selectedBySlot.join('\n');
     syncSpellSetHidden(slotKey);
+    updateSpellSlotDetails(slotKey);
     updateEquipmentFieldAvailability();
     return;
   }
@@ -1705,14 +1770,33 @@ function updateSpellSlotHints() {
       if (help) help.textContent = ownedSpellRowsForInfo(info).length ? `${info.label}の所持術式から選択してください。` : `所持品に${info.label}術式がありません。所持品タブで術式を登録してください。`;
     }
   }
+  for (const slot of EQUIPMENT_SLOTS) {
+    if (slot.kind !== 'carry') updateSpellSlotDetails(slot.key);
+  }
   updateEquipmentFieldAvailability();
+}
+function updateEquipmentSummaries() {
+  for (const slot of EQUIPMENT_SLOTS) {
+    const el = $('equip_' + slot.key + '_summary');
+    if (!el) continue;
+    const name = $('equip_' + slot.key + '_name')?.value?.trim() || '';
+    const type = $('equip_' + slot.key + '_type')?.value || 'なし';
+    const count = $('equip_' + slot.key + '_count')?.value || '';
+    const spellCount = selectedSpellNames(slot.key).length;
+    const parts = [];
+    if (name) parts.push(name);
+    if (type && type !== 'なし') parts.push(type);
+    if (slot.kind === 'carry' && count) parts.push('×' + count);
+    if (spellCount) parts.push('術式' + spellCount + '件');
+    el.textContent = parts.length ? parts.join(' / ') : '未設定';
+  }
 }
 function defaultEquipment() {
   const equipment = {};
   for (const slot of EQUIPMENT_SLOTS) {
     equipment[slot.key] = slot.kind === 'carry'
       ? { itemId:'', name:'', type:'なし', count:1, description:'', note:'' }
-      : { itemId:'', name:'', type:'なし', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', knownSpells:'', setSpells:'', description:'', note:'' };
+      : { itemId:'', name:'', type:'なし', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', knownSpells:'', setSpells:'', description:'', checkType:'', role:'', source:'', tags:'', setItem:'', note:'' };
   }
   equipment.memo = '';
   return equipment;
@@ -1779,6 +1863,7 @@ function setEquipmentState(equipment={}) {
   if ($('equipmentMemo')) $('equipmentMemo').value = eq.memo || '';
   updateEquipmentHandLocks(false);
   updateSpellSlotHints();
+  updateEquipmentSummaries();
 }
 function normalizeEquipmentType(type) {
   return type === '槍' ? '片手槍' : (type || 'なし');
@@ -1921,7 +2006,7 @@ function inferEquipSlotForInventory(item={}) {
   return '';
 }
 function emptyInventoryItem() {
-  return { id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), masterId:'', masterSheet:'', masterSync:'', name:'', kind:defaultInventoryKind(), category:'', count:1, location:'所持', rank:'', price:'', equipSlot:'', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', spellSlots:'', target:'', element:'', cost:'', description:'', effect:'', recipeResult:'', materials:'', note:'' };
+  return { id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), masterId:'', masterSheet:'', masterSync:'', name:'', kind:defaultInventoryKind(), category:'', count:1, location:'所持', rank:'', price:'', equipSlot:'', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', spellSlots:'', target:'', element:'', cost:'', checkType:'', role:'', source:'', tags:'', setItem:'', description:'', effect:'', recipeResult:'', materials:'', note:'' };
 }
 function normalizeInventoryItem(item={}) {
   const kind = normalizeInventoryKind(item.kind || 'アイテム');
@@ -1947,12 +2032,18 @@ function normalizeInventoryItem(item={}) {
     offhand: String(item.offhand || item.offhandBonus || '').trim(),
     spellSlots: String(item.spellSlots || item.slotCount || item.registerSlots || item.maxStack || '').trim(),
     target: String(item.target || '').trim(),
+    element: String(item.element || item.attribute || '').trim(),
     cost: String(item.cost || item.mpCost || '').trim(),
+    checkType: String(item.checkType || '').trim(),
+    role: String(item.role || '').trim(),
+    source: String(item.source || '').trim(),
+    tags: String(item.tags || '').trim(),
+    setItem: String(item.setItem || '').trim(),
     description: mergeTextUnique(item.description, oldDescription),
     effect: String(item.effect || '').trim(),
     recipeResult: String(item.recipeResult || item.resultItem || '').trim(),
     materials: String(item.materials || item.requiredMaterials || '').trim(),
-    note: ''
+    note: String(item.note || item.notes || '').trim()
   };
 }
 function getInventoryState() {
@@ -2023,11 +2114,11 @@ function renderInventory() {
     const description = item.description || '';
     const effectText = item.effect || '';
     const equipMeta = [item.equipSlot, item.power ? '威力 ' + item.power : '', item.hit ? '命中 ' + item.hit : '', item.defense ? '防御 ' + item.defense : ''].filter(Boolean).join(' / ') || '—';
-    const spellMeta = item.kind === '術式' ? [item.cost ? 'コスト：' + item.cost : '', item.target ? '対象：' + item.target : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : ''].filter(Boolean).join(' / ') : '';
+    const spellMeta = item.kind === '術式' ? [item.category ? '種別：' + item.category : '', item.element ? '属性：' + item.element : '', item.cost ? 'コスト：' + item.cost : '', item.target ? '対象：' + item.target : '', item.power ? 'ダメージ/威力：' + item.power : '', item.checkType ? '判定：' + item.checkType : '', item.role ? '役割：' + item.role : ''].filter(Boolean).join(' / ') : '';
     const recipeMeta = item.kind === 'レシピ' ? [item.recipeResult ? '完成品：' + item.recipeResult : '', item.materials ? '必要素材：' + item.materials : ''].filter(Boolean).join('\n') : '';
     const itemUseMeta = item.kind === 'アイテム' ? [item.target ? '対象：' + item.target : '', item.power ? '威力：' + item.power : ''].filter(Boolean).join(' / ') : '';
     const spellSlotMeta = item.spellSlots ? `術式登録枠：${item.spellSlots}` : '';
-    const searchText = [title, item.kind, item.category, item.rank, item.price, item.equipSlot, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.spellSlots, item.target, item.element, item.cost, item.power, item.description, item.effect, item.recipeResult, item.materials].filter(Boolean).join(' ');
+    const searchText = [title, item.kind, item.category, item.rank, item.price, item.equipSlot, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.spellSlots, item.target, item.element, item.cost, item.power, item.description, item.effect, item.checkType, item.role, item.source, item.tags, item.recipeResult, item.materials].filter(Boolean).join(' ');
     return `
     <details class="inventory-card" open data-inventory-row="${index}" data-inventory-id="${esc(item.id || '')}" data-inventory-location="所持" data-inventory-kind="${esc(item.kind || 'アイテム')}" data-inventory-search="${esc(searchText)}">
       <summary class="inventory-card-head">
@@ -2204,11 +2295,16 @@ function dbItemToInventoryItem(row) {
     offhand: row.offhandBonus || '',
     spellSlots: row.maxStack || row.spellSlots || '',
     target: row.target || '',
+    element: row.element || row.attribute || '',
     cost: formatMpCost(row.mpCost || row.cost || ''),
-    
+    checkType: row.checkType || '',
+    role: row.role || '',
+    source: row.source || '',
+    tags: row.tags || row.usageTags || '',
+    setItem: row.setItem || '',
     description: mergeTextUnique(row.description, row['fla' + 'vor' + 'Text']),
     effect: String(row.effect || '').trim(),
-    note: ''
+    note: row.notes || ''
   });
 }
 function dbSpellToInventoryItem(row) {
@@ -2224,13 +2320,17 @@ function dbSpellToInventoryItem(row) {
     rank: row.rank || '',
     price: row.scrollPrice || '',
     target: row.target || '',
-    cost: formatMpCost(row.mpCost || ''),
-    element: row.element || '',
-    power: row.power || '',
-    
+    cost: formatMpCost(row.mpCost || row.cost || ''),
+    element: row.element || row.attribute || '',
+    power: row.power || row.damage || '',
+    checkType: row.checkType || '',
+    role: row.role || '',
+    source: row.source || '',
+    tags: row.tags || row.usageTags || '',
+    setItem: row.setItem || '',
     description: mergeTextUnique(row.description, row['fla' + 'vor' + 'Text']),
     effect: String(row.effect || '').trim(),
-    note: ''
+    note: row.notes || ''
   });
 }
 function setDbCharacterSheetMaster(res={}) {
@@ -2310,7 +2410,7 @@ function mergeMasterPresetIntoInventoryItem(existing={}, preset={}) {
 function isSameInventoryCore(a={}, b={}) {
   const aa = normalizeInventoryItem(a);
   const bb = normalizeInventoryItem(b);
-  const keys = ['masterId','masterSheet','masterSync','name','kind','category','rank','price','equipSlot','power','hit','defense','guard','evade','offhand','spellSlots','target','element','cost','description','effect','recipeResult','materials'];
+  const keys = ['masterId','masterSheet','masterSync','name','kind','category','rank','price','equipSlot','power','hit','defense','guard','evade','offhand','spellSlots','target','element','cost','description','effect','checkType','role','source','tags','setItem','recipeResult','materials'];
   return keys.every(k => String(aa[k] ?? '') === String(bb[k] ?? '')) && Number(aa.count || 0) === Number(bb.count || 0);
 }
 async function syncInitialInventoryFromDb(options={}) {
@@ -2849,6 +2949,7 @@ function applyCsItemToEquipmentSlot(slotKey) {
   updateEquipmentHandLocks(true);
   updateCombatStats();
   updateSpellSlotHints();
+  updateEquipmentSummaries();
   updateSummary();
 }
 function selectedCsItemIsTwoHand(slotKey) {
@@ -3524,7 +3625,7 @@ function bindEvents() {
   });
   document.addEventListener('input', e => {
     if (e.target.matches('#charName,#charGender,#charAge,#playerKey,#newPlayerKey,#charMemo')) { updateSummary(); return; }
-    if (e.target.dataset.equipmentInput) { updateCombatStats(); updateSpellSlotHints(); updateSummary(); return; }
+    if (e.target.dataset.equipmentInput) { updateCombatStats(); updateSpellSlotHints(); updateEquipmentSummaries(); updateSummary(); return; }
     if (e.target.dataset.inventoryInput) { applyInventoryFilters(); updateSummary(); return; }
     if (e.target.id?.startsWith('stat_') || e.target.dataset.abilityInput || e.target.dataset.skillInput || e.target.id?.startsWith('manualBonus_') || ['currentHp','currentMp','hpBonus','mpBonus'].includes(e.target.id)) updateAll();
   });
@@ -3532,14 +3633,18 @@ function bindEvents() {
     if (e.target.classList?.contains('spell-slot-select')) {
       const slotKey = e.target.dataset.slotKey || '';
       syncSpellSetHidden(slotKey);
+      updateSpellSlotDetails(slotKey);
       updateSpellSlotHints();
+      updateEquipmentSummaries();
       updateSummary();
       return;
     }
     if (e.target.id?.startsWith('equip_') && e.target.id.endsWith('_setSpells')) {
       const slotKey = e.target.id.replace(/^equip_/, '').replace(/_setSpells$/, '');
       enforceSpellSetLimit(slotKey);
+      updateSpellSlotDetails(slotKey);
       updateSpellSlotHints();
+      updateEquipmentSummaries();
       updateSummary();
       return;
     }
@@ -3557,6 +3662,7 @@ function bindEvents() {
       if (slotKey === 'rightHand' || slotKey === 'leftHand') updateEquipmentHandLocks(true);
       updateCombatStats();
       updateSpellSlotHints();
+      updateEquipmentSummaries();
       updateSummary();
     }
   });
