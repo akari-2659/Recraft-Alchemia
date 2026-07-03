@@ -436,6 +436,7 @@
   }
   @media (min-width: 780px) { .equipment-grid { grid-template-columns: 1fr; } }
   .equipment-card {
+    width: 100%;
     border: 1px solid rgba(221, 203, 176, .9);
     border-radius: 14px;
     background: rgba(255, 253, 248, .78);
@@ -458,6 +459,9 @@
   .equipment-card-head::before { content: "▼"; color: var(--accent2); font-weight: 900; margin-top: 2px; transition: transform .16s ease; }
   .equipment-card:not([open]) .equipment-card-head::before { transform: rotate(-90deg); }
   .equipment-card-title { color: var(--accent2); font-weight: 900; font-size: 1.03rem; }
+  .equipment-slot-label { display:inline-flex; align-items:center; gap:6px; }
+  .equipment-slot-label::after { content:'装備枠'; font-size:.72rem; color:var(--muted); border:1px solid rgba(184,119,56,.24); border-radius:999px; padding:2px 7px; background:rgba(255,255,255,.58); }
+  .equipment-slot-body { display:grid; gap:10px; }
   .equipment-summary { color: var(--muted); font-size: .82rem; text-align: right; line-height: 1.4; }
   .equipment-card h3 { color: var(--accent2); }
   .equipment-fields {
@@ -493,7 +497,8 @@
     .status-box { font-size: .88rem; }
     .profile-grid { gap: 8px; }
     .ability-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-    .ability-card, .skill-category-card, .equipment-card { padding: 10px; }
+    .ability-card, .skill-category-card, .equipment-card {
+    width: 100%; padding: 10px; }
     .computed-value { font-size: 1.22rem; }
     .bonus-card .bonus-line { grid-template-columns: 1fr 78px; }
     .resource-line { grid-template-columns: 1fr 1fr; }
@@ -1220,8 +1225,8 @@ function renderStatic() {
     if (slot.kind === 'carry') {
       return `
         <details class="equipment-card" data-equipment-card="${slot.key}" open>
-          <summary><div class="equipment-card-head"><div class="equipment-card-title">${slot.name}</div><div class="equipment-summary" id="equip_${slot.key}_summary">未設定</div></div></summary>
-          <div class="equipment-fields three">
+          <summary><div class="equipment-card-head"><div class="equipment-card-title"><span class="equipment-slot-label">${slot.name}</span></div><div class="equipment-summary" id="equip_${slot.key}_summary">未設定</div></div></summary>
+          <div class="equipment-slot-body"><div class="equipment-fields three">
             <div class="field equipment-wide">
               <label for="equip_${slot.key}_itemSelect">所持品から選択</label>
               <select id="equip_${slot.key}_itemSelect" data-equipment-input="1"><option value="">手入力</option></select>
@@ -1246,13 +1251,13 @@ function renderStatic() {
               <label for="equip_${slot.key}_note">効果</label>
               <textarea id="equip_${slot.key}_note" data-equipment-input="1" placeholder="数値・ルール処理など"></textarea>
             </div>
-          </div>
+          </div></div>
         </details>`;
     }
     return `
       <details class="equipment-card" data-equipment-card="${slot.key}" open>
-        <summary><div class="equipment-card-head"><div class="equipment-card-title">${slot.name}</div><div class="equipment-summary" id="equip_${slot.key}_summary">未設定</div></div></summary>
-        <div class="equipment-fields compact">
+        <summary><div class="equipment-card-head"><div class="equipment-card-title"><span class="equipment-slot-label">${slot.name}</span></div><div class="equipment-summary" id="equip_${slot.key}_summary">未設定</div></div></summary>
+        <div class="equipment-slot-body"><div class="equipment-fields compact">
           <div class="field equipment-wide">
             <label for="equip_${slot.key}_itemSelect">所持品から選択</label>
             <select id="equip_${slot.key}_itemSelect" data-equipment-input="1"><option value="">手入力</option></select>
@@ -1310,7 +1315,7 @@ function renderStatic() {
               <div id="equip_${slot.key}_spellHelp" class="small">所持品に対応する術式がない場合は、所持品タブで術式を登録してください。</div>
             </div>
           </div>
-        </div>
+        </div></div>
       </details>`;
   }).join('') + `
     <details class="equipment-card equipment-wide" open>
@@ -1585,8 +1590,8 @@ function selectedSpellNames(slotKey) {
   return splitFormulaList(el.value || el.dataset.pendingSpells || '');
 }
 function spellTypeAliases(label) {
-  if (label === '魔法') return ['魔法'];
-  if (label === '祈祷') return ['祈祷'];
+  if (label === '魔法') return ['魔法','魔法術式','魔術','攻撃魔法'];
+  if (label === '祈祷') return ['祈祷','祈祷術式','聖術','神聖術'];
   return [label];
 }
 function spellDisplayMeta(item={}) {
@@ -2018,29 +2023,29 @@ function normalizeInventoryItem(item={}) {
     masterSync: String(item.masterSync || item.syncRole || '').trim(),
     name: String(item.name || '').trim(),
     kind,
-    category: String(item.category || item.itemCategory || item.materialCategory || '').trim(),
+    category: String(item.category || item.type || item.itemCategory || item.materialCategory || '').trim(),
     count: clampInt(item.count ?? item.quantity ?? 1, 0, 9999),
     location: '所持',
     rank: String(item.rank || '').trim(),
     price: String(item.price || '').trim(),
     equipSlot: inferEquipSlotForInventory({ ...item, kind }),
-    power: String(item.power || '').trim(),
+    power: String(item.power || item.damage || item.damageValue || '').trim(),
     hit: String(item.hit || item.hitMod || '').trim(),
     defense: String(item.defense || item.alwaysDefense || '').trim(),
     guard: String(item.guard || item.guardValue || '').trim(),
     evade: String(item.evade || item.evasionMod || '').trim(),
     offhand: String(item.offhand || item.offhandBonus || '').trim(),
     spellSlots: String(item.spellSlots || item.slotCount || item.registerSlots || item.maxStack || '').trim(),
-    target: String(item.target || '').trim(),
-    element: String(item.element || item.attribute || '').trim(),
-    cost: String(item.cost || item.mpCost || '').trim(),
-    checkType: String(item.checkType || '').trim(),
-    role: String(item.role || '').trim(),
+    target: String(item.target || item['対象'] || '').trim(),
+    element: String(item.element || item.attribute || item.attributeType || item.elementName || item['属性'] || item['属性種別'] || item['攻撃属性'] || item['ダメージ属性'] || '').trim(),
+    cost: String(item.cost || item.mpCost || item['MP'] || item['コスト'] || '').trim(),
+    checkType: String(item.checkType || item['判定'] || '').trim(),
+    role: String(item.role || item['役割'] || '').trim(),
     source: String(item.source || '').trim(),
     tags: String(item.tags || '').trim(),
     setItem: String(item.setItem || '').trim(),
-    description: mergeTextUnique(item.description, oldDescription),
-    effect: String(item.effect || '').trim(),
+    description: mergeTextUnique(item.description, item['説明'], oldDescription),
+    effect: String(item.effect || item['効果'] || '').trim(),
     recipeResult: String(item.recipeResult || item.resultItem || '').trim(),
     materials: String(item.materials || item.requiredMaterials || '').trim(),
     note: String(item.note || item.notes || '').trim()
@@ -2295,7 +2300,7 @@ function dbItemToInventoryItem(row) {
     offhand: row.offhandBonus || '',
     spellSlots: row.maxStack || row.spellSlots || '',
     target: row.target || '',
-    element: row.element || row.attribute || '',
+    element: row.element || row.attribute || row.attributeType || row.elementName || row['属性'] || row['属性種別'] || row['攻撃属性'] || row['ダメージ属性'] || '',
     cost: formatMpCost(row.mpCost || row.cost || ''),
     checkType: row.checkType || '',
     role: row.role || '',
@@ -2321,8 +2326,8 @@ function dbSpellToInventoryItem(row) {
     price: row.scrollPrice || '',
     target: row.target || '',
     cost: formatMpCost(row.mpCost || row.cost || ''),
-    element: row.element || row.attribute || '',
-    power: row.power || row.damage || '',
+    element: row.element || row.attribute || row.attributeType || row.elementName || row['属性'] || row['属性種別'] || row['攻撃属性'] || row['ダメージ属性'] || '',
+    power: row.power || row.damage || row.damageValue || '',
     checkType: row.checkType || '',
     role: row.role || '',
     source: row.source || '',
