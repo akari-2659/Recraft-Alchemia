@@ -534,7 +534,7 @@
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v63</div>
+  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v64</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -2951,6 +2951,28 @@ function enabledLike(value) {
   const s = String(value ?? '').trim().toUpperCase();
   return s !== 'FALSE' && s !== '0' && s !== 'NO' && s !== 'N' && s !== '無効';
 }
+
+function defaultElementForEquipmentRow(row={}) {
+  const explicit = String(row && (row.element || row.attribute || row.attributeType || row.elementName || row['属性'] || row['属性種別'] || row['攻撃属性'] || row['ダメージ属性']) || '').trim();
+  if (explicit) return explicit;
+  const text = [
+    row && row.name,
+    row && row.kind,
+    row && row.category,
+    row && row.itemCategory,
+    row && row.equipSlot,
+    row && row.slotKind,
+    row && row.type
+  ].map(v => String(v || '').trim()).filter(Boolean).join(' / ');
+  if (!text) return '';
+  if (/魔導書|祈祷書|魔印|聖印/.test(text)) return '';
+  if (/盾|大盾/.test(text) && !/剣|斧|槌|杖|槍|弓|弩|短剣/.test(text)) return '';
+  const slotKind = (typeof equipmentSlotKind === 'function') ? equipmentSlotKind(row) : '';
+  if (slotKind === 'hand' && /武器|近接|射撃|短剣|剣|斧|槌|杖|槍|弓|弩/.test(text)) return '物';
+  if (/武器|近接武器|射撃武器/.test(text)) return '物';
+  return '';
+}
+
 function equipmentSlotKind(row) {
   const explicit = String(row && row.slotKind || '').trim();
   if (['hand','armor','accessory','carry'].includes(explicit)) return explicit;
