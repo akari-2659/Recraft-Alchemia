@@ -534,7 +534,7 @@
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v62</div>
+  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v63</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -545,7 +545,7 @@
         <div class="choice-card">
           <h3>ローカル保存</h3>
           <p class="hint">初回に保存フォルダを選択し、そのフォルダ内のキャラクターJSONを一覧・保存します。</p>
-          <button id="chooseLocalBtn">ローカルの作成リストへ</button>
+          <button id="chooseLocalBtn" type="button" onclick="return startLocalList(event)">ローカルの作成リストへ</button>
         </div>
         <div class="choice-card">
           <h3>クラウド保存</h3>
@@ -560,7 +560,7 @@
             <input id="cloudPlayerKeyInput" type="password" placeholder="このキーに紐づくキャラクターだけ表示" autocomplete="off" />
           </div>
           <div class="button-row">
-            <button id="chooseCloudBtn" class="blue">クラウドの作成リストへ</button>
+            <button id="chooseCloudBtn" class="blue" type="button" onclick="return startCloudList(event)">クラウドの作成リストへ</button>
           </div>
         </div>
       </div>
@@ -2654,13 +2654,24 @@ function setReadOnly(readOnly) {
   $('toggleViewEditBtn').style.display = readOnly ? '' : 'none';
 }
 function setView(name) {
-  for (const v of document.querySelectorAll('.view')) v.classList.remove('active');
-  $(name + 'View').classList.add('active');
+  const target = $(name + 'View');
+  if (!target) {
+    console.error('画面IDが見つかりません:', name + 'View');
+    showToast('画面切替に失敗しました。', 'error');
+    return false;
+  }
+  for (const v of document.querySelectorAll('.view')) {
+    const active = v === target;
+    v.classList.toggle('active', active);
+    // class反映が遅れる/壊れる環境でも確実に切り替えるため、displayも直接同期する。
+    v.style.display = active ? 'block' : 'none';
+  }
   document.body.classList.toggle('editor-active', name === 'editor');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { window.scrollTo(0, 0); }
+  return true;
 }
 function storageLabel() { return currentStorage === 'cloud' ? 'クラウド保存' : 'ローカル保存'; }
-async function openList(storage) {
+function prepareListView(storage) {
   currentStorage = storage;
   $('listTitle').textContent = `${storageLabel()}：作成リスト`;
   $('listSub').textContent = storage === 'cloud' ? 'プレイヤーキーに紐づくキャラクターだけを表示します。必要に応じてローカルへ変換できます。' : '選択した保存フォルダ内のキャラクターJSONを表示します。必要に応じてクラウドへ変換できます。';
@@ -2668,8 +2679,56 @@ async function openList(storage) {
   if ($('changeLocalFolderBtn')) $('changeLocalFolderBtn').style.display = storage === 'local' ? '' : 'none';
   if ($('syncToCloudBtn')) $('syncToCloudBtn').style.display = storage === 'local' ? '' : 'none';
   if ($('syncToLocalBtn')) $('syncToLocalBtn').style.display = storage === 'cloud' ? '' : 'none';
+  if ($('characterList')) $('characterList').innerHTML = '';
+  if ($('listStatus')) {
+    $('listStatus').className = 'status-box';
+    $('listStatus').textContent = storage === 'cloud' ? 'クラウドの作成リストを読み込み中です。' : 'ローカルの作成リストを読み込み中です。';
+  }
   setView('list');
+}
+async function openList(storage) {
+  prepareListView(storage);
   await refreshList();
+}
+async function startLocalList(event) {
+  if (event) { event.preventDefault(); event.stopPropagation(); if (event.stopImmediatePropagation) event.stopImmediatePropagation(); }
+  const btn = $('chooseLocalBtn');
+  try {
+    if (btn) btn.disabled = true;
+    if ($('homeStatus')) { $('homeStatus').className = 'status-box'; $('homeStatus').textContent = 'ローカルの作成リストへ移動します。'; }
+    prepareListView('local');
+    await refreshList();
+  } catch (e) {
+    prepareListView('local');
+    $('listStatus').className = 'status-box error';
+    $('listStatus').textContent = e.message || 'ローカル作成リストへの移行に失敗しました。';
+    showToast($('listStatus').textContent, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+  return false;
+}
+async function startCloudList(event) {
+  if (event) { event.preventDefault(); event.stopPropagation(); if (event.stopImmediatePropagation) event.stopImmediatePropagation(); }
+  const btn = $('chooseCloudBtn');
+  try {
+    setGasUrl(gasUrl());
+    currentCloudPlayerKey = ($('cloudPlayerKeyInput')?.value || '').trim();
+    if (!gasUrl()) { $('homeStatus').className = 'status-box error'; $('homeStatus').textContent = '固定クラウド接続先が未設定です。'; showToast('固定クラウド接続先が未設定です。', 'error'); return false; }
+    if (!currentCloudPlayerKey) { $('homeStatus').className = 'status-box error'; $('homeStatus').textContent = 'クラウドリスト表示にはプレイヤーキーが必要です。'; showToast('クラウドリスト表示にはプレイヤーキーが必要です。', 'error'); return false; }
+    if (btn) btn.disabled = true;
+    if ($('homeStatus')) { $('homeStatus').className = 'status-box'; $('homeStatus').textContent = 'クラウドの作成リストへ移動します。'; }
+    prepareListView('cloud');
+    await refreshList();
+  } catch (e) {
+    prepareListView('cloud');
+    $('listStatus').className = 'status-box error';
+    $('listStatus').textContent = e.message || 'クラウド作成リストへの移行に失敗しました。';
+    showToast($('listStatus').textContent, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+  return false;
 }
 function openEditor(mode, data=null) {
   currentMode = mode;
@@ -3830,26 +3889,8 @@ function bindEvents() {
   try { localStorage.removeItem(APP_NAME + '.master.adminKey'); } catch(e) {}
   try { setGasUrl(gasUrl()); } catch(e) {}
   if ($('loadEquipmentCategoriesBtn')) $('loadEquipmentCategoriesBtn').addEventListener('click', async () => { try { await loadEquipmentCategoriesFromDb(); } catch (e) { showToast(e.message, 'error'); const st=$('equipmentCategoryStatus'); if(st) st.textContent=e.message; } });
-  $('chooseLocalBtn').addEventListener('click', async () => { try { await openList('local'); } catch (e) { $('homeStatus').className = 'status-box error'; $('homeStatus').textContent = e.message; showToast(e.message, 'error'); } });
-  $('chooseCloudBtn').addEventListener('click', async () => {
-    const btn = $('chooseCloudBtn');
-    try {
-      setGasUrl(gasUrl());
-      currentCloudPlayerKey = ($('cloudPlayerKeyInput')?.value || '').trim();
-      if (!gasUrl()) { $('homeStatus').className = 'status-box error'; $('homeStatus').textContent = '固定クラウド接続先が未設定です。'; showToast('固定クラウド接続先が未設定です。', 'error'); return; }
-      if (!currentCloudPlayerKey) { $('homeStatus').className = 'status-box error'; $('homeStatus').textContent = 'クラウドリスト表示にはプレイヤーキーが必要です。'; showToast('クラウドリスト表示にはプレイヤーキーが必要です。', 'error'); return; }
-      btn.disabled = true;
-      $('homeStatus').className = 'status-box';
-      $('homeStatus').textContent = 'クラウドの作成リストを読み込み中です。';
-      await openList('cloud');
-    } catch (e) {
-      $('homeStatus').className = 'status-box error';
-      $('homeStatus').textContent = e.message || 'クラウド作成リストへの移行に失敗しました。';
-      showToast($('homeStatus').textContent, 'error');
-    } finally {
-      btn.disabled = false;
-    }
-  });
+  $('chooseLocalBtn').addEventListener('click', startLocalList);
+  $('chooseCloudBtn').addEventListener('click', startCloudList);
   $('backHomeBtn').addEventListener('click', () => setView('home'));
   $('changeCloudKeyBtn').addEventListener('click', async () => {
     const next = prompt('表示するクラウドキャラクターのプレイヤーキーを入力してください。', currentCloudPlayerKey || '') || '';
