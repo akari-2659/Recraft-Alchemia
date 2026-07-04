@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v59</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v60</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -190,6 +190,10 @@
   .skill-row.header { font-weight: 900; color: var(--muted); border-top: 0; padding-top: 0; font-size: .82rem; }
   .skill-row input { padding: 7px 6px; }
   .skill-name { font-weight: 900; }
+  .skill-detail { margin-top: 4px; font-weight: 500; }
+  .skill-detail > summary { display: inline-block; cursor: pointer; color: var(--accent2); font-size: .78rem; font-weight: 900; padding: 1px 8px; border: 1px solid rgba(143,87,40,.24); border-radius: 999px; background: rgba(184,119,56,.08); }
+  .skill-detail-body { margin-top: 5px; color: var(--muted); font-size: .82rem; line-height: 1.55; white-space: pre-line; }
+  .formula-note { margin-top: 6px; color: var(--muted); font-size: .78rem; line-height: 1.45; }
   @media (max-width: 620px) {
     .skill-row { grid-template-columns: 1fr 1fr 1fr 1fr; }
     .skill-row.header { display: none; }
@@ -686,6 +690,7 @@
                 <label for="hpBonus">HP補正</label>
                 <input id="hpBonus" type="number" min="-99" max="999" inputmode="numeric" value="0" />
               </div>
+              <div class="formula-note">最大HP = 10 + 体力×3 + 意志 + HP補正</div>
             </div>
             <div class="resource-card">
               <h3>MP</h3>
@@ -703,6 +708,7 @@
                 <label for="mpBonus">MP補正</label>
                 <input id="mpBonus" type="number" min="-99" max="999" inputmode="numeric" value="0" />
               </div>
+              <div class="formula-note">最大MP = 8 + 意志×3 + 知性 + MP補正</div>
             </div>
           </div>
         </div>
@@ -829,7 +835,7 @@
       <div class="field"><label for="inventoryFormPrice">価格/売価</label><input id="inventoryFormPrice" type="text" placeholder="例：30G" /></div>
       <div class="field inventory-wide"><label for="inventoryFormCategory">カテゴリ</label><input id="inventoryFormCategory" type="text" placeholder="例：短剣 / 回復薬 / 草花 / 調合レシピ" /></div>
       <div class="field" data-inventory-kind-field="weapon armor accessory"><label for="inventoryFormEquipSlot">装備/使用枠</label><select id="inventoryFormEquipSlot"><option value="">なし</option><option>右手/左手</option><option>両手</option><option>鎧</option><option>装飾品</option><option>携行品</option></select></div>
-      <div class="field" data-inventory-kind-field="weapon item spell"><label for="inventoryFormPower">威力</label><input id="inventoryFormPower" type="text" placeholder="例：1D6+1 / 武器依存 / 1D6+魔法ポイント" /></div>
+      <div class="field" data-inventory-kind-field="weapon item spell"><label for="inventoryFormPower">威力</label><input id="inventoryFormPower" type="text" placeholder="例：1D6+1 / 武器依存 / 1D6" /></div>
       <div class="field" data-inventory-kind-field="weapon"><label for="inventoryFormHit">命中補正</label><input id="inventoryFormHit" type="text" placeholder="例：+1 / -1" /></div>
       <div class="field" data-inventory-kind-field="armor accessory"><label for="inventoryFormDefense">常時防御値</label><input id="inventoryFormDefense" type="text" placeholder="例：2" /></div>
       <div class="field" data-inventory-kind-field="armor"><label for="inventoryFormGuard">防御行動値</label><input id="inventoryFormGuard" type="text" placeholder="例：1D6+1" /></div>
@@ -879,8 +885,8 @@ const ABILITIES = [
   { key:'dexterity', name:'器用', desc:'採取・細工・射撃・操作' },
   { key:'sense', name:'感覚', desc:'探索・感知・回避・追跡' },
   { key:'intellect', name:'知性', desc:'調合・鑑定・知識・設計' },
-  { key:'will', name:'意志', desc:'抵抗・集中・魔法・祈念' },
-  { key:'charm', name:'魅力', desc:'交渉・共感・芸術・鼓舞' },
+  { key:'will', name:'意志', desc:'抵抗・集中・魔法・祈祷' },
+  { key:'charm', name:'魅力', desc:'交渉・共感・社交・鼓舞' },
 ];
 const ABILITY_NAMES = Object.fromEntries(ABILITIES.map(a => [a.key, a.name]));
 
@@ -897,40 +903,40 @@ const STAT_CATEGORY_BONUS_LABEL = {
 
 const SKILL_CATEGORIES = [
   { key:'body', name:'体力系', ability:'body', skills:[
-    { key:'athletics', name:'運動', desc:'走る、登る、泳ぐ、跳ぶ' },
-    { key:'force', name:'力業', desc:'重い物を動かす、破壊、運搬' },
-    { key:'melee', name:'近接', desc:'近接武器や素手で戦う' },
-    { key:'guard', name:'防御', desc:'盾、防具、受け流し、かばう' },
+    { key:'athletics', name:'運動', desc:'身体行動', detail:'走る、登る、泳ぐ、跳ぶなど、身体を大きく動かす判定に使用します。足場の悪い場所の移動、障害物の突破、落下や転倒を避ける場面でも使います。' },
+    { key:'force', name:'力業', desc:'力任せの作業・大振り攻撃', detail:'重い物を動かす、押す、引く、壊す、こじ開けるなど、純粋な力で状況を動かす判定に使用します。戦闘中は近接の代わりに力業で武器攻撃を行えます。命中時、通常の武器ダメージに加えて、武器ダメージのダイスを+1個します。ただし追加ダメージに使う技能ポイントは近接を参照します。成否に関わらず、次の自分のターンは行動できず、次の自分のターン開始時まで防御-2を受けます。' },
+    { key:'melee', name:'近接', desc:'近接攻撃', detail:'素手や近接武器で攻撃する時の命中判定に使用します。命中した場合、装備している武器ダメージに、近接へ振り分けたポイント分のダメージを追加します。' },
+    { key:'guard', name:'防御', desc:'防御行動・かばう', detail:'盾、防具、受け流し、かばうなど、攻撃を受け止める行動に使用します。防御値そのものは装備から計算しますが、この技能は防御行動や仲間を守る判定に使います。' },
   ]},
   { key:'dexterity', name:'器用系', ability:'dexterity', skills:[
-    { key:'gather', name:'採取', desc:'素材を傷つけずに集める' },
-    { key:'craft', name:'細工', desc:'工作、罠解除、鍵開け、精密修理' },
-    { key:'shoot', name:'射撃', desc:'弓、投擲、銃など' },
-    { key:'operate', name:'操作', desc:'道具、装置、乗り物、工房設備' },
+    { key:'gather', name:'採取', desc:'素材採取・ドロップ補助', detail:'薬草、鉱石、魔物素材などを傷つけずに集める判定に使用します。素材の品質維持、希少部位の回収、採取量の増加に関わります。魔物の討伐時、採取判定に成功することでドロップ判定を+1します。' },
+    { key:'craft', name:'細工', desc:'精密作業', detail:'細かな手作業、修理、分解、罠解除、鍵開けなどの判定に使用します。道具や素材を精密に扱う作業に関わります。' },
+    { key:'shoot', name:'射撃', desc:'射撃攻撃', detail:'弓、弩、投擲武器などで攻撃する時の命中判定に使用します。命中した場合、装備している武器ダメージに、射撃へ振り分けたポイント分のダメージを追加します。' },
+    { key:'operate', name:'操作', desc:'装置・道具の扱い', detail:'道具、装置、乗り物、工房設備などを扱う判定に使用します。複雑な機械の起動、調整、操縦、作業設備の使用に関わります。' },
   ]},
   { key:'sense', name:'感覚系', ability:'sense', skills:[
-    { key:'search', name:'探索', desc:'手がかり、隠し通路、素材群生地' },
-    { key:'detect', name:'感知', desc:'気配、罠、危険、異変' },
-    { key:'evade', name:'回避', desc:'攻撃、落石、罠、爆発を避ける' },
-    { key:'track', name:'追跡', desc:'足跡、痕跡、匂い、魔力の流れ' },
+    { key:'search', name:'探索', desc:'場所を調べる', detail:'周囲を調べ、手がかり、隠し通路、素材の群生地、違和感のある物品などを見つける判定に使用します。場所を調べる時の基本技能です。' },
+    { key:'detect', name:'感知', desc:'危険や異変に気づく', detail:'気配、罠、危険、異変、接近してくる存在などに気づく判定に使用します。奇襲の察知、不自然な音や匂い、魔力や空気の変化に気づく場面で使います。' },
+    { key:'evade', name:'回避', desc:'回避値の基準', detail:'攻撃、落石、罠、爆発、崩落などを避ける判定に使用します。戦闘中は物理攻撃や、飛来・範囲型の術式を避けるための基準になります。回避値 = 5 + 回避ポイント + 装備の回避補正。' },
+    { key:'track', name:'追跡', desc:'痕跡を辿る', detail:'足跡、痕跡、匂い、魔力の流れなどを辿る判定に使用します。逃げた魔物や人物を追う、移動経路を推測する、痕跡から進行方向を読む場面で使います。' },
   ]},
   { key:'intellect', name:'知性系', ability:'intellect', skills:[
-    { key:'alchemy', name:'調合', desc:'素材を組み合わせてアイテムを作る' },
-    { key:'appraise', name:'鑑定', desc:'素材、遺物、魔物、装置の性質' },
-    { key:'knowledge', name:'知識', desc:'歴史、地理、魔物、植物、伝承' },
-    { key:'design', name:'設計', desc:'施設復興、建築、装置、レシピ構造' },
+    { key:'alchemy', name:'調合', desc:'アイテム作成', detail:'素材を組み合わせ、アイテム・薬品・道具などを作成する判定に使用します。調合の成功、品質の向上、追加効果の付与などに関わります。' },
+    { key:'appraise', name:'鑑定', desc:'価値や性質を見極める', detail:'アイテム、素材、装備、魔物素材などの性質や価値を見極める判定に使用します。未知の素材や特殊なアイテムの効果、危険性、売却価値を調べる場面で使います。' },
+    { key:'knowledge', name:'知識', desc:'魔物・素材・属性', detail:'魔物、素材、属性について知っているかを確認する判定に使用します。魔物の特徴、素材の性質、属性の相性などを思い出す場面で使います。魔物に対して使用する場合、成功すると指定した1つの耐性・弱点・無効属性などを知ることができます。' },
+    { key:'design', name:'設計', desc:'仕組みを考える', detail:'装備、道具、設備、罠、構造物などの仕組みを考える判定に使用します。レシピの改良、装備の設計、工房設備の調整、構造の解析などに関わります。' },
   ]},
   { key:'will', name:'意志系', ability:'will', skills:[
-    { key:'resist', name:'抵抗', desc:'毒、呪い、恐怖、疲労、異界影響' },
-    { key:'focus', name:'集中', desc:'長時間作業、高難度調合、儀式' },
-    { key:'magic', name:'魔法', desc:'魔法、魔力操作' },
-    { key:'prayer', name:'祈祷', desc:'祈り、加護、浄化、精神支援' },
+    { key:'resist', name:'抵抗', desc:'状態異常や精神干渉に耐える', detail:'毒、呪い、恐怖、麻痺、精神干渉、弱体化などに耐える判定に使用します。術式や魔物の特殊効果のうち、身体や精神に作用する効果へ抗う場面で使います。' },
+    { key:'focus', name:'集中', desc:'行動を維持する', detail:'長時間の作業、高難度の調合、儀式、継続的な魔力操作など、精神を乱さずに行動を続ける判定に使用します。戦闘中は、妨害を受けながら術式や特殊な行動を維持する場面でも使います。' },
+    { key:'magic', name:'魔法', desc:'魔法術式', detail:'魔法術式を使用する時の判定に使用します。魔法術式でダメージを与える場合、術式ダメージに魔法へ振り分けたポイント分のダメージを追加します。' },
+    { key:'prayer', name:'祈祷', desc:'祈祷術式', detail:'祈祷術式を使用する時の判定に使用します。祈祷術式でダメージや回復を行う場合、術式の効果量に祈祷へ振り分けたポイント分を追加します。浄化、加護、回復、精神支援にも関わります。' },
   ]},
   { key:'charm', name:'魅力系', ability:'charm', skills:[
-    { key:'negotiate', name:'交渉', desc:'説得、値切り、取引、条件交渉' },
-    { key:'service', name:'共感', desc:'' },
-    { key:'art', name:'芸術', desc:'音楽、絵画、料理、装飾、演技' },
-    { key:'leadership', name:'鼓舞', desc:'' },
+    { key:'negotiate', name:'交渉', desc:'条件交渉', detail:'相手と話し合い、条件を整える判定に使用します。値引き、依頼、説得、情報交換、取引、相手の態度を和らげる場面で使います。' },
+    { key:'service', name:'共感', desc:'感情や本心を読む', detail:'相手の感情や本心を読み取り、寄り添う判定に使用します。不安を落ち着かせる、嘘や隠し事に気づく、相手の悩みや望みを察する場面で使います。' },
+    { key:'art', name:'社交', desc:'場の空気と人付き合い', detail:'礼儀、場の空気、集団内での立ち回りに関わる判定に使用します。人脈作り、評判の確認、貴族・商人・町人などとの交流、集まりの中で自然に情報を得る場面で使います。' },
+    { key:'leadership', name:'鼓舞', desc:'次の判定+1', detail:'仲間を励まし、士気を高める判定に使用します。戦闘中や困難な場面で成功すると、対象の次の判定に+1します。' },
   ]},
 ];
 const HAND_TYPE_OPTIONS = ['なし','短剣','片手剣','片手斧','片手槌','片手槍','杖','盾','大盾','魔導書','祈祷書','両手剣','大槌','長槍','弓','弩','大型弩'];
@@ -1213,7 +1219,7 @@ function renderStatic() {
       </div>
       ${cat.skills.map(sk => `
         <div class="skill-row">
-          <div class="skill-name">${sk.name}</div>
+          <div class="skill-name">${sk.name}<details class="skill-detail"><summary>詳細</summary><div class="skill-detail-body">${esc(sk.detail || sk.desc || '')}</div></details></div>
           <div class="skill-cell base"><span id="skill_base_${sk.key}">0</span></div>
           <div class="skill-cell cat"><input id="skill_cat_${sk.key}" data-skill-input="1" type="number" min="0" max="99" value="0" /></div>
           <div class="skill-cell free"><input id="skill_free_${sk.key}" data-skill-input="1" type="number" min="0" max="3" value="0" /></div>
@@ -3444,8 +3450,16 @@ function makeSummaryFromData(data) {
   if (data.memo) { lines.push(''); lines.push('■ メモ'); lines.push(data.memo); }
   return lines.join('\n');
 }
+function stripSkillPointTerms(value) {
+  return String(value || '')
+    .replace(/\+?\s*(魔法|祈祷)\s*(ポイント|P)\s*/g, '')
+    .replace(/\s*\+\s*$/g, '')
+    .replace(/^\s*\+\s*/g, '')
+    .replace(/\+\s*\+/g, '+')
+    .trim();
+}
 function normalizePaletteFormula(value) {
-  return String(value || '').trim().replace(/[ｄＤ]/g, 'D').replace(/d/g, 'D');
+  return stripSkillPointTerms(value).replace(/[ｄＤ]/g, 'D').replace(/d/g, 'D');
 }
 function paletteInventoryItems(data={}) {
   return normalizeInventoryState(data.inventory || {}).items || [];
