@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v62</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -534,7 +534,7 @@
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v64</div>
+  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -874,6 +874,7 @@ let DB_RECIPE_MASTER = [];
 const FILE_HANDLE_DB = APP_NAME + '.fileHandles';
 const FILE_HANDLE_STORE = 'handles';
 const LOCAL_DIR_HANDLE_ID = 'localDirectory';
+const LOCAL_STORAGE_CHARACTERS_KEY = APP_NAME + '.localCharacters.v1';
 
 const STAT_ORDER = ['STR','CON','POW','DEX','APP','SIZ','INT','EDU'];
 const STAT_MAX = { STR:18, CON:18, POW:18, DEX:18, APP:18, SIZ:18, INT:18, EDU:21 };
@@ -2783,10 +2784,59 @@ async function ensureHandlePermission(handle, mode='readwrite') {
   perm = await handle.requestPermission({ mode });
   return perm === 'granted';
 }
+
+function supportsLocalFolderStorage() {
+  return typeof window !== 'undefined' && 'showDirectoryPicker' in window;
+}
+function readBrowserLocalCharacters() {
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_CHARACTERS_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch (e) {
+    console.warn('ブラウザ内ローカル保存の読み込みに失敗しました。', e);
+    return {};
+  }
+}
+function writeBrowserLocalCharacters(map) {
+  localStorage.setItem(LOCAL_STORAGE_CHARACTERS_KEY, JSON.stringify(map || {}));
+}
+async function saveBrowserLocal(data) {
+  const map = readBrowserLocalCharacters();
+  const clean = { ...stripRuntimeOnlyData(data), storageType:'local', updatedAt: nowIso() };
+  map[clean.id] = clean;
+  writeBrowserLocalCharacters(map);
+  return { saved:true, browserSaved:true, folderName:'ブラウザ内保存' };
+}
+async function listBrowserLocalItems() {
+  const map = readBrowserLocalCharacters();
+  const items = Object.values(map).filter(data => data && data.id).map(data => ({
+    id:data.id,
+    name:data.name || '無名のキャラクター',
+    updatedAt:data.updatedAt,
+    createdAt:data.createdAt,
+    fileName:data.id + '.json'
+  }));
+  items.sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
+  return { items, folderName:'ブラウザ内保存' };
+}
+async function loadBrowserLocal(id) {
+  const map = readBrowserLocalCharacters();
+  const data = map[String(id || '')];
+  if (!data) throw new Error('ブラウザ内保存に対象キャラクターが見つかりません。');
+  return data;
+}
+async function deleteBrowserLocal(id) {
+  const map = readBrowserLocalCharacters();
+  delete map[String(id || '')];
+  writeBrowserLocalCharacters(map);
+}
+
 function assertLocalFolderSupport() {
   if (!('showDirectoryPicker' in window)) throw new Error('このブラウザではフォルダ選択によるローカル保存を使用できません。Chrome / Edge などの対応ブラウザで開いてください。');
 }
 async function chooseLocalDirectory() {
+  if (!supportsLocalFolderStorage()) { showToast('この環境ではブラウザ内保存を使用します。', 'warn'); return null; }
   assertLocalFolderSupport();
   const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
   const ok = await ensureHandlePermission(handle, 'readwrite');
@@ -2814,6 +2864,7 @@ async function writeJsonToHandle(handle, data) {
   await writable.close();
 }
 async function saveLocal(data) {
+  if (!supportsLocalFolderStorage()) return await saveBrowserLocal(data);
   const dir = await getLocalDirectory({ ask:true });
   const fileHandle = await dir.getFileHandle(localFileName(data.id), { create:true });
   await writeJsonToHandle(fileHandle, { ...data, storageType:'local' });
@@ -2825,6 +2876,7 @@ async function readJsonFileHandle(fileHandle) {
   return JSON.parse(text);
 }
 async function listLocalItems() {
+  if (!supportsLocalFolderStorage()) return await listBrowserLocalItems();
   const dir = await getLocalDirectory({ ask:true });
   const items = [];
   for await (const [name, entry] of dir.entries()) {
@@ -2841,11 +2893,13 @@ async function listLocalItems() {
   return { items, folderName:dir.name };
 }
 async function loadLocal(id) {
+  if (!supportsLocalFolderStorage()) return await loadBrowserLocal(id);
   const dir = await getLocalDirectory({ ask:true });
   const fileHandle = await dir.getFileHandle(localFileName(id), { create:false });
   return await readJsonFileHandle(fileHandle);
 }
 async function deleteLocal(id) {
+  if (!supportsLocalFolderStorage()) return await deleteBrowserLocal(id);
   const dir = await getLocalDirectory({ ask:true });
   await dir.removeEntry(localFileName(id));
 }
@@ -2973,6 +3027,7 @@ function defaultElementForEquipmentRow(row={}) {
   return '';
 }
 
+if (typeof window !== 'undefined') window.defaultElementForEquipmentRow = defaultElementForEquipmentRow;
 function equipmentSlotKind(row) {
   const explicit = String(row && row.slotKind || '').trim();
   if (['hand','armor','accessory','carry'].includes(explicit)) return explicit;
@@ -3922,7 +3977,7 @@ function bindEvents() {
     await refreshList();
     showToast('プレイヤーキーを変更しました。', 'ok');
   });
-  $('changeLocalFolderBtn').addEventListener('click', async () => { try { await chooseLocalDirectory(); await refreshList(); showToast('保存先フォルダを変更しました。', 'ok'); } catch (e) { $('listStatus').className = 'status-box error'; $('listStatus').textContent = e.message; showToast(e.message, 'error'); } });
+  $('changeLocalFolderBtn').addEventListener('click', async () => { try { if (!supportsLocalFolderStorage()) { $('listStatus').className = 'status-box warn'; $('listStatus').textContent = 'この環境ではブラウザ内保存を使用しています。'; showToast('この環境ではブラウザ内保存を使用しています。', 'warn'); await refreshList(); return; } await chooseLocalDirectory(); await refreshList(); showToast('保存先フォルダを変更しました。', 'ok'); } catch (e) { $('listStatus').className = 'status-box error'; $('listStatus').textContent = e.message; showToast(e.message, 'error'); } });
   $('syncToCloudBtn').addEventListener('click', convertAllLocalToCloud);
   $('syncToLocalBtn').addEventListener('click', convertAllCloudToLocal);
   $('refreshListBtn').addEventListener('click', refreshList);
@@ -3980,6 +4035,7 @@ function bindEvents() {
       }
       if (action === 'share') { await copyShareUrlForListItem(id); return; }
       if (action === 'toCloud' || action === 'toLocal') { await convertListItem(action, id); return; }
+      if ($('listStatus')) { $('listStatus').className = 'status-box'; $('listStatus').textContent = action === 'export' ? '出力データを読み込み中です。' : '編集画面を開いています。'; }
       const data = await loadItem(id);
       if (action === 'export') { openOutputDialog(data); return; }
       openEditor(action === 'view' ? 'view' : 'edit', data);
@@ -4034,7 +4090,26 @@ function bindEvents() {
   });
 }
 
-function init() { loadCachedEquipmentCategories(); loadCachedCsItems(); renderStatic(); refreshEquipmentItemSelects(); bindEvents(); applyData(emptyCharacter()); setView('home'); autoSyncEquipmentCategoriesFromDb(); }
+function init() {
+  try {
+    loadCachedEquipmentCategories();
+    loadCachedCsItems();
+    renderStatic();
+    refreshEquipmentItemSelects();
+    bindEvents();
+    applyData(emptyCharacter());
+    setView('home');
+    autoSyncEquipmentCategoriesFromDb();
+  } catch (e) {
+    console.error('キャラシHTMLの初期化に失敗しました。', e);
+    const st = $('homeStatus') || $('listStatus') || $('editorStatus');
+    if (st) {
+      st.className = 'status-box error';
+      st.textContent = 'キャラシHTMLの初期化に失敗しました：' + (e && e.message ? e.message : e);
+    }
+    try { setView('home'); } catch (_) {}
+  }
+}
 init();
 </script>
 </body>
