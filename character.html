@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v60</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v61</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -534,7 +534,7 @@
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v39</div>
+  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v61</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -562,7 +562,7 @@
             <button id="saveGasUrlBtn" class="ghost">接続先保存</button>
             <button id="chooseCloudBtn" class="blue">クラウドの作成リストへ</button>
           </div>
-          <div class="small">クラウド接続先はこのブラウザに保存されます。</div>
+          <div class="small">クラウド接続先は固定URLを使用します。プレイヤーキーだけ入力してください。</div>
         </div>
       </div>
       <div id="homeStatus" class="status-box">保存先を選んで開始してください。</div>
@@ -864,7 +864,7 @@
 const APP_NAME = 'recraft_alchemia_v4';
 const GAS_URL_KEY = APP_NAME + '.gas.url';
 // GitHub Pagesで毎回URLを入力しない運用にする場合は、ここにApps Scriptの /exec URLを入れてください。
-const DEFAULT_GAS_WEB_APP_URL = '';
+const DEFAULT_GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyjIIKXTXZGf8RFOt7wQcenYEuVP68ijTU83e6rioqX21EKW075xjDjB5pTucyVcrc/exec';
 const EQUIPMENT_CATEGORY_CACHE_KEY = APP_NAME + '.equipmentCategories';
 const EQUIPMENT_CATEGORY_CACHE_META_KEY = APP_NAME + '.equipmentCategories.meta';
 const CS_ITEM_CACHE_KEY = APP_NAME + '.characterSheetItems';
@@ -2810,8 +2810,8 @@ function buildShareUrl(id) {
   u.searchParams.set('view', id);
   return u.toString();
 }
-function gasUrl() { return (localStorage.getItem(GAS_URL_KEY) || DEFAULT_GAS_WEB_APP_URL || '').trim(); }
-function setGasUrl(url) { localStorage.setItem(GAS_URL_KEY, url.trim()); }
+function gasUrl() { return (DEFAULT_GAS_WEB_APP_URL || '').trim(); }
+function setGasUrl(url) { localStorage.setItem(GAS_URL_KEY, gasUrl()); }
 function masterAdminKey() { return ''; }
 function setMasterAdminKey(key) { /* v37: カテゴリ系マスタは管理キーに関係なく参照する */ }
 function equipmentScopeKey() { return 'global'; }
@@ -3829,22 +3829,39 @@ async function onSave() {
 
 function bindEvents() {
   $('gasUrlInput').value = gasUrl();
+  $('gasUrlInput').readOnly = true;
+  $('gasUrlInput').title = 'クラウド接続先は固定URLを使用します。';
   try { localStorage.removeItem(APP_NAME + '.master.adminKey'); } catch(e) {}
+  try { setGasUrl(gasUrl()); } catch(e) {}
   $('saveGasUrlBtn').addEventListener('click', () => {
-    setGasUrl($('gasUrlInput').value);
+    setGasUrl(gasUrl());
+    $('gasUrlInput').value = gasUrl();
     $('homeStatus').className = 'status-box ok';
-    $('homeStatus').textContent = 'クラウド接続先を保存しました。';
-    showToast('クラウド接続先を保存しました。', 'ok');
+    $('homeStatus').textContent = '固定クラウド接続先を使用します。';
+    showToast('固定クラウド接続先を使用します。', 'ok');
     autoSyncEquipmentCategoriesFromDb();
   });
   if ($('loadEquipmentCategoriesBtn')) $('loadEquipmentCategoriesBtn').addEventListener('click', async () => { try { await loadEquipmentCategoriesFromDb(); } catch (e) { showToast(e.message, 'error'); const st=$('equipmentCategoryStatus'); if(st) st.textContent=e.message; } });
   $('chooseLocalBtn').addEventListener('click', async () => { try { await openList('local'); } catch (e) { $('homeStatus').className = 'status-box error'; $('homeStatus').textContent = e.message; showToast(e.message, 'error'); } });
-  $('chooseCloudBtn').addEventListener('click', () => {
-    setGasUrl($('gasUrlInput').value);
-    currentCloudPlayerKey = ($('cloudPlayerKeyInput')?.value || '').trim();
-    if (!gasUrl()) { $('homeStatus').className = 'status-box error'; $('homeStatus').textContent = 'クラウド保存にはGAS WebアプリURLが必要です。'; showToast('クラウド保存にはGAS WebアプリURLが必要です。', 'error'); return; }
-    if (!currentCloudPlayerKey) { $('homeStatus').className = 'status-box error'; $('homeStatus').textContent = 'クラウドリスト表示にはプレイヤーキーが必要です。'; showToast('クラウドリスト表示にはプレイヤーキーが必要です。', 'error'); return; }
-    openList('cloud');
+  $('chooseCloudBtn').addEventListener('click', async () => {
+    const btn = $('chooseCloudBtn');
+    try {
+      setGasUrl(gasUrl());
+      $('gasUrlInput').value = gasUrl();
+      currentCloudPlayerKey = ($('cloudPlayerKeyInput')?.value || '').trim();
+      if (!gasUrl()) { $('homeStatus').className = 'status-box error'; $('homeStatus').textContent = 'クラウド保存にはGAS WebアプリURLが必要です。'; showToast('クラウド保存にはGAS WebアプリURLが必要です。', 'error'); return; }
+      if (!currentCloudPlayerKey) { $('homeStatus').className = 'status-box error'; $('homeStatus').textContent = 'クラウドリスト表示にはプレイヤーキーが必要です。'; showToast('クラウドリスト表示にはプレイヤーキーが必要です。', 'error'); return; }
+      btn.disabled = true;
+      $('homeStatus').className = 'status-box';
+      $('homeStatus').textContent = 'クラウドの作成リストを読み込み中です。';
+      await openList('cloud');
+    } catch (e) {
+      $('homeStatus').className = 'status-box error';
+      $('homeStatus').textContent = e.message || 'クラウド作成リストへの移行に失敗しました。';
+      showToast($('homeStatus').textContent, 'error');
+    } finally {
+      btn.disabled = false;
+    }
   });
   $('backHomeBtn').addEventListener('click', () => setView('home'));
   $('changeCloudKeyBtn').addEventListener('click', async () => {
