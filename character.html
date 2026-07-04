@@ -1617,7 +1617,7 @@ function spellDisplayMeta(item={}) {
     row.cost ? 'コスト ' + row.cost : '',
     row.power ? 'ダメージ/威力 ' + row.power : '',
     row.target ? '対象 ' + row.target : '',
-    row.checkType ? '判定 ' + row.checkType : '',
+    row.checkType ? '判定 ' + checkExpressionDisplay(row.checkType) : '',
     row.rank ? 'ランク ' + row.rank : ''
   ].filter(Boolean);
 }
@@ -2069,7 +2069,7 @@ function normalizeInventoryItem(item={}) {
     target: String(item.target || item['対象'] || '').trim(),
     element: String(item.element || item.attribute || item.attributeType || item.elementName || item['属性'] || item['属性種別'] || item['攻撃属性'] || item['ダメージ属性'] || '').trim(),
     cost: String(item.cost || item.mpCost || item['MP'] || item['コスト'] || '').trim(),
-    checkType: String(item.checkType || item['判定'] || '').trim(),
+    checkType: normalizeCheckExpression(item.checkType || item['判定'] || ''),
     role: String(item.role || item['役割'] || '').trim(),
     source: String(item.source || '').trim(),
     tags: String(item.tags || '').trim(),
@@ -2186,7 +2186,7 @@ function renderInventory() {
     const description = item.description || '';
     const effectText = item.effect || '';
     const equipMeta = [item.equipSlot, item.element ? '属性 ' + item.element : '', item.power ? '威力 ' + item.power : '', item.hit ? '命中 ' + item.hit : '', item.defense ? '防御 ' + item.defense : ''].filter(Boolean).join(' / ') || '—';
-    const spellMeta = item.kind === '術式' ? [item.category ? '種別：' + item.category : '', item.element ? '属性：' + item.element : '', item.cost ? 'コスト：' + item.cost : '', item.target ? '対象：' + item.target : '', item.power ? 'ダメージ/威力：' + item.power : '', item.checkType ? '判定：' + item.checkType : '', item.role ? '役割：' + item.role : ''].filter(Boolean).join(' / ') : '';
+    const spellMeta = item.kind === '術式' ? [item.category ? '種別：' + item.category : '', item.element ? '属性：' + item.element : '', item.cost ? 'コスト：' + item.cost : '', item.target ? '対象：' + item.target : '', item.power ? 'ダメージ/威力：' + item.power : '', item.checkType ? '判定：' + checkExpressionDisplay(item.checkType) : '', item.role ? '役割：' + item.role : ''].filter(Boolean).join(' / ') : '';
     const recipeMeta = item.kind === 'レシピ' ? [item.recipeResult ? '完成品：' + item.recipeResult : '', item.materials ? '必要素材：' + item.materials : ''].filter(Boolean).join('\n') : '';
     const itemUseMeta = item.kind === 'アイテム' ? [item.target ? '対象：' + item.target : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : ''].filter(Boolean).join(' / ') : '';
     const spellSlotMeta = item.spellSlots ? `術式登録枠：${item.spellSlots}` : '';
@@ -3450,6 +3450,53 @@ function makeSummaryFromData(data) {
   if (data.memo) { lines.push(''); lines.push('■ メモ'); lines.push(data.memo); }
   return lines.join('\n');
 }
+
+const CHECK_SKILL_NAME_TO_KEY = (() => {
+  const pairs = [];
+  for (const cat of SKILL_CATEGORIES) for (const sk of cat.skills) pairs.push([sk.name, sk.key]);
+  return Object.fromEntries(pairs);
+})();
+function normalizeCheckExpression(value) {
+  let raw = String(value || '').trim();
+  if (!raw) return '';
+  raw = raw.replace(/＞＝/g, '>=').replace(/≧/g, '>=').replace(/\s+/g, '');
+  const m = raw.match(/^(.+?)>=(.+)$/);
+  if (!m) return raw;
+  let left = m[1].trim();
+  let right = m[2].trim();
+  if (left === '魔法' && right === '抵抗値') right = '回避値';
+  return `${left}>=${right}`;
+}
+function parseCheckExpression(value) {
+  const raw = normalizeCheckExpression(value);
+  const m = raw.match(/^(.+?)>=(.+)$/);
+  if (!m) return { skillName: raw, right: '', raw };
+  return { skillName: m[1].trim(), right: m[2].trim(), raw };
+}
+function checkExpressionDisplay(value) {
+  return normalizeCheckExpression(value);
+}
+function skillTotalByName(totals, skillName) {
+  const key = CHECK_SKILL_NAME_TO_KEY[String(skillName || '').trim()];
+  if (!key) return null;
+  return totals[key]?.total || 0;
+}
+function paletteCheckLineFromExpression(checkType, label, totals, extraMod='') {
+  const parsed = parseCheckExpression(checkType);
+  if (!parsed.skillName || !parsed.right || parsed.skillName === 'なし') return '';
+  const v = skillTotalByName(totals, parsed.skillName);
+  if (v === null) return '';
+  const mod = String(extraMod || '').trim();
+  const rhs = parsed.right || '目標値';
+  return `2D6+${v}${mod}>=${rhs} 【${label}】`;
+}
+function checkTypeOrDefault(item={}, defaultSkill='', defaultRight='目標値') {
+  const raw = normalizeCheckExpression(item.checkType || '');
+  if (raw && raw !== 'なし') return raw;
+  if (!defaultSkill) return '';
+  return `${defaultSkill}>=${defaultRight}`;
+}
+
 function stripSkillPointTerms(value) {
   return String(value || '')
     .replace(/\+?\s*(魔法|祈祷)\s*(ポイント|P)\s*/g, '')
@@ -3538,6 +3585,67 @@ function collectSetSpellDamagePaletteLines(data={}) {
   }
   return result;
 }
+
+function signedModForPalette(value) {
+  const raw = String(value || '').trim();
+  if (!raw || raw === '0') return '';
+  if (/^[+-]/.test(raw)) return raw;
+  return '+' + raw;
+}
+function defaultSkillForEquipmentItem(item={}, slotKey='') {
+  const type = normalizeEquipmentType(item.type || item.category || item.kind || 'なし');
+  if (['弓','弩','大型弩'].includes(type)) return '射撃';
+  if (spellContainerKind(type)) return '';
+  if (type && type !== 'なし' && !['盾','大盾'].includes(type)) return '近接';
+  return '';
+}
+function collectCheckPaletteLines(data={}, totals={}) {
+  const equipment = data.equipment || {};
+  const items = paletteInventoryItems(data);
+  const result = [];
+  const used = new Set();
+  const pushLine = (checkType, label, extraMod='') => {
+    const line = paletteCheckLineFromExpression(checkType, label, totals, extraMod);
+    if (!line || used.has(line)) return;
+    used.add(line);
+    result.push(line);
+  };
+  for (const spec of [{ key:'rightHand', label:'右手武器命中' }, { key:'leftHand', label:'左手武器命中' }]) {
+    const eq = equipment[spec.key] || {};
+    const source = findPaletteInventoryItem(items, eq);
+    const merged = normalizeInventoryItem({ ...(source || {}), ...(eq || {}) });
+    const type = normalizeEquipmentType(merged.type || merged.category || 'なし');
+    if (!merged.name && (!type || type === 'なし')) continue;
+    if (spellContainerKind(type) || ['盾','大盾'].includes(type)) continue;
+    const defaultSkill = defaultSkillForEquipmentItem(merged, spec.key);
+    const checkType = checkTypeOrDefault(merged, defaultSkill, '回避値');
+    const label = isPaletteTwoHandEquipment(merged, source) ? '両手武器命中' : spec.label;
+    pushLine(checkType, label, signedModForPalette(merged.hit || source?.hit || ''));
+    if (isPaletteTwoHandEquipment(merged, source)) break;
+  }
+  for (const slot of EQUIPMENT_SLOTS) {
+    if (slot.kind === 'carry') continue;
+    const eq = equipment[slot.key] || {};
+    const type = normalizeEquipmentType(eq.type || 'なし');
+    if (!spellContainerKind(type)) continue;
+    const names = splitFormulaList(eq.setSpells || eq.knownSpells || '');
+    for (const name of names) {
+      const spell = findPaletteSpellByName(items, name) || normalizeInventoryItem({ name, kind:'術式' });
+      const spellKind = String(spell.category || spell.kind || type || '').trim();
+      const defaultSkill = /祈祷|聖|神/.test(spellKind) ? '祈祷' : '魔法';
+      pushLine(checkTypeOrDefault(spell, defaultSkill, defaultSkill === '魔法' ? '回避値' : '目標値'), String(spell.name || name).trim());
+    }
+  }
+  for (const item of items) {
+    const row = normalizeInventoryItem(item);
+    if (!row.checkType || row.checkType === 'なし') continue;
+    if (row.kind === '術式') continue; // 術式は装備にセットされたものを上で出す
+    const label = row.name || row.category || '判定';
+    pushLine(row.checkType, label);
+  }
+  return result;
+}
+
 function generatePaletteExport(data=collectData(false)) {
   const abilities = resolveAbilities(data);
   const totals = skillTotals(abilities, data.skills || defaultSkillAlloc());
@@ -3545,8 +3653,13 @@ function generatePaletteExport(data=collectData(false)) {
   for (const cat of SKILL_CATEGORIES) {
     for (const sk of cat.skills) {
       const v = totals[sk.key]?.total || 0;
-      lines.push(`2D6+${v}>= 【${sk.name}】`);
+      lines.push(`2D6+${v}>=目標値 【${sk.name}】`);
     }
+  }
+  const checkLines = collectCheckPaletteLines(data, totals);
+  if (checkLines.length) {
+    lines.push('');
+    lines.push(...checkLines);
   }
   const damageLines = collectWeaponDamagePaletteLines(data).concat(collectSetSpellDamagePaletteLines(data));
   if (damageLines.length) {
