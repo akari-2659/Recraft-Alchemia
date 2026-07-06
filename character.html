@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.15</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.17</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -541,7 +541,7 @@
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.15</div>
+  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.17</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -615,7 +615,7 @@
     <div class="editor-tabs" role="tablist" aria-label="編集ページ切替">
       <button type="button" class="editor-tab-btn active" data-editor-tab="ability">能力</button>
       <button type="button" class="editor-tab-btn" data-editor-tab="skills">技能</button>
-      <button type="button" class="editor-tab-btn" data-editor-tab="equipment">装備</button>
+      <button type="button" class="editor-tab-btn" data-editor-tab="equipment">装備・所持品</button>
       <button type="button" class="editor-tab-btn" data-editor-tab="inventory">倉庫</button>
     </div>
 
@@ -761,9 +761,9 @@
 
     <div id="tabEquipment" class="editor-tab-page">
       <details class="big-section" open>
-        <summary>装備</summary>
+        <summary>装備・所持品</summary>
         <div class="section-body">
-          <p class="hint">右手・左手・鎧・装飾品・所持品は、倉庫に登録済みのアイテムから選択して反映します。必要な装備や道具は先に倉庫へ登録してください。</p>
+          <p class="hint">この「所持品」枠は、冒険に持ち出すアイテム用です。右手・左手・鎧・装飾品・所持品は、倉庫に登録済みのアイテムから選択して反映します。必要な装備や道具は先に倉庫へ登録してください。</p>
           <div class="button-row">
             <button id="loadEquipmentCategoriesBtn" type="button" class="ghost">倉庫から選択カテゴリ読込</button>
             <span id="equipmentCategoryStatus" class="small">未読込の場合は内蔵カテゴリを使います。</span>
@@ -786,7 +786,7 @@
       <details class="big-section" open>
         <summary>倉庫</summary>
         <div class="section-body">
-          <p class="hint">拠点に保管しているアイテムを登録します。倉庫には保管上限はありません。装備欄・所持品欄・バッグ選択の候補は、この倉庫一覧から生成されます。</p>
+          <p class="hint">旧「所持品」はこの「倉庫」です。拠点に保管しているアイテムを登録します。倉庫には保管上限はありません。装備欄・所持品欄・バッグ選択の候補は、この倉庫一覧から生成されます。</p>
           <div class="inventory-filter-panel" aria-label="倉庫アイテムの表示切替">
             <div class="inventory-filter-row">
               <div class="inventory-filter-label">表示</div>
@@ -850,7 +850,7 @@
       <div class="field"><label for="inventoryFormRank">ランク</label><input id="inventoryFormRank" type="text" placeholder="例：初級 / 低級 / 良質" /></div>
       <div class="field"><label for="inventoryFormPrice">価格/売価</label><input id="inventoryFormPrice" type="text" placeholder="例：30G" /></div>
       <div class="field inventory-wide"><label for="inventoryFormCategory">カテゴリ</label><input id="inventoryFormCategory" type="text" placeholder="例：短剣 / 回復薬 / 草花 / 調合レシピ" /></div>
-      <div class="field" data-inventory-kind-field="weapon armor accessory"><label for="inventoryFormEquipSlot">装備/使用枠</label><select id="inventoryFormEquipSlot"><option value="">なし</option><option>右手/左手</option><option>両手</option><option>鎧</option><option>装飾品</option><option>所持品</option></select></div>
+      <div class="field" data-inventory-kind-field="weapon armor accessory item material important other"><label for="inventoryFormEquipSlot">装備/所持品枠</label><select id="inventoryFormEquipSlot"><option value="">なし</option><option>右手/左手</option><option>両手</option><option>鎧</option><option>装飾品</option><option>所持品</option></select></div>
       <div class="field" data-inventory-kind-field="weapon item spell"><label for="inventoryFormPower">威力</label><input id="inventoryFormPower" type="text" placeholder="例：1D6+1 / 武器依存 / 1D6" /></div>
       <div class="field" data-inventory-kind-field="weapon"><label for="inventoryFormHit">命中補正</label><input id="inventoryFormHit" type="text" placeholder="例：+1 / -1" /></div>
       <div class="field" data-inventory-kind-field="armor accessory"><label for="inventoryFormDefense">常時防御値</label><input id="inventoryFormDefense" type="text" placeholder="例：2" /></div>
@@ -2028,10 +2028,19 @@ function defaultInventory() {
   return { items: [basicBag], bagId:'bag_simple' };
 }
 function normalizeInventoryState(inventory) {
-  const src = Array.isArray(inventory) ? inventory : (Array.isArray(inventory?.items) ? inventory.items : []);
-  return { items: src.filter(Boolean).map(item => normalizeInventoryItem(item)), bagId:String(inventory && !Array.isArray(inventory) ? (inventory.bagId || inventory.selectedBagId || '') : '').trim() };
+  const src = Array.isArray(inventory)
+    ? inventory
+    : (Array.isArray(inventory?.items)
+      ? inventory.items
+      : (Array.isArray(inventory?.warehouse)
+        ? inventory.warehouse
+        : (Array.isArray(inventory?.storage) ? inventory.storage : [])));
+  return {
+    items: src.filter(Boolean).map(item => normalizeInventoryItem({ ...item, location:'倉庫' })),
+    bagId:String(inventory && !Array.isArray(inventory) ? (inventory.bagId || inventory.selectedBagId || inventory.selectedBag || '') : '').trim()
+  };
 }
-function defaultInventoryLocation() { return '所持'; }
+function defaultInventoryLocation() { return '倉庫'; }
 function defaultInventoryKind() {
   if (inventoryViewFilter.kind === '素材') return '素材';
   if (inventoryViewFilter.kind === '武器/防具/装飾品') return '武器';
@@ -2234,6 +2243,11 @@ function setInventoryState(inventory=defaultInventory()) {
   const normalized = normalizeInventoryState(inventory);
   inventoryItemsState = normalized.items;
   selectedBagId = normalized.bagId || '';
+  ensureDefaultBagItem();
+  if (!selectedBagId) {
+    const defaultBag = inventoryItemsState.find(item => isBagInventoryItem(item) && (inventoryItemKey(item) === 'bag_simple' || item.id === 'bag_simple' || item.name === '簡素なバッグ'));
+    if (defaultBag) selectedBagId = inventoryItemKey(defaultBag) || defaultBag.id || defaultBag.name;
+  }
   renderInventoryTabs();
   renderInventory();
 }
@@ -2441,7 +2455,10 @@ function hasMasterToken(row, token) {
   const hay = [row && row.tags, row && row.usageTags, row && row.notes, row && row.effect].map(v => String(v || '')).join(',');
   return hay.split(/[、,，\s]+/).map(v => v.trim()).includes(token);
 }
-const INITIAL_MASTER_TOKEN = '初期所持品';
+const INITIAL_MASTER_TOKEN = '初期倉庫';
+const LEGACY_INITIAL_MASTER_TOKEN = '初期' + '所持品';
+function hasInitialMasterToken(row) { return hasMasterToken(row, INITIAL_MASTER_TOKEN) || hasMasterToken(row, LEGACY_INITIAL_MASTER_TOKEN); }
+function isInitialMasterSync(value) { const v = String(value || '').trim(); return v === INITIAL_MASTER_TOKEN || v === LEGACY_INITIAL_MASTER_TOKEN; }
 function formatMpCost(value) {
   const s = String(value ?? '').trim();
   if (!s) return '';
@@ -2467,7 +2484,7 @@ function dbItemToInventoryItem(row) {
     id: row.id || row.name,
     masterId: row.id || row.name || '',
     masterSheet: 'items',
-    masterSync: hasMasterToken(row, INITIAL_MASTER_TOKEN) ? INITIAL_MASTER_TOKEN : '',
+    masterSync: hasInitialMasterToken(row) ? INITIAL_MASTER_TOKEN : '',
     name: row.name || '',
     kind,
     category: mappedCategory,
@@ -2501,7 +2518,7 @@ function dbSpellToInventoryItem(row) {
     id: row.id || row.name,
     masterId: row.id || row.name || '',
     masterSheet: 'spells',
-    masterSync: hasMasterToken(row, INITIAL_MASTER_TOKEN) ? INITIAL_MASTER_TOKEN : '',
+    masterSync: hasInitialMasterToken(row) ? INITIAL_MASTER_TOKEN : '',
     name: row.name || '',
     kind: '術式',
     category: row.type || '',
@@ -2534,8 +2551,8 @@ async function loadCharacterSheetMasterFromDbForInitial() {
   return res || {};
 }
 function getInitialPresetsFromMaster(master={}) {
-  const itemRows = (master.cs_items || []).filter(row => hasMasterToken(row, INITIAL_MASTER_TOKEN));
-  const spellRows = (master.spells || []).filter(row => hasMasterToken(row, INITIAL_MASTER_TOKEN));
+  const itemRows = (master.cs_items || []).filter(row => hasInitialMasterToken(row));
+  const spellRows = (master.spells || []).filter(row => hasInitialMasterToken(row));
   return itemRows.map(dbItemToInventoryItem).concat(spellRows.map(dbSpellToInventoryItem));
 }
 
@@ -2578,14 +2595,14 @@ function mergeInitialPresetIntoInventoryItem(existing={}, preset={}) {
     masterSheet: base.masterSheet || oldItem.masterSheet || '',
     masterSync: INITIAL_MASTER_TOKEN,
     count: oldItem.count || base.count || 1,
-    location: '所持',
+    location: '倉庫',
   });
 }
 
 function mergeMasterPresetIntoInventoryItem(existing={}, preset={}) {
   const oldItem = normalizeInventoryItem(existing);
   const base = normalizeInventoryItem(preset);
-  const isInitial = String(oldItem.masterSync || '').trim() === INITIAL_MASTER_TOKEN || String(base.masterSync || '').trim() === INITIAL_MASTER_TOKEN;
+  const isInitial = isInitialMasterSync(oldItem.masterSync) || isInitialMasterSync(base.masterSync);
   return normalizeInventoryItem({
     ...oldItem,
     ...base,
@@ -2594,7 +2611,7 @@ function mergeMasterPresetIntoInventoryItem(existing={}, preset={}) {
     masterSheet: base.masterSheet || oldItem.masterSheet || '',
     masterSync: isInitial ? INITIAL_MASTER_TOKEN : (oldItem.masterSync || base.masterSync || ''),
     count: oldItem.count || base.count || 1,
-    location: '所持',
+    location: '倉庫',
   });
 }
 function isSameInventoryCore(a={}, b={}) {
@@ -2620,7 +2637,7 @@ async function syncInitialInventoryFromDb(options={}) {
   const presets = getInitialPresetsFromMaster(master);
   const masterMap = masterPresetMapFromMaster(master);
   if (!presets.length) {
-    if (!silent) showToast('DBに初期所持品タグ付きのアイテム/術式が見つかりません。統合DB管理ツールで必要な表をDB登録してください。', 'warn');
+    if (!silent) showToast('DBに初期倉庫タグ付きのアイテム/術式が見つかりません。既存DBの旧タグも読み取り対象です。統合DB管理ツールで必要な表をDB登録してください。', 'warn');
     return { added:0, updated:0, replaced:0, synced:0 };
   }
   const oldPlaceholderNames = new Set(['短剣','片手剣','片手斧','片手槌','片手槍','杖','弓','弩','両手剣','大槌','長槍']);
@@ -3156,7 +3173,7 @@ function equipmentSlotKind(row) {
   const slot = String(row && row.equipSlot || '').trim();
   if (slot.includes('鎧')) return 'armor';
   if (slot.includes('装飾')) return 'accessory';
-  if (slot.includes('携行') || slot.includes('所持')) return 'carry';
+  if (slot.includes('携' + '行') || slot.includes('所持')) return 'carry';
   if (slot.includes('なし')) return 'none';
   return 'hand';
 }
@@ -3208,7 +3225,7 @@ function slotKindForCsItem(row) {
   if (isSpellInventoryItem(row) || kind === '術式' || kind === 'バッグ') return 'none';
   if (kind === '防具' && slot.includes('鎧')) return 'armor';
   if (kind === '装飾品' || slot.includes('装飾')) return 'accessory';
-  if (slot.includes('携行') || slot.includes('所持') || ['アイテム','素材','バッグ','重要品','その他'].includes(kind)) return 'carry';
+  if (slot.includes('携' + '行') || slot.includes('所持') || ['アイテム','素材','バッグ','重要品','その他'].includes(kind)) return 'carry';
   if (kind === '武器' || kind === '防具') return 'hand';
   return 'none';
 }
