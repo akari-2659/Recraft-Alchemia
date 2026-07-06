@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.17</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.18</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -541,7 +541,7 @@
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.17</div>
+  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.18</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -2027,6 +2027,14 @@ function defaultInventory() {
   const basicBag = { id:'bag_simple', masterId:'', masterSheet:'', masterSync:'', name:'簡素なバッグ', kind:'バッグ', category:'バッグ', count:1, capacity:8, location:'倉庫', rank:'初期', price:'', equipSlot:'', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', spellSlots:'', target:'', element:'', cost:'', checkType:'', role:'', source:'', tags:'初期', setItem:'', description:'冒険に必要な最低限の荷物を入れられる簡素なバッグ。', effect:'所持品枠8。', recipeResult:'', materials:'', note:'' };
   return { items: [basicBag], bagId:'bag_simple' };
 }
+function ensureDefaultBagItem() {
+  const defaultBag = normalizeInventoryItem({ id:'bag_simple', masterId:'', masterSheet:'', masterSync:'', name:'簡素なバッグ', kind:'バッグ', category:'バッグ', count:1, capacity:8, location:'倉庫', rank:'初期', price:'', equipSlot:'', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', spellSlots:'', target:'', element:'', cost:'', checkType:'', role:'', source:'', tags:'初期', setItem:'', description:'冒険に必要な最低限の荷物を入れられる簡素なバッグ。', effect:'所持品枠8。', recipeResult:'', materials:'', note:'' });
+  const exists = (inventoryItemsState || []).some(item => {
+    const normalized = normalizeInventoryItem(item);
+    return isBagInventoryItem(normalized) && (inventoryItemKey(normalized) === 'bag_simple' || normalized.id === 'bag_simple' || normalized.name === '簡素なバッグ');
+  });
+  if (!exists) inventoryItemsState.unshift(defaultBag);
+}
 function normalizeInventoryState(inventory) {
   const src = Array.isArray(inventory)
     ? inventory
@@ -2087,7 +2095,7 @@ function parseBagCapacity(itemOrValue={}) {
     const n = parseInt(String(itemOrValue || '').replace(/[^0-9-]/g, ''), 10);
     return Number.isFinite(n) ? clampInt(n, 0, 99) : 0;
   }
-  const direct = itemOrValue.capacity ?? itemOrValue.bagCapacity ?? itemOrValue.capacitySlots ?? itemOrValue.slotCapacity;
+  const direct = itemOrValue.bagCapacity ?? itemOrValue.capacity ?? itemOrValue.capacitySlots ?? itemOrValue.slotCapacity;
   if (direct !== undefined && direct !== null && String(direct).trim() !== '') return clampInt(direct, 0, 99);
   const text = [itemOrValue.power, itemOrValue.effect, itemOrValue.description, itemOrValue.note, itemOrValue.notes, itemOrValue.tags].map(v => String(v || '')).join(' ');
   const m = text.match(/(?:容量|所持品枠|所持枠|枠数|枠)\s*[:：]?\s*(\d{1,2})/);
@@ -2172,6 +2180,7 @@ function normalizeInventoryItem(item={}) {
     category: String(item.category || item.type || item.itemCategory || item.materialCategory || '').trim(),
     count: clampInt(item.count ?? item.quantity ?? 1, 0, 9999),
     capacity: kind === 'バッグ' ? parseBagCapacity(item) : 0,
+    bagCapacity: kind === 'バッグ' ? parseBagCapacity(item) : '',
     location: '倉庫',
     rank: String(item.rank || '').trim(),
     price: String(item.price || '').trim(),
@@ -2315,7 +2324,7 @@ function renderInventory() {
     const itemUseMeta = item.kind === 'アイテム' ? [item.target ? '対象：' + item.target : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : ''].filter(Boolean).join(' / ') : '';
     const spellSlotMeta = item.spellSlots ? `術式登録枠：${item.spellSlots}` : '';
     const bagMeta = item.kind === 'バッグ' ? `バッグ容量：${clampInt(item.capacity || 0, 0, 99)}` : '';
-    const searchText = [title, item.kind, item.category, item.rank, item.price, item.equipSlot, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.spellSlots, item.capacity, item.target, item.element, item.cost, item.power, item.description, item.effect, item.checkType, item.role, item.source, item.tags, item.recipeResult, item.materials].filter(Boolean).join(' ');
+    const searchText = [title, item.kind, item.category, item.rank, item.price, item.equipSlot, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.spellSlots, item.capacity, item.bagCapacity, item.target, item.element, item.cost, item.power, item.description, item.effect, item.checkType, item.role, item.source, item.tags, item.recipeResult, item.materials].filter(Boolean).join(' ');
     return `
     <details class="inventory-card" open data-inventory-row="${index}" data-inventory-id="${esc(item.id || '')}" data-inventory-location="倉庫" data-inventory-kind="${esc(item.kind || 'アイテム')}" data-inventory-search="${esc(searchText)}">
       <summary class="inventory-card-head">
@@ -2402,6 +2411,7 @@ function collectInventoryDialogItem() {
     category: $('inventoryFormCategory')?.value || '',
     count: $('inventoryFormCount')?.value || 1,
     capacity: $('inventoryFormCapacity')?.value || '',
+    bagCapacity: $('inventoryFormCapacity')?.value || '',
     location: '倉庫',
     rank: $('inventoryFormRank')?.value || '',
     price: $('inventoryFormPrice')?.value || '',
@@ -2489,7 +2499,8 @@ function dbItemToInventoryItem(row) {
     kind,
     category: mappedCategory,
     count: 1,
-    capacity: isBagLikeFields(row) ? parseBagCapacity(row.maxStack || row.capacity || row.bagCapacity || row.effect || row.description || '') : 0,
+    capacity: isBagLikeFields(row) ? parseBagCapacity(row.bagCapacity || row.capacity || row.effect || row.description || '') : 0,
+    bagCapacity: isBagLikeFields(row) ? parseBagCapacity(row.bagCapacity || row.capacity || row.effect || row.description || '') : '',
     rank: row.rank || '',
     price: row.price || '',
     equipSlot: row.equipSlot || '',
@@ -2523,7 +2534,8 @@ function dbSpellToInventoryItem(row) {
     kind: '術式',
     category: row.type || '',
     count: 1,
-    capacity: isBagLikeFields(row) ? parseBagCapacity(row.maxStack || row.capacity || row.bagCapacity || row.effect || row.description || '') : 0,
+    capacity: isBagLikeFields(row) ? parseBagCapacity(row.bagCapacity || row.capacity || row.effect || row.description || '') : 0,
+    bagCapacity: isBagLikeFields(row) ? parseBagCapacity(row.bagCapacity || row.capacity || row.effect || row.description || '') : '',
     rank: row.rank || '',
     price: row.scrollPrice || '',
     target: row.target || '',
@@ -2617,7 +2629,7 @@ function mergeMasterPresetIntoInventoryItem(existing={}, preset={}) {
 function isSameInventoryCore(a={}, b={}) {
   const aa = normalizeInventoryItem(a);
   const bb = normalizeInventoryItem(b);
-  const keys = ['masterId','masterSheet','masterSync','name','kind','category','rank','price','equipSlot','power','hit','defense','guard','evade','offhand','spellSlots','target','element','cost','description','effect','checkType','role','source','tags','setItem','recipeResult','materials'];
+  const keys = ['masterId','masterSheet','masterSync','name','kind','category','capacity','bagCapacity','rank','price','equipSlot','power','hit','defense','guard','evade','offhand','spellSlots','target','element','cost','description','effect','checkType','role','source','tags','setItem','recipeResult','materials'];
   return keys.every(k => String(aa[k] ?? '') === String(bb[k] ?? '')) && Number(aa.count || 0) === Number(bb.count || 0);
 }
 async function syncInitialInventoryFromDb(options={}) {
