@@ -227,7 +227,13 @@
   .field-disabled-by-type { opacity: .55; }
   .spell-slot-badge { display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(184,119,56,.26); background: rgba(184,119,56,.08); color: var(--accent2); border-radius: 999px; padding: 4px 10px; font-size: .82rem; font-weight: 900; }
   .inventory-toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 12px; }
+  .inventory-search-panel { border: 1px solid rgba(221, 203, 176, .9); background: rgba(255, 253, 248, .72); border-radius: 14px; padding: 12px; margin: 10px 0 12px; }
   .inventory-filter-panel { border: 1px solid rgba(221, 203, 176, .9); background: rgba(255, 253, 248, .72); border-radius: 14px; padding: 12px; margin: 10px 0 12px; }
+  .inventory-filter-panel > summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 10px; align-items: center; font-weight: 900; color: var(--accent2); }
+  .inventory-filter-panel > summary::-webkit-details-marker { display: none; }
+  .inventory-filter-panel > summary::after { content: "開く"; font-size: .78rem; color: var(--muted); border: 1px solid rgba(221,203,176,.9); background: rgba(255,253,248,.9); border-radius: 999px; padding: 2px 8px; }
+  .inventory-filter-panel[open] > summary::after { content: "閉じる"; }
+  .inventory-filter-body { margin-top: 10px; }
   .inventory-filter-row { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 8px; }
   .inventory-filter-label { font-size: .86rem; font-weight: 900; color: var(--muted); }
   .inventory-chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -807,21 +813,36 @@
       <details class="big-section" open>
         <summary>倉庫</summary>
         <div class="section-body">
-          <p class="hint">旧「所持品」はこの「倉庫」です。拠点に保管しているアイテムを登録します。倉庫には保管上限はありません。装備欄・所持品欄・バッグ選択の候補は、この倉庫一覧から生成されます。</p>
-          <div class="inventory-filter-panel" aria-label="倉庫アイテムの表示切替">
+          <p class="hint">旧「所持品」はこの「倉庫」です。拠点に保管しているアイテムを登録します。倉庫には保管上限はありません。装備欄・所持品欄・バッグ選択の候補は、この倉庫一覧から生成されます。名前検索は常時表示し、詳細フィルターは折り畳み式で使用します。</p>
+          <div class="inventory-search-panel" aria-label="倉庫アイテムの名前検索">
             <div class="inventory-filter-row">
-              <div class="inventory-filter-label">表示</div>
-              <div id="inventoryLocationTabs" class="inventory-chip-row"></div>
-            </div>
-            <div class="inventory-filter-row">
-              <div class="inventory-filter-label">中身の区分</div>
-              <div id="inventoryKindTabs" class="inventory-chip-row"></div>
-            </div>
-            <div class="inventory-filter-row">
-              <div class="inventory-filter-label">検索</div>
+              <div class="inventory-filter-label">名前検索</div>
               <input id="inventorySearchInput" type="search" placeholder="名称・カテゴリ・対象・説明・効果・術式種別で検索してください" />
             </div>
             <div id="inventoryFilterStatus" class="inventory-filter-status">全件を表示中</div>
+          </div>
+          <details class="inventory-filter-panel" aria-label="倉庫アイテムの詳細フィルター">
+            <summary>詳細フィルター</summary>
+            <div class="inventory-filter-body">
+              <div class="inventory-filter-row">
+                <div class="inventory-filter-label">表示</div>
+                <div id="inventoryLocationTabs" class="inventory-chip-row"></div>
+              </div>
+              <div class="inventory-filter-row">
+                <div class="inventory-filter-label">中身の区分</div>
+                <div id="inventoryKindTabs" class="inventory-chip-row"></div>
+              </div>
+            </div>
+          </details>
+          <div class="mini-card">
+            <h3>公開ID貼り付け登録</h3>
+            <p class="hint">GMや進行管理HTMLから受け取ったアイテム情報を貼り付けると、登録IDと個数を読み取ってDBから倉庫へ追加します。アイテム一覧検索は行いません。</p>
+            <textarea id="publicIdPasteInput" rows="6" placeholder="例：\n【ゼラチン液】\n登録ID：RCA-7KQ2-M9\n個数：1\n説明：ぷるぷると揺れる粘液。"></textarea>
+            <div class="button-row">
+              <button id="addByPublicIdPasteBtn" type="button" class="secondary">貼り付け内容を倉庫へ追加</button>
+              <button id="clearPublicIdPasteBtn" type="button" class="ghost">貼り付け欄をクリア</button>
+            </div>
+            <div id="publicIdPasteStatus" class="status-box">アイテム情報を貼り付けてください。</div>
           </div>
           <div class="inventory-toolbar">
             <button id="addInventoryItemBtn" type="button">追加</button>
@@ -2314,6 +2335,7 @@ function normalizeInventoryItem(item={}) {
   const oldDescription = item['fla' + 'vor' + 'Text'];
   return {
     id: item.id || ('inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6)),
+    publicId: String(item.publicId || item.publicID || '').trim(),
     masterId: String(item.masterId || item.masterID || item.sourceId || item.sourceID || '').trim(),
     masterSheet: String(item.masterSheet || item.sourceSheet || '').trim(),
     masterSync: String(item.masterSync || item.syncRole || '').trim(),
@@ -2643,6 +2665,7 @@ function dbItemToInventoryItem(row) {
   const mappedCategory = row.itemCategory || row.materialCategory || row.itemType || '';
   return normalizeInventoryItem({
     id: row.id || row.name,
+    publicId: row.publicId || '',
     masterId: row.id || row.name || '',
     masterSheet: 'items',
     masterSync: hasInitialMasterToken(row) ? INITIAL_MASTER_TOKEN : '',
@@ -2677,6 +2700,7 @@ function dbItemToInventoryItem(row) {
 function dbSpellToInventoryItem(row) {
   return normalizeInventoryItem({
     id: row.id || row.name,
+    publicId: row.publicId || '',
     masterId: row.id || row.name || '',
     masterSheet: 'spells',
     masterSync: hasInitialMasterToken(row) ? INITIAL_MASTER_TOKEN : '',
@@ -2778,9 +2802,173 @@ function mergeMasterPresetIntoInventoryItem(existing={}, preset={}) {
 function isSameInventoryCore(a={}, b={}) {
   const aa = normalizeInventoryItem(a);
   const bb = normalizeInventoryItem(b);
-  const keys = ['masterId','masterSheet','masterSync','name','kind','category','rank','price','equipSlot','power','hit','defense','guard','evade','offhand','spellSlots','target','element','cost','description','effect','checkType','role','source','tags','setItem','recipeResult','materials'];
+  const keys = ['publicId','masterId','masterSheet','masterSync','name','kind','category','rank','price','equipSlot','power','hit','defense','guard','evade','offhand','spellSlots','target','element','cost','description','effect','checkType','role','source','tags','setItem','recipeResult','materials'];
   return keys.every(k => String(aa[k] ?? '') === String(bb[k] ?? '')) && Number(aa.count || 0) === Number(bb.count || 0);
 }
+
+function parsePublicIdPasteEntries(text=''){
+  const raw = String(text || '').trim();
+  if(!raw) return [];
+  const ids = [...raw.matchAll(/RCA-[A-Z0-9]{4}-[A-Z0-9]{4}/gi)].map(m=>({id:m[0].toUpperCase(), index:m.index}));
+  if(!ids.length) return [];
+  return ids.map((entry, i)=>{
+    const start = Math.max(0, raw.lastIndexOf('\n\n', entry.index));
+    const end = i + 1 < ids.length ? Math.max(entry.index, raw.lastIndexOf('\n\n', ids[i+1].index)) : raw.length;
+    const block = raw.slice(start, end).trim();
+    let count = 1;
+    const countMatch = block.match(/(?:個数|数量|count|x|×)\s*[：:=]?\s*(\d+)/i) || block.match(new RegExp(entry.id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[^\\d\\n]*(\\d+)', 'i'));
+    if(countMatch) count = Math.max(1, Number(countMatch[1]) || 1);
+    return { publicId:entry.id, count, raw:block || entry.id };
+  });
+}
+function findPresetByPublicId(master={}, publicId=''){
+  const id = String(publicId || '').trim().toUpperCase();
+  if(!id) return null;
+  const itemRows = Array.isArray(master.cs_items) ? master.cs_items : [];
+  const spellRows = Array.isArray(master.spells) ? master.spells : [];
+  const row = itemRows.find(r=>String(r.publicId || '').trim().toUpperCase() === id);
+  if(row) return dbItemToInventoryItem(row);
+  const spell = spellRows.find(r=>String(r.publicId || '').trim().toUpperCase() === id);
+  if(spell) return dbSpellToInventoryItem(spell);
+  return null;
+}
+function mergePublicIdInventoryItem(existing={}, preset={}, addCount=1){
+  const oldItem = normalizeInventoryItem(existing);
+  const base = normalizeInventoryItem(preset);
+  const total = clampInt(Number(oldItem.count || 0) + Number(addCount || 0), 0, 9999);
+  return normalizeInventoryItem({
+    ...oldItem,
+    ...base,
+    id: oldItem.id || base.id,
+    publicId: base.publicId || oldItem.publicId || '',
+    masterId: base.masterId || base.id || oldItem.masterId || '',
+    masterSheet: base.masterSheet || oldItem.masterSheet || '',
+    count: total || addCount || oldItem.count || base.count || 1,
+    location: '倉庫'
+  });
+}
+async function addInventoryByPublicIdPaste(){
+  if(currentMode === 'view') return;
+  const box = $('publicIdPasteInput');
+  const status = $('publicIdPasteStatus');
+  const entries = parsePublicIdPasteEntries(box?.value || '');
+  if(!entries.length){
+    if(status){ status.className='status-box warn'; status.textContent='登録IDが読み取れませんでした。'; }
+    return;
+  }
+  if(!gasUrl()){
+    if(status){ status.className='status-box warn'; status.textContent='DBから登録するため、先にGAS WebアプリURLを設定してください。'; }
+    return;
+  }
+  let master;
+  try{
+    master = await loadCharacterSheetMasterFromDbForInitial();
+  }catch(e){
+    if(status){ status.className='status-box error'; status.textContent='DB読み込みに失敗しました：' + e.message; }
+    return;
+  }
+  const added = [], updated = [], missing = [];
+  for(const entry of entries){
+    const preset = findPresetByPublicId(master, entry.publicId);
+    if(!preset){ missing.push(entry.publicId); continue; }
+    const pid = String(preset.publicId || '').trim().toUpperCase();
+    const mid = String(preset.masterId || preset.id || '').trim();
+    const idx = inventoryItemsState.findIndex(item=>{
+      const n = normalizeInventoryItem(item);
+      return (pid && String(n.publicId || '').trim().toUpperCase() === pid)
+        || (mid && String(n.masterId || n.id || '').trim() === mid);
+    });
+    if(idx >= 0){
+      inventoryItemsState[idx] = mergePublicIdInventoryItem(inventoryItemsState[idx], preset, entry.count || 1);
+      updated.push(`${preset.name} x${entry.count || 1}`);
+    }else{
+      inventoryItemsState.push(normalizeInventoryItem({...preset, count:entry.count || 1, location:'倉庫'}));
+      added.push(`${preset.name} x${entry.count || 1}`);
+    }
+  }
+  renderInventory();
+  refreshEquipmentItemSelects();
+  updateSummary();
+  if(status){
+    const parts = [];
+    if(added.length) parts.push('追加：' + added.join('、'));
+    if(updated.length) parts.push('加算：' + updated.join('、'));
+    if(missing.length) parts.push('未登録ID：' + missing.join(' / '));
+    status.className = missing.length ? 'status-box warn' : 'status-box ok';
+    status.textContent = parts.join('\n') || '処理対象がありませんでした。';
+  }
+}
+
+const INITIAL_AMMO_STACKS = [
+  { name:'通常矢', count:20, type:'特殊矢弾' },
+  { name:'通常ボルト', count:20, type:'特殊矢弾' },
+  { name:'大型ボルト', count:10, type:'特殊矢弾' },
+];
+function initialAmmoStackCount(item={}, fallback=1){
+  const raw = String(item.spellSlots || item.maxStack || item.count || '').trim();
+  const m = raw.match(/\d+/);
+  return clampInt(m ? m[0] : fallback, 1, 99);
+}
+function findInventoryItemByName(name){
+  const n = String(name || '').trim();
+  if(!n) return null;
+  return (inventoryItemsState || []).map(item=>normalizeInventoryItem(item)).find(item=>String(item.name || '').trim() === n) || null;
+}
+function carrySlotContainsName(name){
+  const n = String(name || '').trim();
+  if(!n) return false;
+  for(const slot of EQUIPMENT_SLOTS){
+    if(slot.kind !== 'carry') continue;
+    const current = String($('equip_' + slot.key + '_name')?.value || '').trim();
+    if(current === n) return true;
+  }
+  return false;
+}
+function firstEmptyCarrySlotKey(){
+  for(const slot of EQUIPMENT_SLOTS){
+    if(slot.kind !== 'carry') continue;
+    const hasName = String($('equip_' + slot.key + '_name')?.value || '').trim();
+    const hasSelect = String($('equip_' + slot.key + '_itemSelect')?.value || '').trim();
+    const hasDesc = String($('equip_' + slot.key + '_description')?.value || '').trim();
+    const hasNote = String($('equip_' + slot.key + '_note')?.value || '').trim();
+    if(!hasName && !hasSelect && !hasDesc && !hasNote) return slot.key;
+  }
+  return '';
+}
+function setCarrySlotFromInventory(slotKey, item={}, count=1, fallbackType='特殊矢弾'){
+  const normalized = normalizeInventoryItem(item);
+  const select = $('equip_' + slotKey + '_itemSelect');
+  if(select){
+    const key = inventoryItemKey(normalized);
+    select.value = key && Array.from(select.options).some(o=>o.value===key) ? key : '';
+  }
+  if($('equip_' + slotKey + '_name')) $('equip_' + slotKey + '_name').value = normalized.name || '';
+  setTypeSelectValue(slotKey, normalized.category || fallbackType || normalized.kind || 'その他');
+  if($('equip_' + slotKey + '_count')) $('equip_' + slotKey + '_count').value = clampInt(count, 1, 99);
+  if($('equip_' + slotKey + '_description')) $('equip_' + slotKey + '_description').value = normalized.description || '';
+  if($('equip_' + slotKey + '_note')) $('equip_' + slotKey + '_note').value = normalized.effect || '';
+}
+function addInitialAmmoStacksToCarry(){
+  let added = 0;
+  refreshEquipmentItemSelects();
+  for(const spec of INITIAL_AMMO_STACKS){
+    if(carrySlotContainsName(spec.name)) continue;
+    const item = findInventoryItemByName(spec.name);
+    if(!item) continue;
+    const slotKey = firstEmptyCarrySlotKey();
+    if(!slotKey) break;
+    const count = initialAmmoStackCount(item, spec.count);
+    setCarrySlotFromInventory(slotKey, item, count, spec.type);
+    added++;
+  }
+  if(added){
+    updateEquipmentSummaries();
+    applyBagCapacityToEquipmentSlots();
+    updateSummary();
+  }
+  return added;
+}
+
 async function syncInitialInventoryFromDb(options={}) {
   const silent = !!options.silent;
   if (currentMode === 'view' && options.skipView) return { added:0, updated:0, replaced:0 };
@@ -2838,10 +3026,14 @@ async function syncInitialInventoryFromDb(options={}) {
   if (added || updated || replaced || synced) {
     renderInventory();
     refreshEquipmentItemSelects();
+    const ammoCarryAdded = addInitialAmmoStacksToCarry();
     updateSummary();
+    if(ammoCarryAdded) added += 0;
   }
+  const ammoCarryAddedFinal = addInitialAmmoStacksToCarry();
   if (!silent) {
     const parts = [];
+    if (ammoCarryAddedFinal) parts.push(`初期矢弾${ammoCarryAddedFinal}枠を所持品に追加`);
     if (replaced) parts.push(`旧初期装備${replaced}件を整理`);
     if (synced) parts.push(`DB由来倉庫アイテム${synced}件を同期`);
     if (added) parts.push(`初期倉庫アイテム${added}件を追加`);
@@ -2862,7 +3054,7 @@ function scheduleInitialInventorySyncForEditor(mode) {
       const st = $('editorStatus');
       if (st && mode !== 'view') {
         st.className = 'status-box ok';
-        st.textContent = `DBから倉庫アイテムを同期しました。追加${result.added}件 / 初期更新${result.updated}件 / DB由来更新${result.synced || 0}件。保存すると反映されます。`;
+        st.textContent = `DBから倉庫アイテムを同期しました。追加${result.added}件 / 初期更新${result.updated}件 / DB由来更新${result.synced || 0}件。初期矢弾は所持品へ反映済みです。保存すると反映されます。`;
       }
     }
   }, 0);
@@ -4303,6 +4495,8 @@ function bindEvents() {
   $('makePaletteOutputBtn').addEventListener('click', () => copyOutput('palette'));
   $('closeOutputDialogBtn').addEventListener('click', () => $('outputDialog').close());
   if ($('addInventoryItemBtn')) $('addInventoryItemBtn').addEventListener('click', () => addInventoryItem());
+  if ($('addByPublicIdPasteBtn')) $('addByPublicIdPasteBtn').addEventListener('click', addInventoryByPublicIdPaste);
+  if ($('clearPublicIdPasteBtn')) $('clearPublicIdPasteBtn').addEventListener('click', () => { if($('publicIdPasteInput')) $('publicIdPasteInput').value=''; if($('publicIdPasteStatus')) { $('publicIdPasteStatus').className='status-box'; $('publicIdPasteStatus').textContent='アイテム情報を貼り付けてください。'; } });
   if ($('addInitialWeaponSetBtn')) $('addInitialWeaponSetBtn').addEventListener('click', addInitialWeaponSet);
   if ($('sortInventoryItemBtn')) $('sortInventoryItemBtn').addEventListener('click', sortInventoryItems);
   if ($('inventorySearchInput')) $('inventorySearchInput').addEventListener('input', e => setInventoryFilter('search', e.target.value || ''));
