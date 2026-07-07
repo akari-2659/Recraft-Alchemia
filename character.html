@@ -2061,6 +2061,59 @@ function defaultInventory() {
   const basicBag = { id:'bag_simple', masterId:'', masterSheet:'', masterSync:'', name:'簡素なバッグ', kind:'バッグ', itemType:'バッグ', category:'バッグ', itemCategory:'バッグ', count:1, capacity:8, bagCapacity:8, location:'倉庫', rank:'初期', price:'', equipSlot:'', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', spellSlots:'', target:'', element:'', cost:'', checkType:'', role:'', source:'初期支給 / 鍛冶屋', tags:'バッグ,初期倉庫', setItem:'', description:'冒険に必要な最低限の荷物を入れられる簡素なバッグ。', effect:'所持品枠8。', recipeResult:'', materials:'', note:'' };
   return { items: [basicBag], bagId:'bag_simple', quiverId:'', quiverAmmoSlots:{} };
 }
+
+function ensureDefaultBagItem() {
+  if (!Array.isArray(inventoryItemsState)) inventoryItemsState = [];
+  const exists = inventoryItemsState.some(item => {
+    const row = normalizeInventoryItem(item);
+    return isBagInventoryItem(row) && (
+      inventoryItemKey(row) === 'bag_simple' ||
+      row.id === 'bag_simple' ||
+      row.masterId === 'bag_simple' ||
+      row.name === '簡素なバッグ'
+    );
+  });
+  if (exists) return;
+  inventoryItemsState.unshift(normalizeInventoryItem({
+    id:'bag_simple',
+    masterId:'',
+    masterSheet:'',
+    masterSync:'',
+    name:'簡素なバッグ',
+    kind:'バッグ',
+    itemType:'バッグ',
+    category:'バッグ',
+    itemCategory:'バッグ',
+    count:1,
+    capacity:8,
+    bagCapacity:8,
+    location:'倉庫',
+    rank:'初期',
+    price:'',
+    equipSlot:'',
+    power:'',
+    hit:'',
+    defense:'',
+    guard:'',
+    evade:'',
+    offhand:'',
+    spellSlots:'',
+    target:'',
+    element:'',
+    cost:'',
+    checkType:'',
+    role:'',
+    source:'初期支給 / 鍛冶屋',
+    tags:'バッグ,初期倉庫',
+    setItem:'',
+    description:'冒険に必要な最低限の荷物を入れられる簡素なバッグ。',
+    effect:'所持品枠8。',
+    recipeResult:'',
+    materials:'',
+    note:''
+  }));
+}
+
 function normalizeInventoryState(inventory) {
   const src = Array.isArray(inventory)
     ? inventory
@@ -4367,11 +4420,11 @@ document.addEventListener('change', (ev) => {
     selectedQuiverId = target.value || '';
     quiverAmmoSlotsState = {};
     renderQuiverControls();
-    autoSaveDraftSoon?.();
+    if (typeof autoSaveDraftSoon === 'function') autoSaveDraftSoon();
   }
   if (target && target.dataset && target.dataset.quiverAmmoSlot) {
     quiverAmmoSlotsState[target.dataset.quiverAmmoSlot] = target.value || '';
-    autoSaveDraftSoon?.();
+    if (typeof autoSaveDraftSoon === 'function') autoSaveDraftSoon();
   }
 });
 
