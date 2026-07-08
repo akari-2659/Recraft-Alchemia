@@ -158,14 +158,14 @@
     padding: 11px;
   }
   .stat-card label { text-align: center; }
-  .ability-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
-  @media (min-width: 760px) { .ability-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-  @media (min-width: 960px) { .ability-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+  .ability-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); gap: 9px; }
   .ability-name, .trait-name { font-weight: 900; }
   .ability-card { display: flex; flex-direction: column; gap: 8px; }
   .ability-card input { font-size: 1.15rem; font-weight: 900; color: var(--accent2); }
   .ability-card button { padding: 7px 10px; font-size: .84rem; }
-  .ability-values { display: grid; grid-template-columns: 1fr .8fr .8fr; gap: 6px; align-items: end; }
+  .ability-values { display: grid; grid-template-columns: 1fr; gap: 7px; }
+  .ability-base-line { min-width: 0; }
+  .ability-result-line { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; min-width: 0; }
   .ability-mini-label { font-size: .72rem; color: var(--muted); font-weight: 800; }
   .ability-mod, .skill-other-auto {
     min-height: 34px;
@@ -177,6 +177,7 @@
     background: rgba(255, 253, 248, .72);
     font-weight: 900;
     color: var(--accent2);
+    min-width: 0;
   }
   .computed-value { font-size: 1.35rem; font-weight: 900; color: var(--accent2); }
   .trait-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
@@ -929,7 +930,7 @@
         <textarea id="inventoryFormModifiers" class="hidden" data-inventory-input="1"></textarea>
         <div id="inventoryFormModifierRows" data-char-modifier-editor data-modifier-hidden="inventoryFormModifiers" data-modifier-list="inventoryFormModifierRows"></div>
         <button type="button" class="ghost" data-modifier-add="inventoryFormModifierRows">補正値を追加</button>
-        <div class="small">能力・技能・戦闘ステータスへの補正を1行ずつ登録できます。命中・回避・防御などもここで管理します。</div>
+        <div class="small">装備に付く補正を登録します。</div>
       </div>
       <div class="field" data-inventory-kind-field="accessory"><label for="inventoryFormSpellSlots">術式登録枠</label><input id="inventoryFormSpellSlots" type="number" min="0" max="99" value="" placeholder="魔印/聖印用" /></div>
       <div class="field" data-inventory-kind-field="item spell"><label for="inventoryFormTarget">対象</label><input id="inventoryFormTarget" type="text" placeholder="例：味方1体 / 敵1体" /></div>
@@ -1298,17 +1299,19 @@ function renderStatic() {
     <div class="ability-card">
       <label for="ability_${a.key}" class="ability-name">${a.name}</label>
       <div class="ability-values">
-        <div>
+        <div class="ability-base-line">
           <div class="ability-mini-label">基本</div>
           <input id="ability_${a.key}" data-ability-input="1" type="number" min="0" max="4" inputmode="numeric" value="0" />
         </div>
-        <div>
-          <div class="ability-mini-label">補正</div>
-          <div id="ability_mod_${a.key}" class="ability-mod">0</div>
-        </div>
-        <div>
-          <div class="ability-mini-label">合計</div>
-          <div id="ability_total_${a.key}" class="computed-value">0</div>
+        <div class="ability-result-line">
+          <div>
+            <div class="ability-mini-label">補正</div>
+            <div id="ability_mod_${a.key}" class="ability-mod">0</div>
+          </div>
+          <div>
+            <div class="ability-mini-label">合計</div>
+            <div id="ability_total_${a.key}" class="computed-value">0</div>
+          </div>
         </div>
       </div>
       <button type="button" class="ghost" data-reroll-ability="${a.key}">個別振り直し</button>
@@ -1607,6 +1610,27 @@ function modifierTargetOptionsHtml(selected='') {
   }
   return html;
 }
+
+function modifierTargetDisplayName(target='') {
+  const key = String(target || '').trim();
+  if(!key) return '';
+  if(key === 'hit') return '命中';
+  if(key === 'combat:defense') return '防御';
+  if(key === 'combat:evasion') return '回避値';
+  if(key === 'combat:initiative') return '先制値';
+  if(key === 'resource:maxHp') return '最大HP';
+  if(key === 'resource:maxMp') return '最大MP';
+  if(key.startsWith('ability:')) return ABILITY_NAMES[key.replace('ability:', '')] || key;
+  if(key.startsWith('skill:')) {
+    const skill = SKILL_BY_KEY[key.replace('skill:', '')];
+    return skill?.name || key;
+  }
+  return key;
+}
+function modifierDisplayText(value='') {
+  return parseModifierRows(value).map(row => `${modifierTargetDisplayName(row.target)} ${signedNumberText(row.value) || row.value}`).filter(Boolean).join(' / ');
+}
+
 function normalizeModifierRow(row={}) {
   const rawTarget = String(row.target || row.key || row.name || '').trim();
   const value = String(row.value ?? row.mod ?? row.amount ?? '').trim();
@@ -1643,9 +1667,9 @@ function serializeModifierRows(rows) {
 function modifierRowHtml(row={}, idx=0) {
   const r = normalizeModifierRow(row) || {target:'', value:''};
   return `<div class="equipment-upgrade-row" data-modifier-row>
-    <div class="field"><label>補正項目</label><select data-modifier-field="target" data-equipment-input="1" data-inventory-input="1">${modifierTargetOptionsHtml(r.target)}</select></div>
-    <div class="field"><label>補正値</label><input data-modifier-field="value" data-equipment-input="1" data-inventory-input="1" type="text" value="${esc(r.value)}" placeholder="例：+1 / -1" /></div>
-    <div class="field"><label>&nbsp;</label><button type="button" class="ghost" data-modifier-remove>削除</button></div>
+    <div class="field"><select aria-label="補正" data-modifier-field="target" data-equipment-input="1" data-inventory-input="1">${modifierTargetOptionsHtml(r.target)}</select></div>
+    <div class="field"><input aria-label="補正値" data-modifier-field="value" data-equipment-input="1" data-inventory-input="1" type="text" value="${esc(r.value)}" placeholder="例：+1 / -1" /></div>
+    <div class="field"><button type="button" class="ghost" data-modifier-remove>削除</button></div>
   </div>`;
 }
 function renderModifierEditor(listId, value='') {
@@ -1834,7 +1858,16 @@ function computeEquipmentSkillModifiers(equipment=getEquipmentState()) {
     const type = normalizeEquipmentType(item.type || 'なし');
     if (!item.name && (!type || type === 'なし')) continue;
     for (const row of activeEquipmentModifierRows(item)) {
-      if (row.target === 'hit' && HAND_SLOT_KEYS.includes(slot.key)) setBestEquipmentHitModifier(mods, equipmentHitSkillKey(item), modifierValue(row));
+      if (row.target === 'hit' && HAND_SLOT_KEYS.includes(slot.key)) {
+        const hitValue = modifierValue(row);
+        const hitKey = equipmentHitSkillKey(item);
+        if (hitKey === 'melee') {
+          setBestEquipmentHitModifier(mods, 'melee', hitValue);
+          setBestEquipmentHitModifier(mods, 'force', hitValue);
+        } else {
+          setBestEquipmentHitModifier(mods, hitKey, hitValue);
+        }
+      }
       if (String(row.target || '').startsWith('skill:')) addEquipmentSkillModifier(mods, row.target.replace('skill:', ''), modifierValue(row));
     }
     if (HAND_SLOT_KEYS.includes(slot.key) && isPaletteTwoHandEquipment(item, null)) break;
@@ -4537,7 +4570,7 @@ function signedModForPalette(value) {
   return '+' + raw;
 }
 function hitModifierValueForItem(item={}) {
-  const rows = equipmentModifierRows(item);
+  const rows = activeEquipmentModifierRows(item);
   return rows.filter(row => row.target === 'hit').reduce((sum,row)=>sum + modifierValue(row), 0);
 }
 function signedHitModifierForPalette(item={}) {
