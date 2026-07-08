@@ -835,17 +835,25 @@
             </div>
           </details>
           <div class="mini-card">
-            <h3>公開ID貼り付け登録</h3>
-            <p class="hint">GMや進行管理HTMLから受け取ったアイテム情報を貼り付けると、登録IDと個数を読み取ってDBから倉庫へ追加します。アイテム一覧検索は行いません。</p>
-            <textarea id="publicIdPasteInput" rows="6" placeholder="例：\n【ゼラチン液】\n登録ID：RCA-7KQ2-M9\n個数：1\n説明：ぷるぷると揺れる粘液。"></textarea>
-            <div class="button-row">
-              <button id="addByPublicIdPasteBtn" type="button" class="secondary">貼り付け内容を倉庫へ追加</button>
-              <button id="clearPublicIdPasteBtn" type="button" class="ghost">貼り付け欄をクリア</button>
+            <h3>公開ID登録</h3>
+            <p class="hint">GMや進行管理HTMLから受け取った登録IDと個数だけを入力して、DB照合で倉庫へ追加します。アイテム一覧検索は行いません。</p>
+            <div class="inventory-form-grid">
+              <div class="field">
+                <label for="publicIdInput">登録ID</label>
+                <input id="publicIdInput" data-inventory-input="1" type="text" inputmode="latin" autocomplete="off" placeholder="例：RCA-64X3-USPY" />
+              </div>
+              <div class="field">
+                <label for="publicIdCountInput">個数</label>
+                <input id="publicIdCountInput" data-inventory-input="1" type="number" min="1" max="9999" value="1" />
+              </div>
             </div>
-            <div id="publicIdPasteStatus" class="status-box">アイテム情報を貼り付けてください。</div>
+            <div class="button-row">
+              <button id="addByPublicIdPasteBtn" type="button" class="secondary">登録IDで倉庫へ追加</button>
+              <button id="clearPublicIdPasteBtn" type="button" class="ghost">入力欄をクリア</button>
+            </div>
+            <div id="publicIdPasteStatus" class="status-box">登録IDと個数を入力してください。</div>
           </div>
           <div class="inventory-toolbar">
-            <button id="addInventoryItemBtn" type="button">追加</button>
             <button id="addInitialWeaponSetBtn" type="button" class="secondary">初期倉庫アイテムをDB同期</button>
             <button id="sortInventoryItemBtn" type="button" class="ghost">名称順に整理</button>
           </div>
@@ -901,6 +909,7 @@
       <div class="field" data-inventory-kind-field="armor"><label for="inventoryFormGuard">防御行動値</label><input id="inventoryFormGuard" type="text" placeholder="例：1D6+1" /></div>
       <div class="field" data-inventory-kind-field="armor accessory"><label for="inventoryFormEvade">回避補正</label><input id="inventoryFormEvade" type="text" placeholder="例：+1 / -1" /></div>
       <div class="field" data-inventory-kind-field="weapon"><label for="inventoryFormOffhand">副手追撃値</label><input id="inventoryFormOffhand" type="text" placeholder="例：+2" /></div>
+      <div class="field" data-inventory-kind-field="weapon armor accessory"><label for="inventoryFormUpgradeLimit">強化可能回数</label><input id="inventoryFormUpgradeLimit" type="number" min="0" max="9" value="" placeholder="例：2" /></div>
       <div class="field" data-inventory-kind-field="accessory"><label for="inventoryFormSpellSlots">術式登録枠</label><input id="inventoryFormSpellSlots" type="number" min="0" max="99" value="" placeholder="魔印/聖印用" /></div>
       <div class="field" data-inventory-kind-field="item spell"><label for="inventoryFormTarget">対象</label><input id="inventoryFormTarget" type="text" placeholder="例：味方1体 / 敵1体" /></div>
       <div class="field" data-inventory-kind-field="weapon item spell"><label for="inventoryFormElement">属性</label><select id="inventoryFormElement"><option value="">未選択</option><option>物</option><option>火</option><option>水</option><option>風</option><option>雷</option><option>光</option><option>闇</option><option>無</option></select></div>
@@ -1384,6 +1393,18 @@ function renderStatic() {
             <label for="equip_${slot.key}_offhand">副手追撃値</label>
             <input id="equip_${slot.key}_offhand" data-equipment-input="1" type="text" placeholder="例：+2" />
           </div>
+          <div class="field">
+            <label for="equip_${slot.key}_upgradeLimit">強化可能回数</label>
+            <input id="equip_${slot.key}_upgradeLimit" data-equipment-input="1" type="number" min="0" max="9" value="" placeholder="例：2" />
+          </div>
+          <details class="equipment-upgrade-details equipment-wide">
+            <summary>強化内容</summary>
+            <div class="field">
+              <label for="equip_${slot.key}_upgradeLines">適用済み強化</label>
+              <textarea id="equip_${slot.key}_upgradeLines" data-equipment-input="1" placeholder="1強化1行で記入してください。例：\nゼラチン液：命中時、対象の次の行動判定-1\n小獣の牙：威力+1"></textarea>
+              <div class="small">強化可能回数を超えないように記録してください。</div>
+            </div>
+          </details>
           <div class="field equipment-wide">
             <label for="equip_${slot.key}_description">説明</label>
             <textarea id="equip_${slot.key}_description" data-equipment-input="1" placeholder="見た目や雰囲気など"></textarea>
@@ -1894,7 +1915,7 @@ function defaultEquipment() {
   for (const slot of EQUIPMENT_SLOTS) {
     equipment[slot.key] = slot.kind === 'carry'
       ? { itemId:'', name:'', type:'なし', count:1, element:'', description:'', note:'' }
-      : { itemId:'', name:'', type:'なし', element:'', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', knownSpells:'', setSpells:'', description:'', checkType:'', role:'', source:'', tags:'', setItem:'', note:'' };
+      : { itemId:'', name:'', type:'なし', element:'', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', upgradeLimit:'', upgradeLines:'', knownSpells:'', setSpells:'', description:'', checkType:'', role:'', source:'', tags:'', setItem:'', note:'' };
   }
   equipment.memo = '';
   return equipment;
@@ -1923,6 +1944,8 @@ function getEquipmentState() {
       base.guard = isBook ? '' : ($('equip_' + slot.key + '_guard')?.value?.trim() || '');
       base.evade = isBook ? '' : ($('equip_' + slot.key + '_evade')?.value?.trim() || '');
       base.offhand = isBook ? '' : ($('equip_' + slot.key + '_offhand')?.value?.trim() || '');
+      base.upgradeLimit = $('equip_' + slot.key + '_upgradeLimit')?.value?.trim() || '';
+      base.upgradeLines = $('equip_' + slot.key + '_upgradeLines')?.value || '';
       if (spellContainerKind(base.type)) {
         base.knownSpells = '';
         base.setSpells = selectedSpellNames(slot.key).join('\n');
@@ -1963,6 +1986,8 @@ function setEquipmentState(equipment={}) {
       if ($('equip_' + slot.key + '_guard')) $('equip_' + slot.key + '_guard').value = item.guard || '';
       if ($('equip_' + slot.key + '_evade')) $('equip_' + slot.key + '_evade').value = item.evade || '';
       if ($('equip_' + slot.key + '_offhand')) $('equip_' + slot.key + '_offhand').value = item.offhand || '';
+      if ($('equip_' + slot.key + '_upgradeLimit')) $('equip_' + slot.key + '_upgradeLimit').value = item.upgradeLimit || '';
+      if ($('equip_' + slot.key + '_upgradeLines')) $('equip_' + slot.key + '_upgradeLines').value = item.upgradeLines || '';
       if ($('equip_' + slot.key + '_knownSpells')) $('equip_' + slot.key + '_knownSpells').value = '';
       setSpellSelectValues(slot.key, item.setSpells || '');
       const hasManualDetail = !!(item.element || item.power || item.hit || item.defense || item.guard || item.evade || item.offhand || item.setSpells || item.description || item.note);
@@ -2357,6 +2382,7 @@ function normalizeInventoryItem(item={}) {
     guard: String(item.guard || item.guardValue || '').trim(),
     evade: String(item.evade || item.evasionMod || '').trim(),
     offhand: String(item.offhand || item.offhandBonus || '').trim(),
+    upgradeLimit: String(item.upgradeLimit || item.upgradeCount || item.upgradeSlots || '').trim(),
     spellSlots: kind === 'バッグ' ? '' : String(item.spellSlots || item.slotCount || item.registerSlots || item.maxStack || '').trim(),
     target: String(item.target || item['対象'] || '').trim(),
     element: String(item.element || item.attribute || item.attributeType || item.elementName || item['属性'] || item['属性種別'] || item['攻撃属性'] || item['ダメージ属性'] || defaultElementForEquipmentRow(item) || '').trim(),
@@ -2487,13 +2513,13 @@ function renderInventory() {
     const title = item.name || '未設定アイテム';
     const description = item.description || '';
     const effectText = item.effect || '';
-    const equipMeta = [item.equipSlot, item.element ? '属性 ' + item.element : '', item.power ? '威力 ' + item.power : '', item.hit ? '命中 ' + item.hit : '', item.defense ? '防御 ' + item.defense : ''].filter(Boolean).join(' / ') || '—';
+    const equipMeta = [item.equipSlot ? '装備/使用枠：' + item.equipSlot : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : '', item.hit ? '命中補正：' + item.hit : '', item.defense ? '常時防御値：' + item.defense : '', item.guard ? '防御行動値：' + item.guard : '', item.evade ? '回避補正：' + item.evade : '', item.offhand ? '副手追撃値：' + item.offhand : '', item.upgradeLimit ? '強化可能回数：' + item.upgradeLimit : ''].filter(Boolean).join(' / ') || '—';
     const spellMeta = item.kind === '術式' ? [item.category ? '種別：' + item.category : '', item.element ? '属性：' + item.element : '', item.cost ? 'コスト：' + item.cost : '', item.target ? '対象：' + item.target : '', item.power ? 'ダメージ/威力：' + item.power : '', item.checkType ? '判定：' + checkExpressionDisplay(item.checkType) : '', item.role ? '役割：' + item.role : ''].filter(Boolean).join(' / ') : '';
     const recipeMeta = item.kind === 'レシピ' ? [item.recipeResult ? '完成品：' + item.recipeResult : '', item.materials ? '必要素材：' + item.materials : ''].filter(Boolean).join('\n') : '';
-    const itemUseMeta = item.kind === 'アイテム' ? [item.target ? '対象：' + item.target : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : ''].filter(Boolean).join(' / ') : '';
-    const spellSlotMeta = item.spellSlots ? `術式登録枠：${item.spellSlots}` : '';
+    const itemUseMeta = ['アイテム','素材','矢筒','バッグ'].includes(item.kind) ? [item.target ? '対象：' + item.target : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : '', item.cost ? 'コスト：' + item.cost : '', item.checkType ? '判定：' + checkExpressionDisplay(item.checkType) : '', item.ammoKind ? '矢弾種別：' + item.ammoKind : '', item.spellSlots ? '最大スタック数：' + item.spellSlots : '', item.quiverCapacity ? '矢筒収納種類数：' + item.quiverCapacity : '', item.bagCapacity ? 'バッグ容量：' + item.bagCapacity : '', item.source ? '入手先：' + item.source : '', item.tags ? 'タグ：' + item.tags : ''].filter(Boolean).join(' / ') : '';
+    const spellSlotMeta = item.spellSlots && ['武器','防具','装飾品','術式'].includes(item.kind) ? `術式登録枠：${item.spellSlots}` : '';
     const bagMeta = item.kind === 'バッグ' ? `バッグ容量：${clampInt(item.capacity || 0, 0, 99)}` : '';
-    const searchText = [title, item.kind, item.category, item.rank, item.price, item.equipSlot, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.spellSlots, item.capacity, item.target, item.element, item.cost, item.power, item.description, item.effect, item.checkType, item.role, item.source, item.tags, item.recipeResult, item.materials].filter(Boolean).join(' ');
+    const searchText = [title, item.kind, item.category, item.rank, item.price, item.equipSlot, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.upgradeLimit, item.spellSlots, item.capacity, item.bagCapacity, item.quiverCapacity, item.ammoKind, item.target, item.element, item.cost, item.power, item.description, item.effect, item.checkType, item.role, item.source, item.tags, item.recipeResult, item.materials].filter(Boolean).join(' ');
     return `
     <details class="inventory-card" open data-inventory-row="${index}" data-inventory-id="${esc(item.id || '')}" data-inventory-location="倉庫" data-inventory-kind="${esc(item.kind || 'アイテム')}" data-inventory-search="${esc(searchText)}">
       <summary class="inventory-card-head">
@@ -2506,6 +2532,7 @@ function renderInventory() {
       </summary>
       <div class="inventory-card-meta">
         <div class="meta-item"><span class="meta-label">カテゴリ</span>${esc(item.category || '—')}</div>
+        ${item.publicId ? `<div class="meta-item"><span class="meta-label">登録ID</span>${esc(item.publicId)}</div>` : ''}
         <div class="meta-item"><span class="meta-label">個数</span>${esc(item.count ?? 0)}</div>
         ${bagMeta ? `<div class="meta-item"><span class="meta-label">バッグ容量</span>${esc(item.capacity || 0)}</div>` : ''}
         <div class="meta-item"><span class="meta-label">ランク</span>${esc(item.rank || '—')}</div>
@@ -2562,6 +2589,7 @@ function openInventoryDialog(index=-1) {
   if ($('inventoryFormGuard')) $('inventoryFormGuard').value = item.guard || '';
   if ($('inventoryFormEvade')) $('inventoryFormEvade').value = item.evade || '';
   if ($('inventoryFormOffhand')) $('inventoryFormOffhand').value = item.offhand || '';
+  if ($('inventoryFormUpgradeLimit')) $('inventoryFormUpgradeLimit').value = item.upgradeLimit || '';
   if ($('inventoryFormSpellSlots')) $('inventoryFormSpellSlots').value = item.spellSlots || '';
   if ($('inventoryFormTarget')) $('inventoryFormTarget').value = item.target || '';
   if ($('inventoryFormElement')) $('inventoryFormElement').value = item.element || '';
@@ -2595,6 +2623,7 @@ function collectInventoryDialogItem() {
     guard: $('inventoryFormGuard')?.value || '',
     evade: $('inventoryFormEvade')?.value || '',
     offhand: $('inventoryFormOffhand')?.value || '',
+    upgradeLimit: $('inventoryFormUpgradeLimit')?.value || '',
     spellSlots: $('inventoryFormSpellSlots')?.value || '',
     target: $('inventoryFormTarget')?.value || '',
     element: $('inventoryFormElement')?.value || '',
@@ -2655,7 +2684,7 @@ function dbItemTypeToInventoryKind(row) {
   if (['魔導書','祈祷書'].includes(cat)) return '武器';
   if (type === '術式装備') return '武器';
   if (type === '武器') return '武器';
-  if (type === '防具') return '防具';
+  if (type === '防具' || type === '盾') return '防具';
   if (type === '装飾品') return '装飾品';
   if (type === '素材') return '素材';
   return 'アイテム';
@@ -2674,6 +2703,9 @@ function dbItemToInventoryItem(row) {
     category: mappedCategory,
     count: 1,
     capacity: isBagLikeFields(row) ? parseBagCapacity(row.bagCapacity || row.capacity || row.effect || row.description || '') : 0,
+    bagCapacity: row.bagCapacity || '',
+    quiverCapacity: row.quiverCapacity || '',
+    ammoKind: row.ammoKind || '',
     rank: row.rank || '',
     price: row.price || '',
     equipSlot: row.equipSlot || '',
@@ -2683,6 +2715,7 @@ function dbItemToInventoryItem(row) {
     guard: row.guardValue || '',
     evade: row.evasionMod || '',
     offhand: row.offhandBonus || '',
+    upgradeLimit: row.upgradeLimit || '',
     spellSlots: row.maxStack || row.spellSlots || '',
     target: row.target || '',
     element: row.element || row.attribute || row.attributeType || row.elementName || row['属性'] || row['属性種別'] || row['攻撃属性'] || row['ダメージ属性'] || '',
@@ -2802,7 +2835,7 @@ function mergeMasterPresetIntoInventoryItem(existing={}, preset={}) {
 function isSameInventoryCore(a={}, b={}) {
   const aa = normalizeInventoryItem(a);
   const bb = normalizeInventoryItem(b);
-  const keys = ['publicId','masterId','masterSheet','masterSync','name','kind','category','rank','price','equipSlot','power','hit','defense','guard','evade','offhand','spellSlots','target','element','cost','description','effect','checkType','role','source','tags','setItem','recipeResult','materials'];
+  const keys = ['publicId','masterId','masterSheet','masterSync','name','kind','category','rank','price','equipSlot','power','hit','defense','guard','evade','offhand','upgradeLimit','spellSlots','target','element','cost','description','effect','checkType','role','source','tags','setItem','recipeResult','materials'];
   return keys.every(k => String(aa[k] ?? '') === String(bb[k] ?? '')) && Number(aa.count || 0) === Number(bb.count || 0);
 }
 
@@ -2849,11 +2882,15 @@ function mergePublicIdInventoryItem(existing={}, preset={}, addCount=1){
 }
 async function addInventoryByPublicIdPaste(){
   if(currentMode === 'view') return;
-  const box = $('publicIdPasteInput');
+  const idInput = $('publicIdInput');
+  const countInput = $('publicIdCountInput');
   const status = $('publicIdPasteStatus');
-  const entries = parsePublicIdPasteEntries(box?.value || '');
-  if(!entries.length){
-    if(status){ status.className='status-box warn'; status.textContent='登録IDが読み取れませんでした。'; }
+  const rawId = String(idInput?.value || '').trim().toUpperCase();
+  const idMatch = rawId.match(/RCA-[A-Z0-9]{4}-[A-Z0-9]{4}/i);
+  const publicId = idMatch ? idMatch[0].toUpperCase() : rawId;
+  const count = clampInt(countInput?.value || 1, 1, 9999);
+  if(!publicId || !/^RCA-[A-Z0-9]{4}-[A-Z0-9]{4}$/i.test(publicId)){
+    if(status){ status.className='status-box warn'; status.textContent='登録IDを RCA-XXXX-XXXX 形式で入力してください。'; }
     return;
   }
   if(!gasUrl()){
@@ -2867,37 +2904,34 @@ async function addInventoryByPublicIdPaste(){
     if(status){ status.className='status-box error'; status.textContent='DB読み込みに失敗しました：' + e.message; }
     return;
   }
-  const added = [], updated = [], missing = [];
-  for(const entry of entries){
-    const preset = findPresetByPublicId(master, entry.publicId);
-    if(!preset){ missing.push(entry.publicId); continue; }
-    const pid = String(preset.publicId || '').trim().toUpperCase();
-    const mid = String(preset.masterId || preset.id || '').trim();
-    const idx = inventoryItemsState.findIndex(item=>{
-      const n = normalizeInventoryItem(item);
-      return (pid && String(n.publicId || '').trim().toUpperCase() === pid)
-        || (mid && String(n.masterId || n.id || '').trim() === mid);
-    });
-    if(idx >= 0){
-      inventoryItemsState[idx] = mergePublicIdInventoryItem(inventoryItemsState[idx], preset, entry.count || 1);
-      updated.push(`${preset.name} x${entry.count || 1}`);
-    }else{
-      inventoryItemsState.push(normalizeInventoryItem({...preset, count:entry.count || 1, location:'倉庫'}));
-      added.push(`${preset.name} x${entry.count || 1}`);
-    }
+  const preset = findPresetByPublicId(master, publicId);
+  if(!preset){
+    if(status){ status.className='status-box warn'; status.textContent='DBに登録IDが見つかりません：' + publicId; }
+    return;
+  }
+  const pid = String(preset.publicId || '').trim().toUpperCase();
+  const mid = String(preset.masterId || preset.id || '').trim();
+  const idx = inventoryItemsState.findIndex(item=>{
+    const n = normalizeInventoryItem(item);
+    return (pid && String(n.publicId || '').trim().toUpperCase() === pid)
+      || (mid && String(n.masterId || n.id || '').trim() === mid);
+  });
+  if(idx >= 0){
+    inventoryItemsState[idx] = mergePublicIdInventoryItem(inventoryItemsState[idx], preset, count);
+  }else{
+    inventoryItemsState.push(normalizeInventoryItem({...preset, count, location:'倉庫'}));
   }
   renderInventory();
   refreshEquipmentItemSelects();
   updateSummary();
   if(status){
-    const parts = [];
-    if(added.length) parts.push('追加：' + added.join('、'));
-    if(updated.length) parts.push('加算：' + updated.join('、'));
-    if(missing.length) parts.push('未登録ID：' + missing.join(' / '));
-    status.className = missing.length ? 'status-box warn' : 'status-box ok';
-    status.textContent = parts.join('\n') || '処理対象がありませんでした。';
+    status.className='status-box ok';
+    status.textContent = idx >= 0 ? `加算しました：${preset.name} x${count}` : `追加しました：${preset.name} x${count}`;
   }
+  if(idInput) idInput.value = '';
+  if(countInput) countInput.value = '1';
 }
+
 
 const INITIAL_AMMO_STACKS = [
   { name:'通常矢', count:20, type:'特殊矢弾' },
@@ -3640,7 +3674,7 @@ function applyCsItemToEquipmentSlot(slotKey) {
   if ($('equip_' + slotKey + '_name')) $('equip_' + slotKey + '_name').value = row.name || '';
   setTypeSelectValue(slotKey, typeValue);
   if ($('equip_' + slotKey + '_count')) $('equip_' + slotKey + '_count').value = Math.min(Number(row.count) || 1, 99);
-  const map = { element:'element', power:'power', hit:'hit', defense:'defense', guard:'guard', evade:'evade', offhand:'offhand' };
+  const map = { element:'element', power:'power', hit:'hit', defense:'defense', guard:'guard', evade:'evade', offhand:'offhand', upgradeLimit:'upgradeLimit' };
   for (const [suffix, field] of Object.entries(map)) {
     const el = $('equip_' + slotKey + '_' + suffix);
     if (el) el.value = row[field] || '';
@@ -4496,7 +4530,8 @@ function bindEvents() {
   $('closeOutputDialogBtn').addEventListener('click', () => $('outputDialog').close());
   if ($('addInventoryItemBtn')) $('addInventoryItemBtn').addEventListener('click', () => addInventoryItem());
   if ($('addByPublicIdPasteBtn')) $('addByPublicIdPasteBtn').addEventListener('click', addInventoryByPublicIdPaste);
-  if ($('clearPublicIdPasteBtn')) $('clearPublicIdPasteBtn').addEventListener('click', () => { if($('publicIdPasteInput')) $('publicIdPasteInput').value=''; if($('publicIdPasteStatus')) { $('publicIdPasteStatus').className='status-box'; $('publicIdPasteStatus').textContent='アイテム情報を貼り付けてください。'; } });
+  if ($('publicIdInput')) $('publicIdInput').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); addInventoryByPublicIdPaste(); } });
+  if ($('clearPublicIdPasteBtn')) $('clearPublicIdPasteBtn').addEventListener('click', () => { if($('publicIdInput')) $('publicIdInput').value=''; if($('publicIdCountInput')) $('publicIdCountInput').value='1'; if($('publicIdPasteStatus')) { $('publicIdPasteStatus').className='status-box'; $('publicIdPasteStatus').textContent='登録IDと個数を入力してください。'; } });
   if ($('addInitialWeaponSetBtn')) $('addInitialWeaponSetBtn').addEventListener('click', addInitialWeaponSet);
   if ($('sortInventoryItemBtn')) $('sortInventoryItemBtn').addEventListener('click', sortInventoryItems);
   if ($('inventorySearchInput')) $('inventorySearchInput').addEventListener('input', e => setInventoryFilter('search', e.target.value || ''));
