@@ -711,10 +711,10 @@
                 </div>
               </div>
               <div class="field" style="margin-top:10px;">
-                <label for="hpBonus">HP補正</label>
-                <input id="hpBonus" type="number" min="-99" max="999" inputmode="numeric" value="0" />
+                <label for="hpBonus">HPボーナス</label>
+                <input id="hpBonus" type="number" min="0" max="99" inputmode="numeric" value="0" />
               </div>
-              <div class="formula-note">最大HP = 10 + 体力×3 + 意志 + HP補正</div>
+              <div class="formula-note">最大HP = 10 + 体力×3 + 意志 + HPボーナス×3</div>
             </div>
             <div class="resource-card">
               <h3>MP</h3>
@@ -729,10 +729,10 @@
                 </div>
               </div>
               <div class="field" style="margin-top:10px;">
-                <label for="mpBonus">MP補正</label>
-                <input id="mpBonus" type="number" min="-99" max="999" inputmode="numeric" value="0" />
+                <label for="mpBonus">MPボーナス</label>
+                <input id="mpBonus" type="number" min="0" max="99" inputmode="numeric" value="0" />
               </div>
-              <div class="formula-note">最大MP = 8 + 意志×3 + 知性 + MP補正</div>
+              <div class="formula-note">最大MP = 8 + 意志×3 + 知性 + MPボーナス×2</div>
             </div>
           </div>
         </div>
@@ -770,7 +770,7 @@
       <details class="big-section" open>
         <summary>技能</summary>
         <div class="section-body">
-          <p class="hint">各分類ポイントは分類ごとに2点＋ボーナス、自由ポイントは合計3点です。「その他」は装備・アイテム・状態補正などの増減に使用します。</p>
+          <p class="hint">各分類ポイントは分類ごとに2点＋ボーナス、自由ポイントは合計3点です。「その他」は状態補正などの手動補正に使用します。装備の命中・回避・防御行動補正は自動で技能値へ反映されます。</p>
           <div id="skillPointStatus" class="status-box">技能ポイントを確認します。</div>
           <div id="skillArea"></div>
         </div>
@@ -913,7 +913,15 @@
       <div class="field" data-inventory-kind-field="armor"><label for="inventoryFormGuard">防御行動値</label><input id="inventoryFormGuard" type="text" placeholder="例：1D6+1" /></div>
       <div class="field" data-inventory-kind-field="armor accessory"><label for="inventoryFormEvade">回避補正</label><input id="inventoryFormEvade" type="text" placeholder="例：+1 / -1" /></div>
       <div class="field" data-inventory-kind-field="weapon"><label for="inventoryFormOffhand">副手追撃値</label><input id="inventoryFormOffhand" type="text" placeholder="例：+2" /></div>
+      <div class="field" data-inventory-kind-field="weapon"><label for="inventoryFormReloadTurns">装填ターン</label><input id="inventoryFormReloadTurns" type="number" min="0" max="9" value="" placeholder="例：1" /></div>
       <div class="field" data-inventory-kind-field="weapon armor accessory"><label for="inventoryFormUpgradeLimit">強化可能回数</label><input id="inventoryFormUpgradeLimit" type="number" min="0" max="9" value="" placeholder="例：2" /></div>
+      <div class="field inventory-wide" data-inventory-kind-field="weapon armor accessory item spell">
+        <label>補正値</label>
+        <textarea id="inventoryFormModifiers" class="hidden" data-inventory-input="1"></textarea>
+        <div id="inventoryFormModifierRows" data-char-modifier-editor data-modifier-hidden="inventoryFormModifiers" data-modifier-list="inventoryFormModifierRows"></div>
+        <button type="button" class="ghost" data-modifier-add="inventoryFormModifierRows">補正値を追加</button>
+        <div class="small">能力・技能・戦闘ステータスへの補正を1行ずつ登録できます。</div>
+      </div>
       <div class="field" data-inventory-kind-field="accessory"><label for="inventoryFormSpellSlots">術式登録枠</label><input id="inventoryFormSpellSlots" type="number" min="0" max="99" value="" placeholder="魔印/聖印用" /></div>
       <div class="field" data-inventory-kind-field="item spell"><label for="inventoryFormTarget">対象</label><input id="inventoryFormTarget" type="text" placeholder="例：味方1体 / 敵1体" /></div>
       <div class="field" data-inventory-kind-field="weapon item spell"><label for="inventoryFormElement">属性</label><select id="inventoryFormElement"><option value="">未選択</option><option>物</option><option>火</option><option>水</option><option>風</option><option>雷</option><option>光</option><option>闇</option><option>無</option></select></div>
@@ -1127,16 +1135,9 @@ function stage(raw, stat) {
   if (v <= 15) return 3;
   return 4;
 }
-function computeAbilitiesFromStats(stats={}) {
-  const st = Object.fromEntries(STAT_ORDER.map(k => [k, stage(stats[k], k)]));
-  return {
-    body: Math.max(st.STR, st.CON, st.SIZ),
-    dexterity: st.DEX,
-    sense: st.INT,
-    intellect: Math.max(st.INT, st.EDU),
-    will: st.POW,
-    charm: st.APP,
-  };
+function computeAbilities(stats) {
+  if (arguments.length === 0) return computeEffectiveAbilities(getAbilityValues(), getEquipmentState());
+  return computeAbilitiesFromStats(stats || {});
 }
 function getAbilityValues() {
   const values = {};
@@ -1147,7 +1148,9 @@ function setAbilityValues(values={}) {
   for (const a of ABILITIES) if ($('ability_' + a.key)) $('ability_' + a.key).value = clampInt(values?.[a.key] ?? 0, 0, 4);
 }
 function resolveAbilities(data) {
-  return data?.abilities || computeAbilitiesFromStats(data?.stats || {});
+  if (data?.effectiveAbilities) return data.effectiveAbilities;
+  const base = data?.abilities || computeAbilitiesFromStats(data?.stats || {});
+  return computeEffectiveAbilities(base, data?.equipment || {});
 }
 function clearRawStats() {
   for (const stat of STAT_ORDER) if ($('stat_' + stat)) $('stat_' + stat).value = '';
@@ -1237,7 +1240,7 @@ function getSkillAlloc() {
     alloc[key] = {
       cat: clampInt($('skill_cat_' + key)?.value || 0, 0, 99),
       free: clampInt($('skill_free_' + key)?.value || 0, 0, 3),
-      other: clampInt($('skill_other_' + key)?.value || 0, 0, 99),
+      other: clampInt($('skill_other_' + key)?.value || 0, -99, 99),
     };
   }
   return alloc;
@@ -1247,18 +1250,20 @@ function setSkillAlloc(alloc={}) {
     if ($('skill_cat_' + key)) $('skill_cat_' + key).value = clampInt(alloc?.[key]?.cat || 0, 0, 99);
     if ($('skill_free_' + key)) $('skill_free_' + key).value = clampInt(alloc?.[key]?.free || 0, 0, 3);
     if ($('skill_other_' + key)) $('skill_other_' + key).value = clampInt(alloc?.[key]?.other || 0, -99, 99);
-    if ($('skill_other_' + key)) $('skill_other_' + key).value = clampInt(alloc?.[key]?.other || 0, 0, 99);
   }
   updateAll();
 }
-function skillTotals(abilities=computeAbilities(), alloc=getSkillAlloc()) {
+function skillTotals(abilities=computeAbilities(), alloc=getSkillAlloc(), equipment=null) {
+  const equipmentMods = equipment ? computeEquipmentSkillModifiers(equipment) : {};
   const totals = {};
   for (const [key, sk] of Object.entries(SKILL_BY_KEY)) {
     const base = abilities[sk.ability] || 0;
     const cat = alloc[key]?.cat || 0;
     const free = alloc[key]?.free || 0;
-    const other = alloc[key]?.other || 0;
-    totals[key] = { base, cat, free, other, add: cat + free + other, total: base + cat + free + other };
+    const manualOther = alloc[key]?.other || 0;
+    const equipmentOther = equipmentMods[key] || 0;
+    const other = manualOther + equipmentOther;
+    totals[key] = { base, cat, free, manualOther, equipmentOther, other, add: cat + free + other, total: base + cat + free + other };
   }
   return totals;
 }
@@ -1285,6 +1290,7 @@ function renderStatic() {
     <div class="ability-card">
       <label for="ability_${a.key}" class="ability-name">${a.name}</label>
       <input id="ability_${a.key}" data-ability-input="1" type="number" min="0" max="4" inputmode="numeric" value="0" />
+      <div id="ability_equip_${a.key}" class="small"></div>
       <button type="button" class="ghost" data-reroll-ability="${a.key}">個別振り直し</button>
     </div>
   `).join('');
@@ -1311,7 +1317,7 @@ function renderStatic() {
           <div class="skill-cell base"><span id="skill_base_${sk.key}">0</span></div>
           <div class="skill-cell cat"><input id="skill_cat_${sk.key}" data-skill-input="1" type="number" min="0" max="99" value="0" /></div>
           <div class="skill-cell free"><input id="skill_free_${sk.key}" data-skill-input="1" type="number" min="0" max="3" value="0" /></div>
-          <div class="skill-cell other"><input id="skill_other_${sk.key}" data-skill-input="1" type="number" min="0" max="99" value="0" /></div>
+          <div class="skill-cell other"><input id="skill_other_${sk.key}" data-skill-input="1" type="number" min="-99" max="99" value="0" /><div id="skill_equip_${sk.key}" class="small"></div></div>
           <div class="skill-cell total computed-value" id="skill_total_${sk.key}">0</div>
         </div>
       `).join('')}
@@ -1398,6 +1404,16 @@ function renderStatic() {
             <input id="equip_${slot.key}_offhand" data-equipment-input="1" type="text" placeholder="例：+2" />
           </div>
           <div class="field">
+            <label for="equip_${slot.key}_reloadTurns">装填ターン</label>
+            <input id="equip_${slot.key}_reloadTurns" data-equipment-input="1" type="number" min="0" max="9" placeholder="例：1" />
+          </div>
+          <div class="field equipment-wide">
+            <label>補正値</label>
+            <textarea id="equip_${slot.key}_modifiers" class="hidden" data-equipment-input="1"></textarea>
+            <div id="equip_${slot.key}_modifierRows" data-char-modifier-editor data-modifier-hidden="equip_${slot.key}_modifiers" data-modifier-list="equip_${slot.key}_modifierRows"></div>
+            <button type="button" class="ghost" data-modifier-add="equip_${slot.key}_modifierRows">補正値を追加</button>
+          </div>
+          <div class="field">
             <label for="equip_${slot.key}_upgradeLimit">強化可能回数</label>
             <input id="equip_${slot.key}_upgradeLimit" data-equipment-input="1" type="number" min="0" max="9" value="" placeholder="例：2" />
           </div>
@@ -1440,7 +1456,15 @@ function renderStatic() {
     </details>`;
 }
 function updateAbilities() {
-  return computeAbilities();
+  const base = getAbilityValues();
+  const equipment = getEquipmentState();
+  const mods = computeEquipmentAbilityModifiers(equipment);
+  const effective = computeEffectiveAbilities(base, equipment);
+  for (const a of ABILITIES) {
+    const el = $('ability_equip_' + a.key);
+    if (el) el.textContent = mods[a.key] ? `装備${signedNumberText(mods[a.key])} → ${effective[a.key]}` : '';
+  }
+  return effective;
 }
 function updateCategoryBonuses() {
   const details = computeAutoCategoryBonusDetails();
@@ -1451,10 +1475,11 @@ function updateCategoryBonuses() {
 function updateSkills() {
   const abilities = computeAbilities();
   const alloc = getSkillAlloc();
-  const totals = skillTotals(abilities, alloc);
+  const totals = skillTotals(abilities, alloc, getEquipmentState());
   for (const [key, t] of Object.entries(totals)) {
     if ($('skill_base_' + key)) $('skill_base_' + key).textContent = t.base;
     if ($('skill_total_' + key)) $('skill_total_' + key).textContent = t.total;
+    if ($('skill_equip_' + key)) $('skill_equip_' + key).textContent = t.equipmentOther ? `装備${signedNumberText(t.equipmentOther)}` : '';
   }
   const check = validateSkills(alloc, getStats(), getManualCategoryBonuses());
   for (const cat of SKILL_CATEGORIES) {
@@ -1469,14 +1494,18 @@ function updateSkills() {
     $('skillPointStatus').textContent = `技能ポイントOK。自由P ${check.freeSum}/3`;
   }
 }
+function skillOtherSummaryText(t={}) {
+  if (t.equipmentOther) return `その他${t.other || 0}（手動${t.manualOther || 0}+装備${signedNumberText(t.equipmentOther)}）`;
+  return `その他${t.manualOther || 0}`;
+}
 function makeSummary() {
   const data = collectData(false);
-  const abilities = data.abilities || computeAbilities();
-  const totals = skillTotals(abilities, data.skills);
+  const abilities = data.effectiveAbilities || computeEffectiveAbilities(data.abilities || getAbilityValues(), data.equipment || getEquipmentState());
+  const totals = skillTotals(abilities, data.skills, data.equipment || {});
   const manualBonus = data.manualCategoryBonuses || emptyCategoryBonus();
   const autoBonus = computeAutoCategoryBonuses(data.stats || {});
   const catLimits = categoryPointLimits(data.stats || {}, manualBonus);
-  const res = computeResources(abilities, data.resources || getResourceState());
+  const res = computeResources(abilities, data.resources || getResourceState(), data.equipment || getEquipmentState());
   const lines = [];
   lines.push(`【リクラフト・アルケミア キャラクター】`);
   lines.push(`名前：${data.name || '未設定'}`);
@@ -1486,7 +1515,7 @@ function makeSummary() {
   lines.push(ABILITIES.map(a => `${a.name}:${abilities[a.key]}`).join(' / '));
   lines.push('');
   lines.push('■ HP・MP');
-  lines.push(`HP:${res.currentHp}/${res.maxHp} / MP:${res.currentMp}/${res.maxMp}`);
+  lines.push(`HP:${res.currentHp}/${res.maxHp}（HPボーナス${res.hpBonus}点） / MP:${res.currentMp}/${res.maxMp}（MPボーナス${res.mpBonus}点）`);
   const combat = computeCombatStats(abilities, data.skills || defaultSkillAlloc(), data.equipment || {});
   lines.push(`防御:${combat.defenseTotal} / 回避:${combat.evasionTotal}`);
   if (combat.dualWield?.available) lines.push(`二刀攻撃:${combat.dualWield.rightMain} / ${combat.dualWield.leftMain}`);
@@ -1502,7 +1531,7 @@ function makeSummary() {
     lines.push(`［${cat.name}］`);
     for (const sk of cat.skills) {
       const t = totals[sk.key];
-      lines.push(`${sk.name}: ${t.total}（能力${t.base}+分類P${t.cat}+自由P${t.free}+その他${t.other || 0}）`);
+      lines.push(`${sk.name}: ${t.total}（能力${t.base}+分類P${t.cat}+自由P${t.free}+${skillOtherSummaryText(t)}）`);
     }
   }
   pushInventorySummaryLines(lines, data.inventory || {});
@@ -1512,15 +1541,15 @@ function makeSummary() {
 
 function getResourceState() {
   return {
-    hpBonus: clampInt($('hpBonus')?.value || 0, -99, 999),
-    mpBonus: clampInt($('mpBonus')?.value || 0, -99, 999),
+    hpBonus: clampInt($('hpBonus')?.value || 0, 0, 99),
+    mpBonus: clampInt($('mpBonus')?.value || 0, 0, 99),
     currentHp: clampInt($('currentHp')?.value || 0, 0, 999),
     currentMp: clampInt($('currentMp')?.value || 0, 0, 999),
   };
 }
 function setResourceState(resources={}) {
-  if ($('hpBonus')) $('hpBonus').value = clampInt(resources?.hpBonus || 0, -99, 999);
-  if ($('mpBonus')) $('mpBonus').value = clampInt(resources?.mpBonus || 0, -99, 999);
+  if ($('hpBonus')) $('hpBonus').value = clampInt(resources?.hpBonus || 0, 0, 99);
+  if ($('mpBonus')) $('mpBonus').value = clampInt(resources?.mpBonus || 0, 0, 99);
   if ($('currentHp')) $('currentHp').value = resources?.currentHp ?? '';
   if ($('currentMp')) $('currentMp').value = resources?.currentMp ?? '';
 }
@@ -1553,28 +1582,157 @@ function parseFlatBonus(value) {
   if (/^[+-]?\d+$/.test(s)) return parseInt(s, 10) || 0;
   return 0;
 }
+
+function modifierTargetOptionsHtml(current='') {
+  const cur = String(current || '').trim();
+  const ability = ABILITIES.map(a => [`ability:${a.key}`, `能力：${a.name}`]);
+  const skills = SKILL_CATEGORIES.flatMap(cat => cat.skills.map(sk => [`skill:${sk.key}`, `技能：${sk.name}`]));
+  const combat = [
+    ['hit','命中（装備種別に応じて近接/射撃）'],
+    ['combat:defense','防御'],
+    ['combat:evasion','回避値'],
+    ['combat:initiative','先制値'],
+    ['resource:maxHp','最大HP'],
+    ['resource:maxMp','最大MP']
+  ];
+  const groups = [['能力', ability], ['技能', skills], ['戦闘・リソース', combat]];
+  const hasCurrent = groups.some(([,rows]) => rows.some(([v]) => v === cur));
+  const extra = cur && !hasCurrent ? `<option value="${esc(cur)}" selected>${esc(cur)}</option>` : '';
+  return extra + groups.map(([label, rows]) => `<optgroup label="${esc(label)}">${rows.map(([value, text]) => `<option value="${esc(value)}" ${value===cur?'selected':''}>${esc(text)}</option>`).join('')}</optgroup>`).join('');
+}
+function normalizeModifierRow(row={}) {
+  const rawTarget = String(row.target || row.key || row.name || row.type || '').trim();
+  const value = String(row.value ?? row.mod ?? row.amount ?? '').trim();
+  const note = String(row.note || row.memo || row.description || '').trim();
+  if(!rawTarget && !value && !note) return null;
+  const aliases = {
+    '命中':'hit', '命中補正':'hit', '常時防御':'combat:defense', '防御':'combat:defense', '防御値':'combat:defense', '回避値':'combat:evasion',
+    '回避':'skill:evade', '回避補正':'skill:evade', '防御行動':'skill:guard', '防御行動値':'skill:guard',
+    '体力':'ability:body', '器用':'ability:dexterity', '感覚':'ability:sense', '知性':'ability:intellect', '意志':'ability:will', '魅力':'ability:charm',
+    '最大HP':'resource:maxHp', 'HP':'resource:maxHp', '最大MP':'resource:maxMp', 'MP':'resource:maxMp', '先制':'combat:initiative', '先制値':'combat:initiative'
+  };
+  return { target: aliases[rawTarget] || rawTarget, value, note };
+}
+function parseModifierRows(value) {
+  if(Array.isArray(value)) return value.map(normalizeModifierRow).filter(Boolean);
+  const raw = String(value || '').trim();
+  if(!raw) return [];
+  try{
+    const parsed = JSON.parse(raw);
+    if(Array.isArray(parsed)) return parsed.map(normalizeModifierRow).filter(Boolean);
+  }catch(e){}
+  return raw.split(/\r?\n/).map(line=>line.trim()).filter(Boolean).map(line=>{
+    let parts = line.split('\t');
+    if(parts.length < 2) parts = line.split(/[｜|]/);
+    if(parts.length < 2) parts = line.split(/\s*,\s*/);
+    return normalizeModifierRow({ target: parts[0] || '', value: parts[1] || '', note: parts.slice(2).join(' / ') || '' });
+  }).filter(Boolean);
+}
+function serializeModifierRows(rows) {
+  return (rows || []).map(normalizeModifierRow).filter(Boolean).map(r => `${r.target}\t${r.value}\t${r.note || ''}`).join('\n');
+}
+function modifierRowHtml(row={}, idx=0) {
+  const r = normalizeModifierRow(row) || {target:'', value:'', note:''};
+  return `<div class="equipment-upgrade-row" data-modifier-row>
+    <div class="field"><label>補正対象 ${idx+1}</label><select data-modifier-field="target" data-equipment-input="1" data-inventory-input="1">${modifierTargetOptionsHtml(r.target)}</select></div>
+    <div class="field"><label>補正値</label><input data-modifier-field="value" data-equipment-input="1" data-inventory-input="1" type="text" value="${esc(r.value)}" placeholder="例：+1 / -1" /></div>
+    <div class="field"><label>メモ</label><input data-modifier-field="note" data-equipment-input="1" data-inventory-input="1" type="text" value="${esc(r.note)}" placeholder="任意" /></div>
+    <div class="field"><label>&nbsp;</label><button type="button" class="ghost" data-modifier-remove>削除</button></div>
+  </div>`;
+}
+function renderModifierEditor(listId, value='') {
+  const list = $(listId);
+  if(!list) return;
+  const rows = parseModifierRows(value);
+  list.innerHTML = rows.length ? rows.map((r,i)=>modifierRowHtml(r,i)).join('') : '<div class="small">補正値はまだありません。</div>';
+  syncModifierEditor(list.closest('[data-char-modifier-editor]') || list);
+}
+function readModifierRowsFromEditor(editor) {
+  return Array.from(editor.querySelectorAll('[data-modifier-row]')).map(row=>{
+    const get=f=>row.querySelector(`[data-modifier-field="${f}"]`)?.value || '';
+    return normalizeModifierRow({target:get('target'), value:get('value'), note:get('note')});
+  }).filter(Boolean);
+}
+function syncModifierEditor(editor) {
+  if(!editor) return;
+  const hiddenId = editor.dataset.modifierHidden || '';
+  const hidden = hiddenId ? $(hiddenId) : editor.querySelector('textarea');
+  if(hidden) hidden.value = serializeModifierRows(readModifierRowsFromEditor(editor));
+}
+function legacyModifierRowsFromEquipment(item={}) {
+  const rows = [];
+  if(String(item.hit ?? '').trim()) rows.push({target:'hit', value:item.hit, note:'命中'});
+  if(String(item.defense ?? '').trim()) rows.push({target:'combat:defense', value:item.defense, note:'常時防御'});
+  if(String(item.guard ?? '').trim()) rows.push({target:'skill:guard', value:item.guard, note:'防御行動'});
+  if(String(item.evade ?? '').trim()) rows.push({target:'skill:evade', value:item.evade, note:'回避'});
+  return rows;
+}
+function equipmentModifierRows(item={}) {
+  return parseModifierRows(item.modifiers || '').concat(legacyModifierRowsFromEquipment(item));
+}
+function modifierValue(row={}) { return parseFlatBonus(row.value); }
+function sumModifierRows(rows=[], predicate=()=>false) {
+  return rows.reduce((sum,row)=> predicate(row) ? sum + modifierValue(row) : sum, 0);
+}
+function computeEquipmentAbilityModifiers(equipment=getEquipmentState()) {
+  const mods = {};
+  for (const slot of EQUIPMENT_SLOTS) {
+    if (slot.kind === 'carry') continue;
+    for (const row of equipmentModifierRows((equipment || {})[slot.key] || {})) {
+      const target = String(row.target || '');
+      if (!target.startsWith('ability:')) continue;
+      const key = target.replace('ability:', '');
+      mods[key] = (mods[key] || 0) + modifierValue(row);
+    }
+  }
+  return mods;
+}
+function computeEquipmentCombatModifiers(equipment=getEquipmentState()) {
+  const mods = { defense:0, evasion:0, initiative:0, maxHp:0, maxMp:0 };
+  for (const slot of EQUIPMENT_SLOTS) {
+    if (slot.kind === 'carry') continue;
+    for (const row of equipmentModifierRows((equipment || {})[slot.key] || {})) {
+      const target = String(row.target || '');
+      const value = modifierValue(row);
+      if (target === 'combat:defense') mods.defense += value;
+      if (target === 'combat:evasion') mods.evasion += value;
+      if (target === 'combat:initiative') mods.initiative += value;
+      if (target === 'resource:maxHp') mods.maxHp += value;
+      if (target === 'resource:maxMp') mods.maxMp += value;
+    }
+  }
+  return mods;
+}
+function computeEffectiveAbilities(base=getAbilityValues(), equipment=getEquipmentState()) {
+  const mods = computeEquipmentAbilityModifiers(equipment);
+  const out = {};
+  for (const a of ABILITIES) out[a.key] = Math.max(0, (Number(base[a.key]) || 0) + (mods[a.key] || 0));
+  return out;
+}
+
+
 function getPresetForItem(item={}) {
   return EQUIPMENT_PRESETS[normalizeEquipmentType(item.type || 'なし')] || EQUIPMENT_PRESETS['なし'];
 }
+function hasSelectedInventoryEquipmentItem(item={}) {
+  return !!String(item && item.itemId || '').trim();
+}
+function equipmentFlatValueForCombat(item={}, field, fallback='0') {
+  const own = item && item[field];
+  if (own !== undefined && own !== null && String(own).trim() !== '') return own;
+  // 倉庫アイテムから選択した装備は、そのアイテム行の値を正とする。
+  // 空欄の場合に装備カテゴリのプリセット値へ戻すと、
+  // 例：命中+1の武器なのにカテゴリ側の回避+1までステータスに乗る、という誤反映が起きる。
+  if (hasSelectedInventoryEquipmentItem(item)) return fallback;
+  const preset = getPresetForItem(item);
+  const presetValue = preset && preset[field];
+  return presetValue !== undefined && presetValue !== null && String(presetValue).trim() !== '' ? presetValue : fallback;
+}
 function computeEquipmentDefense(equipment=getEquipmentState()) {
-  let total = 0;
-  for (const slot of EQUIPMENT_SLOTS) {
-    if (slot.kind === 'carry') continue;
-    const item = (equipment || {})[slot.key] || {};
-    const preset = getPresetForItem(item);
-    total += parseFlatBonus(item.defense !== undefined && item.defense !== '' ? item.defense : preset.defense);
-  }
-  return total;
+  return computeEquipmentCombatModifiers(equipment).defense;
 }
 function computeEquipmentEvade(equipment=getEquipmentState()) {
-  let total = 0;
-  for (const slot of EQUIPMENT_SLOTS) {
-    if (slot.kind === 'carry') continue;
-    const item = (equipment || {})[slot.key] || {};
-    const preset = getPresetForItem(item);
-    total += parseFlatBonus(item.evade !== undefined && item.evade !== '' ? item.evade : preset.evade);
-  }
-  return total;
+  return computeEquipmentCombatModifiers(equipment).evasion;
 }
 
 function signedNumberText(value) {
@@ -1588,6 +1746,52 @@ function parseFlatBonus(value) {
   const n = Number(String(value ?? '').trim().replace(/^\+/, ''));
   return Number.isFinite(n) ? n : 0;
 }
+const RANGED_EQUIPMENT_TYPES = new Set(['弓','弩','大型弩']);
+function equipmentHitSkillKey(item={}) {
+  const type = normalizeEquipmentType(item.type || item.category || item.kind || 'なし');
+  if (!type || type === 'なし') return '';
+  if (spellContainerKind(type)) return '';
+  if (['盾','大盾'].includes(type)) return '';
+  if (RANGED_EQUIPMENT_TYPES.has(type)) return 'shoot';
+  return 'melee';
+}
+function addEquipmentSkillModifier(mods, key, value) {
+  const n = Number(value || 0);
+  if (!key || !Number.isFinite(n) || n === 0) return;
+  mods[key] = (mods[key] || 0) + n;
+}
+function setBestEquipmentHitModifier(mods, key, value) {
+  const n = Number(value || 0);
+  if (!key || !Number.isFinite(n) || n === 0) return;
+  if (mods[key] === undefined) mods[key] = n;
+  else mods[key] = Math.max(mods[key], n);
+}
+function computeEquipmentSkillModifiers(equipment=getEquipmentState()) {
+  const mods = {};
+  for (const spec of [{ key:'rightHand' }, { key:'leftHand' }]) {
+    const item = (equipment || {})[spec.key] || {};
+    const type = normalizeEquipmentType(item.type || 'なし');
+    if (!item.name && (!type || type === 'なし')) continue;
+    const hit = parseFlatBonus(equipmentFlatValueForCombat(item, 'hit', '0'));
+    setBestEquipmentHitModifier(mods, equipmentHitSkillKey(item), hit);
+    for (const row of parseModifierRows(item.modifiers || '')) {
+      if (row.target === 'hit') setBestEquipmentHitModifier(mods, equipmentHitSkillKey(item), modifierValue(row));
+      if (String(row.target || '').startsWith('skill:')) addEquipmentSkillModifier(mods, row.target.replace('skill:', ''), modifierValue(row));
+    }
+    if (isPaletteTwoHandEquipment(item, null)) break;
+  }
+  for (const slot of EQUIPMENT_SLOTS) {
+    if (slot.kind === 'carry') continue;
+    const item = (equipment || {})[slot.key] || {};
+    addEquipmentSkillModifier(mods, 'evade', parseFlatBonus(equipmentFlatValueForCombat(item, 'evade', '0')));
+    addEquipmentSkillModifier(mods, 'guard', parseFlatBonus(equipmentFlatValueForCombat(item, 'guard', '0')));
+    for (const row of parseModifierRows(item.modifiers || '')) {
+      if (String(row.target || '').startsWith('skill:')) addEquipmentSkillModifier(mods, row.target.replace('skill:', ''), modifierValue(row));
+    }
+  }
+  return mods;
+}
+
 function canUseAsDualWeapon(item) {
   const type = normalizeEquipmentType(item?.type || 'なし');
   if (!type || type === 'なし' || TWO_HAND_TYPES.has(type)) return false;
@@ -1609,12 +1813,13 @@ function computeDualWieldStats(equipment=getEquipmentState()) {
   };
 }
 function computeCombatStats(abilities=computeAbilities(), alloc=getSkillAlloc(), equipment=getEquipmentState()) {
-  const totals = skillTotals(abilities, alloc);
-  const defenseTotal = computeEquipmentDefense(equipment);
+  const totals = skillTotals(abilities, alloc, equipment);
+  const combatMods = computeEquipmentCombatModifiers(equipment);
+  const defenseTotal = combatMods.defense;
   const evadeSkill = totals.evade?.total || 0;
-  const evadeModifier = computeEquipmentEvade(equipment);
-  const evasionTotal = 5 + evadeSkill + evadeModifier;
-  return { defenseTotal, evasionTotal, evadeSkill, evadeModifier, dualWield: computeDualWieldStats(equipment) };
+  const evadeModifier = (totals.evade?.equipmentOther || 0) + combatMods.evasion;
+  const evasionTotal = 5 + evadeSkill + combatMods.evasion;
+  return { defenseTotal, evasionTotal, evadeSkill, evadeModifier, combatMods, dualWield: computeDualWieldStats(equipment) };
 }
 function updateCombatStats() {
   const combat = computeCombatStats(computeAbilities(), getSkillAlloc(), getEquipmentState());
@@ -1639,20 +1844,23 @@ function updateCombatStats() {
   return combat;
 }
 
-function computeResources(abilities=computeAbilities(), resources=getResourceState()) {
-  const maxHp = Math.max(1, 10 + (abilities.body || 0) * 3 + (abilities.will || 0) + (resources.hpBonus || 0));
-  const maxMp = Math.max(0, 8 + (abilities.will || 0) * 3 + (abilities.intellect || 0) + (resources.mpBonus || 0));
+function computeResources(abilities=computeAbilities(), resources=getResourceState(), equipment=getEquipmentState()) {
+  const hpBonusPoints = Math.max(0, resources.hpBonus || 0);
+  const mpBonusPoints = Math.max(0, resources.mpBonus || 0);
+  const combatMods = computeEquipmentCombatModifiers(equipment);
+  const maxHp = Math.max(1, 10 + (abilities.body || 0) * 3 + (abilities.will || 0) + hpBonusPoints * 3 + (combatMods.maxHp || 0));
+  const maxMp = Math.max(0, 8 + (abilities.will || 0) * 3 + (abilities.intellect || 0) + mpBonusPoints * 2 + (combatMods.maxMp || 0));
   return {
     maxHp,
     maxMp,
     currentHp: resources.currentHp || maxHp,
     currentMp: resources.currentMp || maxMp,
-    hpBonus: resources.hpBonus || 0,
-    mpBonus: resources.mpBonus || 0,
+    hpBonus: hpBonusPoints,
+    mpBonus: mpBonusPoints,
   };
 }
 function updateResources() {
-  const res = computeResources(computeAbilities(), getResourceState());
+  const res = computeResources(computeAbilities(), getResourceState(), getEquipmentState());
   if ($('maxHp')) $('maxHp').textContent = res.maxHp;
   if ($('maxMp')) $('maxMp').textContent = res.maxMp;
   if ($('currentHp') && !$('currentHp').value) $('currentHp').value = res.maxHp;
@@ -1995,7 +2203,7 @@ function defaultEquipment() {
   for (const slot of EQUIPMENT_SLOTS) {
     equipment[slot.key] = slot.kind === 'carry'
       ? { itemId:'', name:'', type:'なし', count:1, element:'', description:'', note:'' }
-      : { itemId:'', name:'', type:'なし', element:'', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', upgradeLimit:'', upgradeLines:'', upgradeEntries:[], knownSpells:'', setSpells:'', description:'', checkType:'', role:'', source:'', tags:'', setItem:'', note:'' };
+      : { itemId:'', name:'', type:'なし', element:'', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', reloadTurns:'', modifiers:'', upgradeLimit:'', upgradeLines:'', upgradeEntries:[], knownSpells:'', setSpells:'', description:'', checkType:'', role:'', source:'', tags:'', setItem:'', note:'' };
   }
   equipment.memo = '';
   return equipment;
@@ -2024,6 +2232,8 @@ function getEquipmentState() {
       base.guard = isBook ? '' : ($('equip_' + slot.key + '_guard')?.value?.trim() || '');
       base.evade = isBook ? '' : ($('equip_' + slot.key + '_evade')?.value?.trim() || '');
       base.offhand = isBook ? '' : ($('equip_' + slot.key + '_offhand')?.value?.trim() || '');
+      base.reloadTurns = isBook ? '' : ($('equip_' + slot.key + '_reloadTurns')?.value?.trim() || '');
+      base.modifiers = isBook ? '' : ($('equip_' + slot.key + '_modifiers')?.value?.trim() || '');
       base.upgradeLimit = $('equip_' + slot.key + '_upgradeLimit')?.value?.trim() || '';
       base.upgradeEntries = collectUpgradeEntries(slot.key).slice(0, equipmentUpgradeLimit(slot.key));
       base.upgradeLines = serializeUpgradeEntries(base.upgradeEntries);
@@ -2069,12 +2279,15 @@ function setEquipmentState(equipment={}) {
       if ($('equip_' + slot.key + '_guard')) $('equip_' + slot.key + '_guard').value = item.guard || '';
       if ($('equip_' + slot.key + '_evade')) $('equip_' + slot.key + '_evade').value = item.evade || '';
       if ($('equip_' + slot.key + '_offhand')) $('equip_' + slot.key + '_offhand').value = item.offhand || '';
+      if ($('equip_' + slot.key + '_reloadTurns')) $('equip_' + slot.key + '_reloadTurns').value = item.reloadTurns || '';
+      if ($('equip_' + slot.key + '_modifiers')) $('equip_' + slot.key + '_modifiers').value = item.modifiers || '';
+      renderModifierEditor('equip_' + slot.key + '_modifierRows', item.modifiers || '');
       if ($('equip_' + slot.key + '_upgradeLimit')) $('equip_' + slot.key + '_upgradeLimit').value = item.upgradeLimit || '';
       if ($('equip_' + slot.key + '_upgradeLines')) $('equip_' + slot.key + '_upgradeLines').value = item.upgradeLines || serializeUpgradeEntries(item.upgradeEntries || []);
       renderEquipmentUpgradeSlots(slot.key, item.upgradeEntries || item.upgradeLines || '');
       if ($('equip_' + slot.key + '_knownSpells')) $('equip_' + slot.key + '_knownSpells').value = '';
       setSpellSelectValues(slot.key, item.setSpells || '');
-      const hasManualDetail = !!(item.element || item.power || item.hit || item.defense || item.guard || item.evade || item.offhand || item.upgradeLimit || item.upgradeLines || (item.upgradeEntries || []).length || item.setSpells || item.description || item.note);
+      const hasManualDetail = !!(item.element || item.power || item.hit || item.defense || item.guard || item.evade || item.offhand || item.reloadTurns || item.modifiers || item.upgradeLimit || item.upgradeLines || (item.upgradeEntries || []).length || item.setSpells || item.description || item.note);
       if (!hasManualDetail && normalizeEquipmentType(item.type || 'なし') !== 'なし') applyEquipmentPreset(slot.key);
     }
   }
@@ -2092,7 +2305,7 @@ function applyEquipmentPreset(slotKey) {
   const normalized = normalizeEquipmentType(typeEl.value);
   if (typeEl.value !== normalized) typeEl.value = normalized;
   const preset = EQUIPMENT_PRESETS[normalized] || EQUIPMENT_PRESETS['なし'];
-  for (const key of ['element','power','hit','defense','guard','evade','offhand','description','note']) {
+  for (const key of ['element','power','hit','defense','guard','evade','offhand','reloadTurns','modifiers','description','note']) {
     const el = $('equip_' + slotKey + '_' + key);
     if (el) el.value = preset[key] || '';
   }
@@ -2101,12 +2314,13 @@ function applyEquipmentPreset(slotKey) {
     if (known) known.value = '';
     setSpellSelectValues(slotKey, []);
   }
+  renderModifierEditor('equip_' + slotKey + '_modifierRows', preset.modifiers || '');
   renderEquipmentUpgradeSlots(slotKey);
   updateEquipmentFieldAvailability();
   updateSpellSlotHints();
 }
 function clearHandSlot(slotKey) {
-  for (const suffix of ['itemSelect','name','element','power','hit','defense','guard','evade','offhand','upgradeLimit','upgradeLines','description','note']) {
+  for (const suffix of ['itemSelect','name','element','power','hit','defense','guard','evade','offhand','reloadTurns','modifiers','upgradeLimit','upgradeLines','description','note']) {
     const el = $('equip_' + slotKey + '_' + suffix);
     if (el) el.value = '';
   }
@@ -2116,7 +2330,7 @@ function clearHandSlot(slotKey) {
 function setHandSlotDisabled(slotKey, disabled) {
   const card = document.querySelector(`[data-equipment-card="${slotKey}"]`);
   if (card) card.classList.toggle('hand-disabled', disabled && currentMode !== 'view');
-  for (const suffix of ['itemSelect','name','type','element','power','hit','defense','guard','evade','offhand','upgradeLimit','knownSpells','setSpells','description','note']) {
+  for (const suffix of ['itemSelect','name','type','element','power','hit','defense','guard','evade','offhand','reloadTurns','modifiers','upgradeLimit','knownSpells','setSpells','description','note']) {
     const el = $('equip_' + slotKey + '_' + suffix);
     if (el) el.disabled = disabled || currentMode === 'view';
   }
@@ -2138,7 +2352,7 @@ function updateEquipmentFieldAvailability() {
       const el = $('equip_' + slot.key + '_' + suffix);
       if (el) el.disabled = baseDisabled;
     }
-    for (const suffix of ['power','hit','defense','guard','evade','offhand']) {
+    for (const suffix of ['power','hit','defense','guard','evade','offhand','reloadTurns','modifiers']) {
       const el = $('equip_' + slot.key + '_' + suffix);
       if (!el) continue;
       el.disabled = baseDisabled || book;
@@ -2439,7 +2653,7 @@ function renderBagSelect() {
   applyBagCapacityToEquipmentSlots();
 }
 function emptyInventoryItem() {
-  return { id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), masterId:'', masterSheet:'', masterSync:'', name:'', kind:defaultInventoryKind(), category:'', count:1, capacity:'', location:'倉庫', rank:'', price:'', equipSlot:'', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', spellSlots:'', target:'', element:'', cost:'', checkType:'', role:'', source:'', tags:'', setItem:'', description:'', effect:'', recipeResult:'', materials:'', note:'' };
+  return { id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), masterId:'', masterSheet:'', masterSync:'', name:'', kind:defaultInventoryKind(), category:'', count:1, capacity:'', location:'倉庫', rank:'', price:'', equipSlot:'', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', reloadTurns:'', modifiers:'', spellSlots:'', target:'', element:'', cost:'', checkType:'', role:'', source:'', tags:'', setItem:'', description:'', effect:'', recipeResult:'', materials:'', note:'' };
 }
 function normalizeInventoryItem(item={}) {
   const rawCategory = String(item.category || item.type || item.itemCategory || item.materialCategory || '').trim();
@@ -2471,6 +2685,8 @@ function normalizeInventoryItem(item={}) {
     guard: String(item.guard || item.guardValue || '').trim(),
     evade: String(item.evade || item.evasionMod || '').trim(),
     offhand: String(item.offhand || item.offhandBonus || '').trim(),
+    reloadTurns: String(item.reloadTurns || item.reloadTurn || item.reload || '').trim(),
+    modifiers: serializeModifierRows(parseModifierRows(item.modifiers || item.modifierRows || item.bonuses || '')),
     upgradeLimit: String(item.upgradeLimit || item.upgradeCount || item.upgradeSlots || '').trim(),
     spellSlots: kind === 'バッグ' ? '' : String(item.spellSlots || item.slotCount || item.registerSlots || item.maxStack || '').trim(),
     target: String(item.target || item['対象'] || '').trim(),
@@ -2678,6 +2894,9 @@ function openInventoryDialog(index=-1) {
   if ($('inventoryFormGuard')) $('inventoryFormGuard').value = item.guard || '';
   if ($('inventoryFormEvade')) $('inventoryFormEvade').value = item.evade || '';
   if ($('inventoryFormOffhand')) $('inventoryFormOffhand').value = item.offhand || '';
+  if ($('inventoryFormReloadTurns')) $('inventoryFormReloadTurns').value = item.reloadTurns || '';
+  if ($('inventoryFormModifiers')) $('inventoryFormModifiers').value = item.modifiers || '';
+  renderModifierEditor('inventoryFormModifierRows', item.modifiers || '');
   if ($('inventoryFormUpgradeLimit')) $('inventoryFormUpgradeLimit').value = item.upgradeLimit || '';
   if ($('inventoryFormSpellSlots')) $('inventoryFormSpellSlots').value = item.spellSlots || '';
   if ($('inventoryFormTarget')) $('inventoryFormTarget').value = item.target || '';
@@ -2712,6 +2931,8 @@ function collectInventoryDialogItem() {
     guard: $('inventoryFormGuard')?.value || '',
     evade: $('inventoryFormEvade')?.value || '',
     offhand: $('inventoryFormOffhand')?.value || '',
+    reloadTurns: $('inventoryFormReloadTurns')?.value || '',
+    modifiers: $('inventoryFormModifiers')?.value || '',
     upgradeLimit: $('inventoryFormUpgradeLimit')?.value || '',
     spellSlots: $('inventoryFormSpellSlots')?.value || '',
     target: $('inventoryFormTarget')?.value || '',
@@ -3022,75 +3243,7 @@ async function addInventoryByPublicIdPaste(){
 }
 
 
-const INITIAL_AMMO_STACKS = [
-  { name:'通常矢', count:20, type:'特殊矢弾' },
-  { name:'通常ボルト', count:20, type:'特殊矢弾' },
-  { name:'大型ボルト', count:10, type:'特殊矢弾' },
-];
-function initialAmmoStackCount(item={}, fallback=1){
-  const raw = String(item.spellSlots || item.maxStack || item.count || '').trim();
-  const m = raw.match(/\d+/);
-  return clampInt(m ? m[0] : fallback, 1, 99);
-}
-function findInventoryItemByName(name){
-  const n = String(name || '').trim();
-  if(!n) return null;
-  return (inventoryItemsState || []).map(item=>normalizeInventoryItem(item)).find(item=>String(item.name || '').trim() === n) || null;
-}
-function carrySlotContainsName(name){
-  const n = String(name || '').trim();
-  if(!n) return false;
-  for(const slot of EQUIPMENT_SLOTS){
-    if(slot.kind !== 'carry') continue;
-    const current = String($('equip_' + slot.key + '_name')?.value || '').trim();
-    if(current === n) return true;
-  }
-  return false;
-}
-function firstEmptyCarrySlotKey(){
-  for(const slot of EQUIPMENT_SLOTS){
-    if(slot.kind !== 'carry') continue;
-    const hasName = String($('equip_' + slot.key + '_name')?.value || '').trim();
-    const hasSelect = String($('equip_' + slot.key + '_itemSelect')?.value || '').trim();
-    const hasDesc = String($('equip_' + slot.key + '_description')?.value || '').trim();
-    const hasNote = String($('equip_' + slot.key + '_note')?.value || '').trim();
-    if(!hasName && !hasSelect && !hasDesc && !hasNote) return slot.key;
-  }
-  return '';
-}
-function setCarrySlotFromInventory(slotKey, item={}, count=1, fallbackType='特殊矢弾'){
-  const normalized = normalizeInventoryItem(item);
-  const select = $('equip_' + slotKey + '_itemSelect');
-  if(select){
-    const key = inventoryItemKey(normalized);
-    select.value = key && Array.from(select.options).some(o=>o.value===key) ? key : '';
-  }
-  if($('equip_' + slotKey + '_name')) $('equip_' + slotKey + '_name').value = normalized.name || '';
-  setTypeSelectValue(slotKey, normalized.category || fallbackType || normalized.kind || 'その他');
-  if($('equip_' + slotKey + '_count')) $('equip_' + slotKey + '_count').value = clampInt(count, 1, 99);
-  if($('equip_' + slotKey + '_description')) $('equip_' + slotKey + '_description').value = normalized.description || '';
-  if($('equip_' + slotKey + '_note')) $('equip_' + slotKey + '_note').value = normalized.effect || '';
-}
-function addInitialAmmoStacksToCarry(){
-  let added = 0;
-  refreshEquipmentItemSelects();
-  for(const spec of INITIAL_AMMO_STACKS){
-    if(carrySlotContainsName(spec.name)) continue;
-    const item = findInventoryItemByName(spec.name);
-    if(!item) continue;
-    const slotKey = firstEmptyCarrySlotKey();
-    if(!slotKey) break;
-    const count = initialAmmoStackCount(item, spec.count);
-    setCarrySlotFromInventory(slotKey, item, count, spec.type);
-    added++;
-  }
-  if(added){
-    updateEquipmentSummaries();
-    applyBagCapacityToEquipmentSlots();
-    updateSummary();
-  }
-  return added;
-}
+// 初期矢弾は倉庫にだけ同期します。所持品枠へは自動配置しません。
 
 async function syncInitialInventoryFromDb(options={}) {
   const silent = !!options.silent;
@@ -3149,14 +3302,10 @@ async function syncInitialInventoryFromDb(options={}) {
   if (added || updated || replaced || synced) {
     renderInventory();
     refreshEquipmentItemSelects();
-    const ammoCarryAdded = addInitialAmmoStacksToCarry();
     updateSummary();
-    if(ammoCarryAdded) added += 0;
   }
-  const ammoCarryAddedFinal = addInitialAmmoStacksToCarry();
   if (!silent) {
     const parts = [];
-    if (ammoCarryAddedFinal) parts.push(`初期矢弾${ammoCarryAddedFinal}枠を所持品に追加`);
     if (replaced) parts.push(`旧初期装備${replaced}件を整理`);
     if (synced) parts.push(`DB由来倉庫アイテム${synced}件を同期`);
     if (added) parts.push(`初期倉庫アイテム${added}件を追加`);
@@ -3177,7 +3326,7 @@ function scheduleInitialInventorySyncForEditor(mode) {
       const st = $('editorStatus');
       if (st && mode !== 'view') {
         st.className = 'status-box ok';
-        st.textContent = `DBから倉庫アイテムを同期しました。追加${result.added}件 / 初期更新${result.updated}件 / DB由来更新${result.synced || 0}件。初期矢弾は所持品へ反映済みです。保存すると反映されます。`;
+        st.textContent = `DBから倉庫アイテムを同期しました。追加${result.added}件 / 初期更新${result.updated}件 / DB由来更新${result.synced || 0}件。初期矢弾は倉庫にのみ同期します。保存すると反映されます。`;
       }
     }
   }, 0);
@@ -3209,20 +3358,23 @@ function emptyCharacter() {
 }
 function collectData(updateTime=true) {
   const base = currentCharacter || emptyCharacter();
-  const abilities = computeAbilities();
+  const equipment = getEquipmentState();
+  const baseAbilities = getAbilityValues();
+  const abilities = computeEffectiveAbilities(baseAbilities, equipment);
   return {
     ...base,
     name: $('charName').value.trim(),
     gender: $('charGender').value.trim(),
     age: $('charAge').value.trim(),
     stats: getStats(),
-    abilities,
+    abilities: baseAbilities,
+    effectiveAbilities: abilities,
     skills: getSkillAlloc(),
     manualCategoryBonuses: getManualCategoryBonuses(),
-    resources: computeResources(abilities, getResourceState()),
-    equipment: getEquipmentState(),
+    resources: computeResources(abilities, getResourceState(), equipment),
+    equipment,
     inventory: getInventoryState(),
-    combatStats: computeCombatStats(abilities, getSkillAlloc(), getEquipmentState()),
+    combatStats: computeCombatStats(abilities, getSkillAlloc(), equipment),
     memo: $('charMemo').value,
     updatedAt: updateTime ? nowIso() : base.updatedAt,
   };
@@ -3763,11 +3915,16 @@ function applyCsItemToEquipmentSlot(slotKey) {
   if ($('equip_' + slotKey + '_name')) $('equip_' + slotKey + '_name').value = row.name || '';
   setTypeSelectValue(slotKey, typeValue);
   if ($('equip_' + slotKey + '_count')) $('equip_' + slotKey + '_count').value = Math.min(Number(row.count) || 1, 99);
-  const map = { element:'element', power:'power', hit:'hit', defense:'defense', guard:'guard', evade:'evade', offhand:'offhand', upgradeLimit:'upgradeLimit' };
+  const map = { element:'element', power:'power', hit:'hit', defense:'defense', guard:'guard', evade:'evade', offhand:'offhand', reloadTurns:'reloadTurns', upgradeLimit:'upgradeLimit' };
+  const selectedItemFallbacks = { hit:'0', defense:'0', evade:'0' };
   for (const [suffix, field] of Object.entries(map)) {
     const el = $('equip_' + slotKey + '_' + suffix);
-    if (el) el.value = row[field] || '';
+    if (!el) continue;
+    const value = row[field];
+    el.value = value !== undefined && value !== null && String(value).trim() !== '' ? value : (selectedItemFallbacks[field] || '');
   }
+  if ($('equip_' + slotKey + '_modifiers')) $('equip_' + slotKey + '_modifiers').value = row.modifiers || '';
+  renderModifierEditor('equip_' + slotKey + '_modifierRows', row.modifiers || '');
   renderEquipmentUpgradeSlots(slotKey, []);
   const description = row.description || '';
   const effectText = row.effect || '';
@@ -3816,6 +3973,8 @@ function applyEquipmentCategoryMaster(rows, {save=false, silent=false, meta=null
       guard: row.guardValue || '',
       evade: row.evasionMod || '0',
       offhand: row.offhandBonus || '',
+      reloadTurns: row.reloadTurns || '',
+      modifiers: row.modifiers || '',
       description: row.description || row['fla' + 'vor' + 'Text'] || '',
       note: row.effect || ''
     };
@@ -4150,7 +4309,7 @@ async function readTextFile(file) {
 
 function generateTokenExport(data=collectData(false)) {
   const abilities = resolveAbilities(data);
-  const res = computeResources(abilities, data.resources || getResourceState());
+  const res = computeResources(abilities, data.resources || getResourceState(), data.equipment || getEquipmentState());
   const combat = computeCombatStats(abilities, data.skills || defaultSkillAlloc(), data.equipment || getEquipmentState());
   const params = ABILITIES.map(a => ({ label:a.name, value:String(abilities[a.key] ?? 0) }));
   const token = {
@@ -4172,7 +4331,7 @@ function generateTokenExport(data=collectData(false)) {
 }
 function makeSummaryFromData(data) {
   const abilities = resolveAbilities(data);
-  const totals = skillTotals(abilities, data.skills || defaultSkillAlloc());
+  const totals = skillTotals(abilities, data.skills || defaultSkillAlloc(), data.equipment || {});
   const res = computeResources(abilities, data.resources || {});
   const lines = [];
   lines.push(`【リクラフト・アルケミア キャラクター】`);
@@ -4183,7 +4342,7 @@ function makeSummaryFromData(data) {
   lines.push(ABILITIES.map(a => `${a.name}:${abilities[a.key]}`).join(' / '));
   lines.push('');
   lines.push('■ HP・MP');
-  lines.push(`HP:${res.currentHp}/${res.maxHp} / MP:${res.currentMp}/${res.maxMp}`);
+  lines.push(`HP:${res.currentHp}/${res.maxHp}（HPボーナス${res.hpBonus}点） / MP:${res.currentMp}/${res.maxMp}（MPボーナス${res.mpBonus}点）`);
   const combat = computeCombatStats(abilities, data.skills || defaultSkillAlloc(), data.equipment || {});
   lines.push(`防御:${combat.defenseTotal} / 回避:${combat.evasionTotal}`);
   if (combat.dualWield?.available) lines.push(`二刀攻撃:${combat.dualWield.rightMain} / ${combat.dualWield.leftMain}`);
@@ -4411,7 +4570,8 @@ function collectCheckPaletteLines(data={}, totals={}) {
 
 function generatePaletteExport(data=collectData(false)) {
   const abilities = resolveAbilities(data);
-  const totals = skillTotals(abilities, data.skills || defaultSkillAlloc());
+  const totals = skillTotals(abilities, data.skills || defaultSkillAlloc(), data.equipment || {});
+  const baseTotals = skillTotals(abilities, data.skills || defaultSkillAlloc(), null);
   const lines = [];
   for (const cat of SKILL_CATEGORIES) {
     for (const sk of cat.skills) {
@@ -4419,7 +4579,7 @@ function generatePaletteExport(data=collectData(false)) {
       lines.push(`2D6+${v}>=目標値 【${sk.name}】`);
     }
   }
-  const checkLines = collectCheckPaletteLines(data, totals);
+  const checkLines = collectCheckPaletteLines(data, baseTotals);
   if (checkLines.length) {
     lines.push('');
     lines.push(...checkLines);
@@ -4614,6 +4774,32 @@ function bindEvents() {
   $('outputBtn').addEventListener('click', () => openOutputDialog(collectData(false)));
   $('shareBtn').addEventListener('click', copyShareData);
   $('actionBarToggleBtn').addEventListener('click', () => $('editorActionBar').classList.toggle('collapsed'));
+
+  document.addEventListener('click', e => {
+    const add = e.target.closest('[data-modifier-add]');
+    if (add) {
+      const list = $(add.dataset.modifierAdd);
+      const editor = list?.closest('[data-char-modifier-editor]');
+      if (list) {
+        if (!list.querySelector('[data-modifier-row]')) list.innerHTML = '';
+        const idx = list.querySelectorAll('[data-modifier-row]').length;
+        list.insertAdjacentHTML('beforeend', modifierRowHtml({}, idx));
+        syncModifierEditor(editor);
+        updateAll();
+      }
+      return;
+    }
+    const rem = e.target.closest('[data-modifier-remove]');
+    if (rem) {
+      const editor = rem.closest('[data-char-modifier-editor]');
+      rem.closest('[data-modifier-row]')?.remove();
+      const list = editor?.querySelector('[id$="ModifierRows"], [id$="modifierRows"]');
+      if (list && !list.querySelector('[data-modifier-row]')) list.innerHTML = '<div class="small">補正値はまだありません。</div>';
+      syncModifierEditor(editor);
+      updateAll();
+      return;
+    }
+  });
   document.querySelectorAll('.editor-tab-btn').forEach(btn => btn.addEventListener('click', () => showEditorTab(btn.dataset.editorTab)));
   $('makeTokenOutputBtn').addEventListener('click', () => copyOutput('token'));
   $('makePaletteOutputBtn').addEventListener('click', () => copyOutput('palette'));
@@ -4668,11 +4854,13 @@ function bindEvents() {
   });
   document.addEventListener('input', e => {
     if (e.target.matches('#charName,#charGender,#charAge,#playerKey,#newPlayerKey,#charMemo')) { updateSummary(); return; }
-    if (e.target.dataset.equipmentInput) { updateCombatStats(); updateSpellSlotHints(); updateEquipmentSummaries(); applyBagCapacityToEquipmentSlots(); updateSummary(); return; }
-    if (e.target.dataset.inventoryInput) { applyInventoryFilters(); updateSummary(); return; }
+    if (e.target.closest('[data-char-modifier-editor]')) syncModifierEditor(e.target.closest('[data-char-modifier-editor]'));
+    if (e.target.dataset.equipmentInput) { updateAll(); return; }
+    if (e.target.dataset.inventoryInput) { if (e.target.closest('[data-char-modifier-editor]')) syncModifierEditor(e.target.closest('[data-char-modifier-editor]')); applyInventoryFilters(); updateSummary(); return; }
     if (e.target.id?.startsWith('stat_') || e.target.dataset.abilityInput || e.target.dataset.skillInput || e.target.id?.startsWith('manualBonus_') || ['currentHp','currentMp','hpBonus','mpBonus'].includes(e.target.id)) updateAll();
   });
   document.addEventListener('change', e => {
+    if (e.target.closest?.('[data-char-modifier-editor]')) { syncModifierEditor(e.target.closest('[data-char-modifier-editor]')); updateAll(); return; }
     if (e.target.classList?.contains('spell-slot-select')) {
       const slotKey = e.target.dataset.slotKey || '';
       syncSpellSetHidden(slotKey);
