@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.72</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.73</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -574,7 +574,7 @@
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.72</div>
+  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.73</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -934,7 +934,8 @@
         <div class="small">装備に付く補正を登録します。</div>
       </div>
       <div class="field" data-inventory-kind-field="accessory"><label for="inventoryFormSpellSlots">術式登録枠</label><input id="inventoryFormSpellSlots" type="number" min="0" max="99" value="" placeholder="魔印/聖印用" /></div>
-      <div class="field" data-inventory-kind-field="item spell"><label for="inventoryFormTarget">対象</label><input id="inventoryFormTarget" type="text" placeholder="例：味方1体 / 敵1体" /></div>
+      <div class="field" data-inventory-kind-field="weapon item spell"><label for="inventoryFormTarget">対象</label><input id="inventoryFormTarget" type="text" placeholder="例：味方1体 / 敵1体" /></div>
+      <div class="field" data-inventory-kind-field="weapon item spell"><label for="inventoryFormCheckType">判定</label><input id="inventoryFormCheckType" type="text" placeholder="例：回避値 / 防御値 / 抵抗値" /></div>
       <div class="field" data-inventory-kind-field="weapon item spell"><label for="inventoryFormElement">属性</label><select id="inventoryFormElement"><option value="">未選択</option><option>物</option><option>火</option><option>水</option><option>風</option><option>雷</option><option>光</option><option>闇</option><option>無</option></select></div>
       <div class="field" data-inventory-kind-field="spell"><label for="inventoryFormCost">コスト</label><input id="inventoryFormCost" type="text" placeholder="例：MP1 / MP2" /></div>
       <div class="field inventory-wide" data-inventory-kind-field="recipe"><label for="inventoryFormRecipeResult">完成品</label><input id="inventoryFormRecipeResult" type="text" placeholder="例：ポーション ×1" /></div>
@@ -1414,6 +1415,14 @@ function renderStatic() {
           <div class="field">
             <label for="equip_${slot.key}_reloadTurns">装填ターン</label>
             <input id="equip_${slot.key}_reloadTurns" data-equipment-input="1" type="number" min="0" max="9" placeholder="例：1" />
+          </div>
+          <div class="field">
+            <label for="equip_${slot.key}_target">対象</label>
+            <input id="equip_${slot.key}_target" data-equipment-input="1" type="text" placeholder="例：敵1体" />
+          </div>
+          <div class="field">
+            <label for="equip_${slot.key}_checkType">判定</label>
+            <input id="equip_${slot.key}_checkType" data-equipment-input="1" type="text" placeholder="例：回避値" />
           </div>
           <div class="field equipment-wide">
             <label>補正値</label>
@@ -2288,6 +2297,12 @@ function updateEquipmentSummaries() {
     if (type && type !== 'なし') parts.push(type);
     const element = $('equip_' + slot.key + '_element')?.value || '';
     if (element) parts.push('属性:' + element);
+    if (slot.kind !== 'carry') {
+      const target = $('equip_' + slot.key + '_target')?.value?.trim() || '';
+      const checkType = checkExpressionRightDisplay($('equip_' + slot.key + '_checkType')?.value || '');
+      if (target) parts.push('対象:' + target);
+      if (checkType) parts.push('判定:' + checkType);
+    }
     if (slot.kind === 'carry' && count) parts.push('×' + count);
     if (spellCount) parts.push('術式' + spellCount + '件');
     el.textContent = parts.length ? parts.join(' / ') : '未設定';
@@ -2298,7 +2313,7 @@ function defaultEquipment() {
   for (const slot of EQUIPMENT_SLOTS) {
     equipment[slot.key] = slot.kind === 'carry'
       ? { itemId:'', name:'', type:'なし', count:1, element:'', description:'', note:'' }
-      : { itemId:'', name:'', type:'なし', element:'', power:'', offhand:'', reloadTurns:'', modifiers:'', upgradeLimit:'', upgradeLines:'', upgradeEntries:[], knownSpells:'', setSpells:'', description:'', checkType:'', role:'', source:'', tags:'', setItem:'', note:'' };
+      : { itemId:'', name:'', type:'なし', element:'', power:'', offhand:'', reloadTurns:'', modifiers:'', upgradeLimit:'', upgradeLines:'', upgradeEntries:[], knownSpells:'', setSpells:'', description:'', target:'', checkType:'', role:'', source:'', tags:'', setItem:'', note:'' };
   }
   equipment.memo = '';
   return equipment;
@@ -2324,6 +2339,8 @@ function getEquipmentState() {
       base.power = isBook ? '' : ($('equip_' + slot.key + '_power')?.value?.trim() || '');
       base.offhand = isBook ? '' : ($('equip_' + slot.key + '_offhand')?.value?.trim() || '');
       base.reloadTurns = isBook ? '' : ($('equip_' + slot.key + '_reloadTurns')?.value?.trim() || '');
+      base.target = isBook ? '' : ($('equip_' + slot.key + '_target')?.value?.trim() || '');
+      base.checkType = isBook ? '' : normalizeCheckExpression($('equip_' + slot.key + '_checkType')?.value || '');
       base.modifiers = isBook ? '' : ($('equip_' + slot.key + '_modifiers')?.value?.trim() || '');
       base.upgradeLimit = $('equip_' + slot.key + '_upgradeLimit')?.value?.trim() || '';
       base.upgradeEntries = collectUpgradeEntries(slot.key).slice(0, equipmentUpgradeLimit(slot.key));
@@ -2367,6 +2384,8 @@ function setEquipmentState(equipment={}) {
       if ($('equip_' + slot.key + '_power')) $('equip_' + slot.key + '_power').value = item.power || '';
       if ($('equip_' + slot.key + '_offhand')) $('equip_' + slot.key + '_offhand').value = item.offhand || '';
       if ($('equip_' + slot.key + '_reloadTurns')) $('equip_' + slot.key + '_reloadTurns').value = item.reloadTurns || '';
+      if ($('equip_' + slot.key + '_target')) $('equip_' + slot.key + '_target').value = item.target || '';
+      if ($('equip_' + slot.key + '_checkType')) $('equip_' + slot.key + '_checkType').value = checkExpressionRightDisplay(item.checkType || '');
       const restoredModifiers = itemModifierTextWithPresetFallback(item);
       if ($('equip_' + slot.key + '_modifiers')) $('equip_' + slot.key + '_modifiers').value = restoredModifiers;
       renderModifierEditor('equip_' + slot.key + '_modifierRows', restoredModifiers);
@@ -2375,7 +2394,7 @@ function setEquipmentState(equipment={}) {
       renderEquipmentUpgradeSlots(slot.key, item.upgradeEntries || item.upgradeLines || '');
       if ($('equip_' + slot.key + '_knownSpells')) $('equip_' + slot.key + '_knownSpells').value = '';
       setSpellSelectValues(slot.key, item.setSpells || '');
-      const hasManualDetail = !!(item.element || item.power || item.offhand || item.reloadTurns || item.modifiers || item.upgradeLimit || item.upgradeLines || (item.upgradeEntries || []).length || item.setSpells || item.description || item.note);
+      const hasManualDetail = !!(item.element || item.power || item.offhand || item.reloadTurns || item.target || item.checkType || item.modifiers || item.upgradeLimit || item.upgradeLines || (item.upgradeEntries || []).length || item.setSpells || item.description || item.note);
       if (!hasManualDetail && normalizeEquipmentType(item.type || 'なし') !== 'なし') applyEquipmentPreset(slot.key);
     }
   }
@@ -2393,7 +2412,7 @@ function applyEquipmentPreset(slotKey) {
   const normalized = normalizeEquipmentType(typeEl.value);
   if (typeEl.value !== normalized) typeEl.value = normalized;
   const preset = EQUIPMENT_PRESETS[normalized] || EQUIPMENT_PRESETS['なし'];
-  for (const key of ['element','power','offhand','reloadTurns','modifiers','description','note']) {
+  for (const key of ['element','power','offhand','reloadTurns','target','checkType','modifiers','description','note']) {
     const el = $('equip_' + slotKey + '_' + key);
     if (el) el.value = preset[key] || '';
   }
@@ -2408,7 +2427,7 @@ function applyEquipmentPreset(slotKey) {
   updateSpellSlotHints();
 }
 function clearHandSlot(slotKey) {
-  for (const suffix of ['itemSelect','name','element','power','offhand','reloadTurns','modifiers','upgradeLimit','upgradeLines','description','note']) {
+  for (const suffix of ['itemSelect','name','element','power','offhand','reloadTurns','target','checkType','modifiers','upgradeLimit','upgradeLines','description','note']) {
     const el = $('equip_' + slotKey + '_' + suffix);
     if (el) el.value = '';
   }
@@ -2418,7 +2437,7 @@ function clearHandSlot(slotKey) {
 function setHandSlotDisabled(slotKey, disabled) {
   const card = document.querySelector(`[data-equipment-card="${slotKey}"]`);
   if (card) card.classList.toggle('hand-disabled', disabled && currentMode !== 'view');
-  for (const suffix of ['itemSelect','name','type','element','power','offhand','reloadTurns','modifiers','upgradeLimit','knownSpells','setSpells','description','note']) {
+  for (const suffix of ['itemSelect','name','type','element','power','offhand','reloadTurns','target','checkType','modifiers','upgradeLimit','knownSpells','setSpells','description','note']) {
     const el = $('equip_' + slotKey + '_' + suffix);
     if (el) el.disabled = disabled || currentMode === 'view';
   }
@@ -2980,6 +2999,7 @@ function openInventoryDialog(index=-1) {
   if ($('inventoryFormUpgradeLimit')) $('inventoryFormUpgradeLimit').value = item.upgradeLimit || '';
   if ($('inventoryFormSpellSlots')) $('inventoryFormSpellSlots').value = item.spellSlots || '';
   if ($('inventoryFormTarget')) $('inventoryFormTarget').value = item.target || '';
+  if ($('inventoryFormCheckType')) $('inventoryFormCheckType').value = item.checkType || '';
   if ($('inventoryFormElement')) $('inventoryFormElement').value = item.element || '';
   if ($('inventoryFormCost')) $('inventoryFormCost').value = item.cost || '';
   if ($('inventoryFormDescription')) $('inventoryFormDescription').value = item.description || '';
@@ -3012,6 +3032,7 @@ function collectInventoryDialogItem() {
     upgradeLimit: $('inventoryFormUpgradeLimit')?.value || '',
     spellSlots: $('inventoryFormSpellSlots')?.value || '',
     target: $('inventoryFormTarget')?.value || '',
+    checkType: $('inventoryFormCheckType')?.value || '',
     element: $('inventoryFormElement')?.value || '',
     cost: $('inventoryFormCost')?.value || '',
     description: $('inventoryFormDescription')?.value || '',
@@ -3988,7 +4009,7 @@ function applyCsItemToEquipmentSlot(slotKey) {
   if ($('equip_' + slotKey + '_name')) $('equip_' + slotKey + '_name').value = row.name || '';
   setTypeSelectValue(slotKey, typeValue);
   if ($('equip_' + slotKey + '_count')) $('equip_' + slotKey + '_count').value = Math.min(Number(row.count) || 1, 99);
-  const map = { element:'element', power:'power', offhand:'offhand', reloadTurns:'reloadTurns', upgradeLimit:'upgradeLimit' };
+  const map = { element:'element', power:'power', offhand:'offhand', reloadTurns:'reloadTurns', target:'target', checkType:'checkType', upgradeLimit:'upgradeLimit' };
   const selectedItemFallbacks = {};
   for (const [suffix, field] of Object.entries(map)) {
     const el = $('equip_' + slotKey + '_' + suffix);
@@ -4454,10 +4475,17 @@ function parseCheckExpression(value) {
   if (!m) return { skillName: raw, right: '', raw };
   return { skillName: m[1].trim(), right: m[2].trim(), raw };
 }
+function checkExpressionRightDisplay(value, defaultRight='') {
+  const raw = normalizeCheckExpression(value || '');
+  if (!raw || raw === 'なし') return defaultRight || '';
+  const parsed = parseCheckExpression(raw);
+  if (parsed.right) return parsed.right;
+  if (CHECK_SKILL_NAME_TO_KEY[String(parsed.skillName || '').trim()]) return defaultRight || '';
+  return parsed.skillName || defaultRight || '';
+}
 function forceCheckExpressionLeft(value, defaultSkill='', defaultRight='目標値') {
   const skill = String(defaultSkill || '').trim();
-  const parsed = parseCheckExpression(value || '');
-  const right = parsed.right || String(defaultRight || '').trim();
+  const right = checkExpressionRightDisplay(value, String(defaultRight || '').trim());
   if (!skill) return normalizeCheckExpression(value || '');
   if (right) return normalizeCheckExpression(`${skill}>=${right}`);
   return skill;
