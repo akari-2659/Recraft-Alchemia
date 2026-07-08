@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.71</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.72</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -567,13 +567,14 @@
   }
 
   .hidden-file { display: none; }
+  .internal-raw-field, textarea.internal-raw-field { display: none !important; visibility: hidden !important; height: 0 !important; min-height: 0 !important; padding: 0 !important; margin: 0 !important; border: 0 !important; overflow: hidden !important; }
 </style>
 </head>
 <body>
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.71</div>
+  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.72</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -927,7 +928,7 @@
       <div class="field" data-inventory-kind-field="weapon armor accessory"><label for="inventoryFormUpgradeLimit">強化可能回数</label><input id="inventoryFormUpgradeLimit" type="number" min="0" max="9" value="" placeholder="例：2" /></div>
       <div class="field inventory-wide" data-inventory-kind-field="weapon armor accessory item spell">
         <label>補正値</label>
-        <textarea id="inventoryFormModifiers" class="hidden" data-inventory-input="1"></textarea>
+        <textarea id="inventoryFormModifiers" class="hidden internal-raw-field" data-inventory-input="1" hidden aria-hidden="true" tabindex="-1" style="display:none!important"></textarea>
         <div id="inventoryFormModifierRows" data-char-modifier-editor data-modifier-hidden="inventoryFormModifiers" data-modifier-list="inventoryFormModifierRows"></div>
         <button type="button" class="ghost" data-modifier-add="inventoryFormModifierRows">補正値を追加</button>
         <div class="small">装備に付く補正を登録します。</div>
@@ -1416,7 +1417,7 @@ function renderStatic() {
           </div>
           <div class="field equipment-wide">
             <label>補正値</label>
-            <textarea id="equip_${slot.key}_modifiers" class="hidden" data-equipment-input="1"></textarea>
+            <textarea id="equip_${slot.key}_modifiers" class="hidden internal-raw-field" data-equipment-input="1" hidden aria-hidden="true" tabindex="-1" style="display:none!important"></textarea>
             <div id="equip_${slot.key}_modifierRows" data-char-modifier-editor data-modifier-hidden="equip_${slot.key}_modifiers" data-modifier-list="equip_${slot.key}_modifierRows"></div>
             <button type="button" class="ghost" data-modifier-add="equip_${slot.key}_modifierRows">補正値を追加</button>
           </div>
