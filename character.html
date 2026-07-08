@@ -165,6 +165,19 @@
   .ability-card { display: flex; flex-direction: column; gap: 8px; }
   .ability-card input { font-size: 1.15rem; font-weight: 900; color: var(--accent2); }
   .ability-card button { padding: 7px 10px; font-size: .84rem; }
+  .ability-values { display: grid; grid-template-columns: 1fr .8fr .8fr; gap: 6px; align-items: end; }
+  .ability-mini-label { font-size: .72rem; color: var(--muted); font-weight: 800; }
+  .ability-mod, .skill-other-auto {
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(221, 203, 176, .82);
+    border-radius: 10px;
+    background: rgba(255, 253, 248, .72);
+    font-weight: 900;
+    color: var(--accent2);
+  }
   .computed-value { font-size: 1.35rem; font-weight: 900; color: var(--accent2); }
   .trait-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
   @media (min-width: 680px) { .trait-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -770,7 +783,7 @@
       <details class="big-section" open>
         <summary>技能</summary>
         <div class="section-body">
-          <p class="hint">各分類ポイントは分類ごとに2点＋ボーナス、自由ポイントは合計3点です。「その他」は状態補正などの手動補正に使用します。装備の命中・回避・防御行動補正は自動で技能値へ反映されます。</p>
+          <p class="hint">各分類ポイントは分類ごとに2点＋ボーナス、自由ポイントは合計3点です。「その他」には装備・強化内容などの補正値合計が自動で反映されます。</p>
           <div id="skillPointStatus" class="status-box">技能ポイントを確認します。</div>
           <div id="skillArea"></div>
         </div>
@@ -1236,7 +1249,7 @@ function getSkillAlloc() {
     alloc[key] = {
       cat: clampInt($('skill_cat_' + key)?.value || 0, 0, 99),
       free: clampInt($('skill_free_' + key)?.value || 0, 0, 3),
-      other: clampInt($('skill_other_' + key)?.value || 0, -99, 99),
+      other: 0,
     };
   }
   return alloc;
@@ -1245,7 +1258,6 @@ function setSkillAlloc(alloc={}) {
   for (const key of Object.keys(SKILL_BY_KEY)) {
     if ($('skill_cat_' + key)) $('skill_cat_' + key).value = clampInt(alloc?.[key]?.cat || 0, 0, 99);
     if ($('skill_free_' + key)) $('skill_free_' + key).value = clampInt(alloc?.[key]?.free || 0, 0, 3);
-    if ($('skill_other_' + key)) $('skill_other_' + key).value = clampInt(alloc?.[key]?.other || 0, -99, 99);
   }
   updateAll();
 }
@@ -1256,9 +1268,9 @@ function skillTotals(abilities=computeAbilities(), alloc=getSkillAlloc(), equipm
     const base = abilities[sk.ability] || 0;
     const cat = alloc[key]?.cat || 0;
     const free = alloc[key]?.free || 0;
-    const manualOther = alloc[key]?.other || 0;
+    const manualOther = 0;
     const equipmentOther = equipmentMods[key] || 0;
-    const other = manualOther + equipmentOther;
+    const other = equipmentOther;
     totals[key] = { base, cat, free, manualOther, equipmentOther, other, add: cat + free + other, total: base + cat + free + other };
   }
   return totals;
@@ -1285,8 +1297,20 @@ function renderStatic() {
   $('abilityOutput').innerHTML = ABILITIES.map(a => `
     <div class="ability-card">
       <label for="ability_${a.key}" class="ability-name">${a.name}</label>
-      <input id="ability_${a.key}" data-ability-input="1" type="number" min="0" max="4" inputmode="numeric" value="0" />
-      <div id="ability_equip_${a.key}" class="small"></div>
+      <div class="ability-values">
+        <div>
+          <div class="ability-mini-label">基本</div>
+          <input id="ability_${a.key}" data-ability-input="1" type="number" min="0" max="4" inputmode="numeric" value="0" />
+        </div>
+        <div>
+          <div class="ability-mini-label">補正</div>
+          <div id="ability_mod_${a.key}" class="ability-mod">0</div>
+        </div>
+        <div>
+          <div class="ability-mini-label">合計</div>
+          <div id="ability_total_${a.key}" class="computed-value">0</div>
+        </div>
+      </div>
       <button type="button" class="ghost" data-reroll-ability="${a.key}">個別振り直し</button>
     </div>
   `).join('');
@@ -1313,7 +1337,7 @@ function renderStatic() {
           <div class="skill-cell base"><span id="skill_base_${sk.key}">0</span></div>
           <div class="skill-cell cat"><input id="skill_cat_${sk.key}" data-skill-input="1" type="number" min="0" max="99" value="0" /></div>
           <div class="skill-cell free"><input id="skill_free_${sk.key}" data-skill-input="1" type="number" min="0" max="3" value="0" /></div>
-          <div class="skill-cell other"><input id="skill_other_${sk.key}" data-skill-input="1" type="number" min="-99" max="99" value="0" /><div id="skill_equip_${sk.key}" class="small"></div></div>
+          <div class="skill-cell other"><div id="skill_other_${sk.key}" class="skill-other-auto">0</div></div>
           <div class="skill-cell total computed-value" id="skill_total_${sk.key}">0</div>
         </div>
       `).join('')}
@@ -1441,8 +1465,8 @@ function updateAbilities() {
   const mods = computeEquipmentAbilityModifiers(equipment);
   const effective = computeEffectiveAbilities(base, equipment);
   for (const a of ABILITIES) {
-    const el = $('ability_equip_' + a.key);
-    if (el) el.textContent = mods[a.key] ? `装備${signedNumberText(mods[a.key])} → ${effective[a.key]}` : '';
+    if ($('ability_mod_' + a.key)) $('ability_mod_' + a.key).textContent = signedNumberText(mods[a.key] || 0);
+    if ($('ability_total_' + a.key)) $('ability_total_' + a.key).textContent = effective[a.key] || 0;
   }
   return effective;
 }
@@ -1458,8 +1482,8 @@ function updateSkills() {
   const totals = skillTotals(abilities, alloc, getEquipmentState());
   for (const [key, t] of Object.entries(totals)) {
     if ($('skill_base_' + key)) $('skill_base_' + key).textContent = t.base;
+    if ($('skill_other_' + key)) $('skill_other_' + key).textContent = signedNumberText(t.other || 0);
     if ($('skill_total_' + key)) $('skill_total_' + key).textContent = t.total;
-    if ($('skill_equip_' + key)) $('skill_equip_' + key).textContent = t.equipmentOther ? `装備${signedNumberText(t.equipmentOther)}` : '';
   }
   const check = validateSkills(alloc, getStats(), getManualCategoryBonuses());
   for (const cat of SKILL_CATEGORIES) {
@@ -1475,8 +1499,7 @@ function updateSkills() {
   }
 }
 function skillOtherSummaryText(t={}) {
-  if (t.equipmentOther) return `その他${t.other || 0}（手動${t.manualOther || 0}+装備${signedNumberText(t.equipmentOther)}）`;
-  return `その他${t.manualOther || 0}`;
+  return `その他${signedNumberText(t.other || 0)}`;
 }
 function makeSummary() {
   const data = collectData(false);
@@ -1563,35 +1586,41 @@ function parseFlatBonus(value) {
   return 0;
 }
 
-function modifierTargetOptionsHtml(current='') {
-  const cur = String(current || '').trim();
-  const ability = ABILITIES.map(a => [`ability:${a.key}`, `能力：${a.name}`]);
-  const skills = SKILL_CATEGORIES.flatMap(cat => cat.skills.map(sk => [`skill:${sk.key}`, `技能：${sk.name}`]));
-  const combat = [
-    ['hit','命中（装備種別に応じて近接/射撃）'],
-    ['combat:defense','防御'],
-    ['combat:evasion','回避値'],
-    ['combat:initiative','先制値'],
-    ['resource:maxHp','最大HP'],
-    ['resource:maxMp','最大MP']
+function modifierTargetOptionsHtml(selected='') {
+  const groups = [
+    ['能力', [
+      ['ability:body','体力'], ['ability:dexterity','器用'], ['ability:sense','感覚'], ['ability:intellect','知性'], ['ability:will','意志'], ['ability:charm','魅力']
+    ]],
+    ['技能', SKILL_CATEGORIES.flatMap(cat => cat.skills.map(sk => ['skill:' + sk.key, sk.name]))],
+    ['戦闘', [
+      ['hit','命中'], ['combat:defense','防御'], ['combat:evasion','回避値'], ['combat:initiative','先制値']
+    ]],
+    ['リソース', [
+      ['resource:maxHp','最大HP'], ['resource:maxMp','最大MP']
+    ]]
   ];
-  const groups = [['能力', ability], ['技能', skills], ['戦闘・リソース', combat]];
-  const hasCurrent = groups.some(([,rows]) => rows.some(([v]) => v === cur));
-  const extra = cur && !hasCurrent ? `<option value="${esc(cur)}" selected>${esc(cur)}</option>` : '';
-  return extra + groups.map(([label, rows]) => `<optgroup label="${esc(label)}">${rows.map(([value, text]) => `<option value="${esc(value)}" ${value===cur?'selected':''}>${esc(text)}</option>`).join('')}</optgroup>`).join('');
+  let html = '<option value="">選択してください</option>';
+  for (const [label, items] of groups) {
+    html += `<optgroup label="${esc(label)}">`;
+    for (const [value, name] of items) html += `<option value="${esc(value)}"${value === selected ? ' selected' : ''}>${esc(name)}</option>`;
+    html += '</optgroup>';
+  }
+  return html;
 }
 function normalizeModifierRow(row={}) {
-  const rawTarget = String(row.target || row.key || row.name || row.type || '').trim();
+  const rawTarget = String(row.target || row.key || row.name || '').trim();
   const value = String(row.value ?? row.mod ?? row.amount ?? '').trim();
-  const note = String(row.note || row.memo || row.description || '').trim();
-  if(!rawTarget && !value && !note) return null;
   const aliases = {
-    '命中':'hit', '命中補正':'hit', '常時防御':'combat:defense', '防御':'combat:defense', '防御値':'combat:defense', '回避値':'combat:evasion',
-    '回避':'skill:evade', '回避補正':'skill:evade', '防御行動':'skill:guard', '防御行動値':'skill:guard',
+    '命中':'hit', '命中補正':'hit', 'hitMod':'hit', 'hit':'hit',
+    '防御':'combat:defense', '防御値':'combat:defense', '常時防御':'combat:defense', '常時防御値':'combat:defense', 'alwaysDefense':'combat:defense', 'defense':'combat:defense',
+    '回避値':'combat:evasion',
+    '回避':'skill:evade', '回避補正':'skill:evade', 'evasionMod':'skill:evade', 'evade':'skill:evade',
+    '防御行動':'skill:guard', '防御行動値':'skill:guard', 'guardValue':'skill:guard', 'guard':'skill:guard',
     '体力':'ability:body', '器用':'ability:dexterity', '感覚':'ability:sense', '知性':'ability:intellect', '意志':'ability:will', '魅力':'ability:charm',
     '最大HP':'resource:maxHp', 'HP':'resource:maxHp', '最大MP':'resource:maxMp', 'MP':'resource:maxMp', '先制':'combat:initiative', '先制値':'combat:initiative'
   };
-  return { target: aliases[rawTarget] || rawTarget, value, note };
+  const target = aliases[rawTarget] || rawTarget;
+  return target || value ? { target, value } : null;
 }
 function parseModifierRows(value) {
   if(Array.isArray(value)) return value.map(normalizeModifierRow).filter(Boolean);
@@ -1605,18 +1634,17 @@ function parseModifierRows(value) {
     let parts = line.split('\t');
     if(parts.length < 2) parts = line.split(/[｜|]/);
     if(parts.length < 2) parts = line.split(/\s*,\s*/);
-    return normalizeModifierRow({ target: parts[0] || '', value: parts[1] || '', note: parts.slice(2).join(' / ') || '' });
+    return normalizeModifierRow({ target: parts[0] || '', value: parts[1] || '' });
   }).filter(Boolean);
 }
 function serializeModifierRows(rows) {
-  return (rows || []).map(normalizeModifierRow).filter(Boolean).map(r => `${r.target}\t${r.value}\t${r.note || ''}`).join('\n');
+  return (rows || []).map(normalizeModifierRow).filter(Boolean).map(r => `${r.target}\t${r.value}`).join('\n');
 }
 function modifierRowHtml(row={}, idx=0) {
-  const r = normalizeModifierRow(row) || {target:'', value:'', note:''};
+  const r = normalizeModifierRow(row) || {target:'', value:''};
   return `<div class="equipment-upgrade-row" data-modifier-row>
-    <div class="field"><label>補正対象 ${idx+1}</label><select data-modifier-field="target" data-equipment-input="1" data-inventory-input="1">${modifierTargetOptionsHtml(r.target)}</select></div>
+    <div class="field"><label>補正項目</label><select data-modifier-field="target" data-equipment-input="1" data-inventory-input="1">${modifierTargetOptionsHtml(r.target)}</select></div>
     <div class="field"><label>補正値</label><input data-modifier-field="value" data-equipment-input="1" data-inventory-input="1" type="text" value="${esc(r.value)}" placeholder="例：+1 / -1" /></div>
-    <div class="field"><label>メモ</label><input data-modifier-field="note" data-equipment-input="1" data-inventory-input="1" type="text" value="${esc(r.note)}" placeholder="任意" /></div>
     <div class="field"><label>&nbsp;</label><button type="button" class="ghost" data-modifier-remove>削除</button></div>
   </div>`;
 }
@@ -1630,7 +1658,7 @@ function renderModifierEditor(listId, value='') {
 function readModifierRowsFromEditor(editor) {
   return Array.from(editor.querySelectorAll('[data-modifier-row]')).map(row=>{
     const get=f=>row.querySelector(`[data-modifier-field="${f}"]`)?.value || '';
-    return normalizeModifierRow({target:get('target'), value:get('value'), note:get('note')});
+    return normalizeModifierRow({target:get('target'), value:get('value')});
   }).filter(Boolean);
 }
 function syncModifierEditor(editor) {
@@ -1644,10 +1672,9 @@ function mergeModifierRows(existing=[], legacy=[]){
   const out=[]; const seen=new Set();
   for(const row of [...(existing||[]), ...(legacy||[])]){
     const r=normalizeModifierRow(row); if(!r) continue;
-    const key=`${r.target}\t${r.value}\t${r.note||''}`;
-    const keyNoNote=`${r.target}\t${r.value}\t`;
-    if(seen.has(key) || seen.has(keyNoNote)) continue;
-    out.push(r); seen.add(key); seen.add(keyNoNote);
+    const key=`${r.target}\t${r.value}`;
+    if(seen.has(key)) continue;
+    out.push(r); seen.add(key);
   }
   return out;
 }
@@ -1655,10 +1682,10 @@ function isZeroModifierText(value){ return /^[+-]?0$/.test(String(value||'').tri
 function legacyModifierRowsFromEquipment(item={}) {
   const first=(...keys)=>{ for(const key of keys){ const v=item && item[key]; if(v!==undefined && v!==null && String(v).trim()!=='') return String(v).trim(); } return ''; };
   const rows = [];
-  const hit=first('hit','hitMod'); if(hit && !isZeroModifierText(hit)) rows.push({target:'hit', value:hit, note:'命中補正'});
-  const defense=first('defense','alwaysDefense'); if(defense && !isZeroModifierText(defense)) rows.push({target:'combat:defense', value:defense, note:'防御'});
-  const guard=first('guard','guardValue'); if(guard && !isZeroModifierText(guard)) rows.push({target:'skill:guard', value:guard, note:'防御行動'});
-  const evade=first('evade','evasionMod'); if(evade && !isZeroModifierText(evade)) rows.push({target:'skill:evade', value:evade, note:'回避補正'});
+  const hit=first('hit','hitMod'); if(hit && !isZeroModifierText(hit)) rows.push({target:'hit', value:hit});
+  const defense=first('defense','alwaysDefense'); if(defense && !isZeroModifierText(defense)) rows.push({target:'combat:defense', value:defense});
+  const guard=first('guard','guardValue'); if(guard && !isZeroModifierText(guard)) rows.push({target:'skill:guard', value:guard});
+  const evade=first('evade','evasionMod'); if(evade && !isZeroModifierText(evade)) rows.push({target:'skill:evade', value:evade});
   return rows;
 }
 function migratedModifierTextForItem(item={}){
@@ -1681,11 +1708,36 @@ function modifierValue(row={}) { return parseFlatBonus(row.value); }
 function sumModifierRows(rows=[], predicate=()=>false) {
   return rows.reduce((sum,row)=> predicate(row) ? sum + modifierValue(row) : sum, 0);
 }
+function upgradeEntryModifierRow(entry={}) {
+  const content = String(entry.content || '').trim();
+  const value = String(entry.value || '').trim();
+  if(!content || !value || isZeroModifierText(value)) return null;
+  const aliases = {
+    '命中':'hit', '命中補正':'hit',
+    '防御':'combat:defense', '常時防御':'combat:defense', '常時防御値':'combat:defense',
+    '回避値':'combat:evasion',
+    '回避':'skill:evade', '回避補正':'skill:evade',
+    '防御行動':'skill:guard', '防御行動値':'skill:guard',
+    'HP':'resource:maxHp', '最大HP':'resource:maxHp',
+    'MP':'resource:maxMp', '最大MP':'resource:maxMp',
+    '体力':'ability:body', '器用':'ability:dexterity', '感覚':'ability:sense', '知性':'ability:intellect', '意志':'ability:will', '魅力':'ability:charm'
+  };
+  const target = aliases[content] || normalizeModifierRow({target:content, value})?.target || '';
+  if(!target || target === content) return null;
+  return normalizeModifierRow({target, value});
+}
+function equipmentUpgradeModifierRows(item={}) {
+  return parseUpgradeLines(item.upgradeLines || item.upgradeEntries || '').map(upgradeEntryModifierRow).filter(Boolean);
+}
+function activeEquipmentModifierRows(item={}) {
+  return equipmentModifierRows(item).concat(equipmentUpgradeModifierRows(item));
+}
 function computeEquipmentAbilityModifiers(equipment=getEquipmentState()) {
   const mods = {};
   for (const slot of EQUIPMENT_SLOTS) {
     if (slot.kind === 'carry') continue;
-    for (const row of equipmentModifierRows((equipment || {})[slot.key] || {})) {
+    const item = (equipment || {})[slot.key] || {};
+    for (const row of activeEquipmentModifierRows(item)) {
       const target = String(row.target || '');
       if (!target.startsWith('ability:')) continue;
       const key = target.replace('ability:', '');
@@ -1698,7 +1750,8 @@ function computeEquipmentCombatModifiers(equipment=getEquipmentState()) {
   const mods = { defense:0, evasion:0, initiative:0, maxHp:0, maxMp:0 };
   for (const slot of EQUIPMENT_SLOTS) {
     if (slot.kind === 'carry') continue;
-    for (const row of equipmentModifierRows((equipment || {})[slot.key] || {})) {
+    const item = (equipment || {})[slot.key] || {};
+    for (const row of activeEquipmentModifierRows(item)) {
       const target = String(row.target || '');
       const value = modifierValue(row);
       if (target === 'combat:defense') mods.defense += value;
@@ -1780,7 +1833,7 @@ function computeEquipmentSkillModifiers(equipment=getEquipmentState()) {
     const item = (equipment || {})[slot.key] || {};
     const type = normalizeEquipmentType(item.type || 'なし');
     if (!item.name && (!type || type === 'なし')) continue;
-    for (const row of equipmentModifierRows(item)) {
+    for (const row of activeEquipmentModifierRows(item)) {
       if (row.target === 'hit' && HAND_SLOT_KEYS.includes(slot.key)) setBestEquipmentHitModifier(mods, equipmentHitSkillKey(item), modifierValue(row));
       if (String(row.target || '').startsWith('skill:')) addEquipmentSkillModifier(mods, row.target.replace('skill:', ''), modifierValue(row));
     }
@@ -1854,6 +1907,7 @@ function computeResources(abilities=computeAbilities(), resources=getResourceSta
     currentMp: resources.currentMp || maxMp,
     hpBonus: hpBonusPoints,
     mpBonus: mpBonusPoints,
+    resourceModifiers: { maxHp: combatMods.maxHp || 0, maxMp: combatMods.maxMp || 0 },
   };
 }
 function updateResources() {
@@ -4301,7 +4355,7 @@ function generateTokenExport(data=collectData(false)) {
 function makeSummaryFromData(data) {
   const abilities = resolveAbilities(data);
   const totals = skillTotals(abilities, data.skills || defaultSkillAlloc(), data.equipment || {});
-  const res = computeResources(abilities, data.resources || {});
+  const res = computeResources(abilities, data.resources || {}, data.equipment || {});
   const lines = [];
   lines.push(`【リクラフト・アルケミア キャラクター】`);
   lines.push(`名前：${data.name || '未設定'}`);
