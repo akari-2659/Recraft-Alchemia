@@ -499,6 +499,10 @@
     .equipment-fields.three { grid-template-columns: 1.5fr .8fr .8fr; }
   }
   .equipment-wide { grid-column: 1 / -1; }
+  .equipment-upgrade-list{display:grid;gap:8px}
+  .equipment-upgrade-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(120px,.55fr);gap:8px;align-items:end;border:1px solid var(--line);background:rgba(255,255,255,.68);border-radius:12px;padding:8px}
+  .equipment-upgrade-row label{font-size:.78rem}
+  @media(max-width:620px){.equipment-upgrade-row{grid-template-columns:1fr}}
 
 
   /* v27: スマホ表示の強化 */
@@ -840,7 +844,7 @@
             <div class="inventory-form-grid">
               <div class="field">
                 <label for="publicIdInput">登録ID</label>
-                <input id="publicIdInput" data-inventory-input="1" type="text" inputmode="latin" autocomplete="off" placeholder="例：RCA-64X3-USPY" />
+                <input id="publicIdInput" data-inventory-input="1" type="text" inputmode="latin" autocomplete="off" />
               </div>
               <div class="field">
                 <label for="publicIdCountInput">個数</label>
@@ -1397,13 +1401,11 @@ function renderStatic() {
             <label for="equip_${slot.key}_upgradeLimit">強化可能回数</label>
             <input id="equip_${slot.key}_upgradeLimit" data-equipment-input="1" type="number" min="0" max="9" value="" placeholder="例：2" />
           </div>
-          <details class="equipment-upgrade-details equipment-wide">
+          <details id="equip_${slot.key}_upgradeDetails" class="equipment-upgrade-details equipment-wide">
             <summary>強化内容</summary>
-            <div class="field">
-              <label for="equip_${slot.key}_upgradeLines">適用済み強化</label>
-              <textarea id="equip_${slot.key}_upgradeLines" data-equipment-input="1" placeholder="1強化1行で記入してください。例：\nゼラチン液：命中時、対象の次の行動判定-1\n小獣の牙：威力+1"></textarea>
-              <div class="small">強化可能回数を超えないように記録してください。</div>
-            </div>
+            <div id="equip_${slot.key}_upgradeSlots" class="equipment-upgrade-list" data-equipment-input="1"></div>
+            <input id="equip_${slot.key}_upgradeLines" data-equipment-input="1" type="hidden" value="" />
+            <div class="small">強化可能回数に応じて入力欄を表示します。各枠は「強化内容（選択）」と「強化値（任意入力）」で記録してください。</div>
           </details>
           <div class="field equipment-wide">
             <label for="equip_${slot.key}_description">説明</label>
@@ -1772,6 +1774,84 @@ function syncSpellSetHidden(slotKey) {
   hidden.value = names.join('\n');
   hidden.dataset.pendingSpells = hidden.value;
 }
+const EQUIPMENT_UPGRADE_OPTIONS = ['','威力','命中補正','常時防御値','防御行動値','回避補正','副手追撃値','術式登録枠','最大スタック数','HP','MP','属性効果','特殊効果','その他'];
+function normalizeUpgradeEntry(entry={}){
+  return {
+    content: String(entry.content || entry.type || entry.name || entry.label || '').trim(),
+    value: String(entry.value || entry.amount || entry.detail || '').trim()
+  };
+}
+function parseUpgradeLines(value=''){
+  if(Array.isArray(value)) return value.map(normalizeUpgradeEntry).filter(e=>e.content || e.value);
+  return String(value || '').split(/\n+/).map(line=>{
+    const raw = line.trim();
+    if(!raw) return null;
+    const parts = raw.split(/[：:]/);
+    if(parts.length >= 2) return normalizeUpgradeEntry({content:parts.shift(), value:parts.join('：')});
+    return normalizeUpgradeEntry({content:'その他', value:raw});
+  }).filter(Boolean);
+}
+function serializeUpgradeEntries(entries=[]){
+  return (entries || []).map(normalizeUpgradeEntry).filter(e=>e.content || e.value).map(e=>{
+    if(e.content && e.value) return `${e.content}：${e.value}`;
+    return e.content || e.value;
+  }).join('\n');
+}
+function collectUpgradeEntries(slotKey){
+  const list = $('equip_' + slotKey + '_upgradeSlots');
+  if(!list) return parseUpgradeLines($('equip_' + slotKey + '_upgradeLines')?.value || '');
+  return Array.from(list.querySelectorAll('[data-upgrade-row]')).map(row=>normalizeUpgradeEntry({
+    content: row.querySelector('[data-upgrade-content]')?.value || '',
+    value: row.querySelector('[data-upgrade-value]')?.value || ''
+  })).filter(e=>e.content || e.value);
+}
+function equipmentUpgradeLimit(slotKey){
+  return clampInt($('equip_' + slotKey + '_upgradeLimit')?.value || 0, 0, 9);
+}
+function upgradeOptionHtml(selected=''){
+  const current = String(selected || '').trim();
+  const base = EQUIPMENT_UPGRADE_OPTIONS.slice();
+  if(current && !base.includes(current)) base.push(current);
+  return base.map(v=>`<option value="${esc(v)}" ${v===current?'selected':''}>${esc(v || '未選択')}</option>`).join('');
+}
+function renderEquipmentUpgradeSlots(slotKey, sourceEntries=null){
+  const list = $('equip_' + slotKey + '_upgradeSlots');
+  const hidden = $('equip_' + slotKey + '_upgradeLines');
+  const details = $('equip_' + slotKey + '_upgradeDetails');
+  if(!list) return;
+  const limit = equipmentUpgradeLimit(slotKey);
+  const entries = sourceEntries !== null ? parseUpgradeLines(sourceEntries) : collectUpgradeEntries(slotKey);
+  if(details) details.style.display = limit > 0 ? '' : 'none';
+  if(limit <= 0){
+    list.innerHTML = '<div class="small">この装備は強化できません。</div>';
+    if(hidden) hidden.value = '';
+    return;
+  }
+  list.innerHTML = Array.from({length:limit}, (_,i)=>{
+    const entry = normalizeUpgradeEntry(entries[i] || {});
+    return `<div class="equipment-upgrade-row" data-upgrade-row="${i}">
+      <div class="field"><label>強化内容 ${i+1}</label><select data-upgrade-content data-equipment-input="1">${upgradeOptionHtml(entry.content)}</select></div>
+      <div class="field"><label>強化値</label><input data-upgrade-value data-equipment-input="1" type="text" value="${esc(entry.value)}" placeholder="任意入力" /></div>
+    </div>`;
+  }).join('');
+  if(hidden) hidden.value = serializeUpgradeEntries(entries.slice(0, limit));
+  if(typeof updateEquipmentFieldAvailability === 'function') updateEquipmentFieldAvailability();
+}
+function syncEquipmentUpgradeHidden(slotKey){
+  const hidden = $('equip_' + slotKey + '_upgradeLines');
+  if(hidden) hidden.value = serializeUpgradeEntries(collectUpgradeEntries(slotKey).slice(0, equipmentUpgradeLimit(slotKey)));
+}
+function refreshSelectionListsForTarget(target=null){
+  if(target && target.id?.startsWith('equip_') && target.id.endsWith('_itemSelect')) refreshEquipmentItemSelects();
+  if(target && target.id?.startsWith('equip_') && target.id.endsWith('_type')) refreshEquipmentTypeSelects();
+  if(target && target.classList?.contains('spell-slot-select')) {
+    const slotKey = target.dataset.slotKey || '';
+    refreshSpellSetSelect(slotKey, spellContainerKind($('equip_' + slotKey + '_type')?.value || 'なし'));
+  }
+  if(target && target.id === 'bagSelect') renderBagSelect();
+  if(target && target.id === 'quiverSelect') renderQuiverControls();
+}
+
 function setSpellSelectValues(slotKey, values) {
   const hidden = $('equip_' + slotKey + '_setSpells');
   const names = Array.isArray(values) ? values : splitFormulaList(values || '');
@@ -1915,7 +1995,7 @@ function defaultEquipment() {
   for (const slot of EQUIPMENT_SLOTS) {
     equipment[slot.key] = slot.kind === 'carry'
       ? { itemId:'', name:'', type:'なし', count:1, element:'', description:'', note:'' }
-      : { itemId:'', name:'', type:'なし', element:'', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', upgradeLimit:'', upgradeLines:'', knownSpells:'', setSpells:'', description:'', checkType:'', role:'', source:'', tags:'', setItem:'', note:'' };
+      : { itemId:'', name:'', type:'なし', element:'', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', upgradeLimit:'', upgradeLines:'', upgradeEntries:[], knownSpells:'', setSpells:'', description:'', checkType:'', role:'', source:'', tags:'', setItem:'', note:'' };
   }
   equipment.memo = '';
   return equipment;
@@ -1945,7 +2025,8 @@ function getEquipmentState() {
       base.evade = isBook ? '' : ($('equip_' + slot.key + '_evade')?.value?.trim() || '');
       base.offhand = isBook ? '' : ($('equip_' + slot.key + '_offhand')?.value?.trim() || '');
       base.upgradeLimit = $('equip_' + slot.key + '_upgradeLimit')?.value?.trim() || '';
-      base.upgradeLines = $('equip_' + slot.key + '_upgradeLines')?.value || '';
+      base.upgradeEntries = collectUpgradeEntries(slot.key).slice(0, equipmentUpgradeLimit(slot.key));
+      base.upgradeLines = serializeUpgradeEntries(base.upgradeEntries);
       if (spellContainerKind(base.type)) {
         base.knownSpells = '';
         base.setSpells = selectedSpellNames(slot.key).join('\n');
@@ -1959,6 +2040,8 @@ function getEquipmentState() {
   return equipment;
 }
 function setEquipmentState(equipment={}) {
+  refreshEquipmentTypeSelects();
+  refreshEquipmentItemSelects();
   const defaults = defaultEquipment();
   const eq = { ...defaults, ...(equipment || {}) };
   for (const slot of EQUIPMENT_SLOTS) {
@@ -1987,10 +2070,11 @@ function setEquipmentState(equipment={}) {
       if ($('equip_' + slot.key + '_evade')) $('equip_' + slot.key + '_evade').value = item.evade || '';
       if ($('equip_' + slot.key + '_offhand')) $('equip_' + slot.key + '_offhand').value = item.offhand || '';
       if ($('equip_' + slot.key + '_upgradeLimit')) $('equip_' + slot.key + '_upgradeLimit').value = item.upgradeLimit || '';
-      if ($('equip_' + slot.key + '_upgradeLines')) $('equip_' + slot.key + '_upgradeLines').value = item.upgradeLines || '';
+      if ($('equip_' + slot.key + '_upgradeLines')) $('equip_' + slot.key + '_upgradeLines').value = item.upgradeLines || serializeUpgradeEntries(item.upgradeEntries || []);
+      renderEquipmentUpgradeSlots(slot.key, item.upgradeEntries || item.upgradeLines || '');
       if ($('equip_' + slot.key + '_knownSpells')) $('equip_' + slot.key + '_knownSpells').value = '';
       setSpellSelectValues(slot.key, item.setSpells || '');
-      const hasManualDetail = !!(item.element || item.power || item.hit || item.defense || item.guard || item.evade || item.offhand || item.setSpells || item.description || item.note);
+      const hasManualDetail = !!(item.element || item.power || item.hit || item.defense || item.guard || item.evade || item.offhand || item.upgradeLimit || item.upgradeLines || (item.upgradeEntries || []).length || item.setSpells || item.description || item.note);
       if (!hasManualDetail && normalizeEquipmentType(item.type || 'なし') !== 'なし') applyEquipmentPreset(slot.key);
     }
   }
@@ -2017,11 +2101,12 @@ function applyEquipmentPreset(slotKey) {
     if (known) known.value = '';
     setSpellSelectValues(slotKey, []);
   }
+  renderEquipmentUpgradeSlots(slotKey);
   updateEquipmentFieldAvailability();
   updateSpellSlotHints();
 }
 function clearHandSlot(slotKey) {
-  for (const suffix of ['itemSelect','name','element','power','hit','defense','guard','evade','offhand','description','note']) {
+  for (const suffix of ['itemSelect','name','element','power','hit','defense','guard','evade','offhand','upgradeLimit','upgradeLines','description','note']) {
     const el = $('equip_' + slotKey + '_' + suffix);
     if (el) el.value = '';
   }
@@ -2031,10 +2116,12 @@ function clearHandSlot(slotKey) {
 function setHandSlotDisabled(slotKey, disabled) {
   const card = document.querySelector(`[data-equipment-card="${slotKey}"]`);
   if (card) card.classList.toggle('hand-disabled', disabled && currentMode !== 'view');
-  for (const suffix of ['itemSelect','name','type','element','power','hit','defense','guard','evade','offhand','knownSpells','setSpells','description','note']) {
+  for (const suffix of ['itemSelect','name','type','element','power','hit','defense','guard','evade','offhand','upgradeLimit','knownSpells','setSpells','description','note']) {
     const el = $('equip_' + slotKey + '_' + suffix);
     if (el) el.disabled = disabled || currentMode === 'view';
   }
+  const upgradeList = $('equip_' + slotKey + '_upgradeSlots');
+  if (upgradeList) upgradeList.querySelectorAll('select,input').forEach(el => { el.disabled = disabled || currentMode === 'view'; });
 }
 function isSpellBookType(type) {
   const t = normalizeEquipmentType(type || 'なし');
@@ -2047,7 +2134,7 @@ function updateEquipmentFieldAvailability() {
     const card = document.querySelector(`[data-equipment-card="${slot.key}"]`);
     const baseDisabled = currentMode === 'view' || !!card?.classList.contains('hand-disabled');
     const book = isSpellBookType(type);
-    for (const suffix of ['itemSelect','name','type','element','description','note']) {
+    for (const suffix of ['itemSelect','name','type','element','upgradeLimit','description','note']) {
       const el = $('equip_' + slot.key + '_' + suffix);
       if (el) el.disabled = baseDisabled;
     }
@@ -2063,6 +2150,8 @@ function updateEquipmentFieldAvailability() {
     if (setEl) setEl.disabled = spellDisabled;
     const spellList = $('equip_' + slot.key + '_spellSlotList');
     if (spellList) spellList.querySelectorAll('select.spell-slot-select').forEach(sel => { sel.disabled = spellDisabled; });
+    const upgradeList = $('equip_' + slot.key + '_upgradeSlots');
+    if (upgradeList) upgradeList.querySelectorAll('select,input').forEach(el => { el.disabled = baseDisabled; });
   }
 }
 function updateEquipmentHandLocks(clearOpposite=true) {
@@ -3679,6 +3768,7 @@ function applyCsItemToEquipmentSlot(slotKey) {
     const el = $('equip_' + slotKey + '_' + suffix);
     if (el) el.value = row[field] || '';
   }
+  renderEquipmentUpgradeSlots(slotKey, []);
   const description = row.description || '';
   const effectText = row.effect || '';
   if ($('equip_' + slotKey + '_description')) $('equip_' + slotKey + '_description').value = description;
@@ -4617,8 +4707,30 @@ function bindEvents() {
       updateSpellSlotHints();
       updateEquipmentSummaries();
       updateSummary();
+      return;
+    }
+    if (e.target.id?.startsWith('equip_') && e.target.id.endsWith('_upgradeLimit')) {
+      const slotKey = e.target.id.replace(/^equip_/, '').replace(/_upgradeLimit$/, '');
+      renderEquipmentUpgradeSlots(slotKey);
+      updateEquipmentSummaries();
+      updateSummary();
+      return;
+    }
+    if (e.target.closest?.('[data-upgrade-row]')) {
+      const row = e.target.closest('[data-upgrade-row]');
+      const slotRoot = row?.closest('[id$="_upgradeSlots"]');
+      const slotKey = slotRoot ? slotRoot.id.replace(/^equip_/, '').replace(/_upgradeSlots$/, '') : '';
+      if(slotKey) syncEquipmentUpgradeHidden(slotKey);
+      updateEquipmentSummaries();
+      updateSummary();
+      return;
     }
   });
+  document.addEventListener('focusin', e => refreshSelectionListsForTarget(e.target));
+  document.addEventListener('pointerdown', e => {
+    const target = e.target;
+    if(target && target.tagName === 'SELECT') refreshSelectionListsForTarget(target);
+  }, true);
 }
 
 function init() {
