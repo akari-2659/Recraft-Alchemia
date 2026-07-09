@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.85</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.86</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -514,9 +514,8 @@
   }
   .equipment-wide { grid-column: 1 / -1; }
   .equipment-upgrade-list{display:grid;gap:8px}
-  .equipment-upgrade-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(120px,.5fr) minmax(150px,.65fr);gap:8px;align-items:end;border:1px solid var(--line);background:rgba(255,255,255,.68);border-radius:12px;padding:8px}
+  .equipment-upgrade-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(120px,.55fr);gap:8px;align-items:end;border:1px solid var(--line);background:rgba(255,255,255,.68);border-radius:12px;padding:8px}
   .equipment-upgrade-row label{font-size:.78rem}
-  .upgrade-difficulty-badge{margin-top:4px;padding:5px 8px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.72);font-weight:700;color:var(--accent2)}
   @media(max-width:620px){.equipment-upgrade-row{grid-template-columns:1fr}}
 
 
@@ -641,7 +640,7 @@
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.85</div>
+  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.86</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -1505,7 +1504,7 @@ function renderStatic() {
             <summary>強化内容</summary>
             <div id="equip_${slot.key}_upgradeSlots" class="equipment-upgrade-list" data-equipment-input="1"></div>
             <input id="equip_${slot.key}_upgradeLines" data-equipment-input="1" type="hidden" value="" />
-            <div class="small">強化可能回数に応じて入力欄を表示します。各枠は「強化内容」「強化値」「素材ランク」を記録してください。素材ランクを選ぶと強化難易度を表示します。</div>
+            <div class="small">強化可能回数に応じて入力欄を表示します。各枠は「強化内容（選択）」と「強化値（任意入力）」で記録してください。</div>
           </details>
           <div class="field equipment-wide">
             <label for="equip_${slot.key}_description">説明</label>
@@ -2208,14 +2207,6 @@ function syncSpellSetHidden(slotKey) {
   hidden.dataset.pendingSpells = hidden.value;
 }
 const EQUIPMENT_UPGRADE_OPTIONS = ['','威力','命中補正','常時防御値','防御行動値','回避補正','副手追撃値','術式登録枠','最大スタック数','HP','MP','属性効果','特殊効果','その他'];
-const UPGRADE_RANK_DIFFICULTY = {
-  '低級': 7,
-  '普通': 9,
-  '良質': 11,
-  '希少': 13,
-  '高級': 15
-};
-const UPGRADE_RANK_OPTIONS = ['', '低級', '普通', '良質', '希少', '高級'];
 
 function normalizeUpgradeEntry(entry={}){
   let content = String(entry.content || entry.type || entry.name || entry.label || '').trim();
@@ -2264,8 +2255,7 @@ function collectUpgradeEntries(slotKey){
   if(!list) return parseUpgradeLines($('equip_' + slotKey + '_upgradeLines')?.value || '');
   return Array.from(list.querySelectorAll('[data-upgrade-row]')).map(row=>normalizeUpgradeEntry({
     content: row.querySelector('[data-upgrade-content]')?.value || '',
-    value: row.querySelector('[data-upgrade-value]')?.value || '',
-    rank: row.querySelector('[data-upgrade-rank]')?.value || ''
+    value: row.querySelector('[data-upgrade-value]')?.value || ''
   })).filter(e=>e.content || e.value || e.rank);
 }
 function equipmentUpgradeLimit(slotKey){
@@ -2278,26 +2268,10 @@ function upgradeOptionHtml(selected=''){
   return base.map(v=>`<option value="${esc(v)}" ${v===current?'selected':''}>${esc(v || '未選択')}</option>`).join('');
 }
 
-function upgradeRankOptionHtml(selected=''){
-  const current = String(selected || '').trim();
-  const base = UPGRADE_RANK_OPTIONS.slice();
-  if(current && !base.includes(current)) base.push(current);
-  return base.map(v=>`<option value="${esc(v)}" ${v===current?'selected':''}>${esc(v || '未選択')}</option>`).join('');
-}
-function upgradeDifficultyForRank(rank=''){
-  const key = String(rank || '').trim();
-  return UPGRADE_RANK_DIFFICULTY[key] || 0;
-}
-function upgradeDifficultyText(rank=''){
-  const n = upgradeDifficultyForRank(rank);
-  return n ? `強化難易度：${n}` : '強化難易度：ランク未選択';
-}
-function updateUpgradeDifficultyForRow(row=null){
-  if(!row) return;
-  const rank = row.querySelector('[data-upgrade-rank]')?.value || '';
-  const box = row.querySelector('[data-upgrade-difficulty]');
-  if(box) box.textContent = upgradeDifficultyText(rank);
-}
+
+
+
+
 
 function renderEquipmentUpgradeSlots(slotKey, sourceEntries=null){
   const list = $('equip_' + slotKey + '_upgradeSlots');
@@ -2317,7 +2291,6 @@ function renderEquipmentUpgradeSlots(slotKey, sourceEntries=null){
     return `<div class="equipment-upgrade-row" data-upgrade-row="${i}">
       <div class="field"><label>強化内容 ${i+1}</label><select data-upgrade-content data-equipment-input="1">${upgradeOptionHtml(entry.content)}</select></div>
       <div class="field"><label>強化値</label><input data-upgrade-value data-equipment-input="1" type="text" value="${esc(entry.value)}" placeholder="任意入力" /></div>
-      <div class="field"><label>素材ランク</label><select data-upgrade-rank data-equipment-input="1">${upgradeRankOptionHtml(entry.rank)}</select><div class="small upgrade-difficulty-badge" data-upgrade-difficulty>${esc(upgradeDifficultyText(entry.rank))}</div></div>
     </div>`;
   }).join('');
   if(hidden) hidden.value = serializeUpgradeEntries(entries.slice(0, limit));
@@ -5255,7 +5228,6 @@ function bindEvents() {
     }
     if (e.target.closest?.('[data-upgrade-row]')) {
       const row = e.target.closest('[data-upgrade-row]');
-      if (e.target.matches?.('[data-upgrade-rank]')) updateUpgradeDifficultyForRow(row);
       const slotRoot = row?.closest('[id$="_upgradeSlots"]');
       const slotKey = slotRoot ? slotRoot.id.replace(/^equip_/, '').replace(/_upgradeSlots$/, '') : '';
       if(slotKey) syncEquipmentUpgradeHidden(slotKey);
