@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.75</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.82</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -568,13 +568,79 @@
 
   .hidden-file { display: none; }
   .internal-raw-field, textarea.internal-raw-field { display: none !important; visibility: hidden !important; height: 0 !important; min-height: 0 !important; padding: 0 !important; margin: 0 !important; border: 0 !important; overflow: hidden !important; }
+
+  body.public-view .private-view-only,
+  body.public-view [data-private-view="1"],
+  body.public-view [data-private-section="1"],
+  body.public-view [data-section-key="warehouse"],
+  body.public-view [data-section-key="inventory"],
+  body.public-view [data-section-key="carry"],
+  body.public-view [data-section-key="storage"],
+  body.public-view [data-section-key="deposit"],
+  body.public-view #warehouseSection,
+  body.public-view #inventorySection,
+  body.public-view #carrySection,
+  body.public-view #storageSection,
+  body.public-view #depositSection,
+  body.public-view #warehousePanel,
+  body.public-view #inventoryPanel,
+  body.public-view #carryPanel,
+  body.public-view #storagePanel,
+  body.public-view #depositPanel,
+  body.public-view #warehouseList,
+  body.public-view #inventoryList,
+  body.public-view #carryList,
+  body.public-view #storageList,
+  body.public-view #depositList,
+  body.public-view #itemRegisterSection,
+  body.public-view #warehouseRegisterSection,
+  body.public-view #cloudSavePanel,
+  body.public-view #dbSyncPanel,
+  body.public-view #saveLoadPanel,
+  body.public-view #adminPanel,
+  body.public-view #debugPanel,
+  body.public-view textarea[data-inventory-input="1"],
+  body.public-view textarea[data-equipment-input="1"],
+  body.public-view .warehouse-card,
+  body.public-view .inventory-card,
+  body.public-view .carry-card,
+  body.public-view .storage-card,
+  body.public-view .deposit-card,
+  body.public-view .item-edit-area,
+  body.public-view .db-action-area,
+  body.public-view .save-action-area,
+  body.public-view .owner-key-area,
+  body.public-view .player-key-area {
+    display:none !important;
+    visibility:hidden !important;
+  }
+  body.public-view button,
+  body.public-view .edit-only,
+  body.public-view [data-edit-only="1"],
+  body.public-view [data-action],
+  body.public-view [data-row-save],
+  body.public-view [data-row-replace],
+  body.public-view [data-add-row],
+  body.public-view [data-delete-row] {
+    display:none !important;
+  }
+  body.public-view button.public-view-allowed,
+  body.public-view .public-view-allowed button {
+    display:inline-flex !important;
+  }
+  body.public-view input:not([readonly]),
+  body.public-view select:not([disabled]),
+  body.public-view textarea:not([readonly]) {
+    pointer-events:none;
+  }
+
 </style>
 </head>
 <body>
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.75</div>
+  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.82</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -1033,8 +1099,8 @@ const SKILL_CATEGORIES = [
     { key:'leadership', name:'鼓舞', desc:'次の判定+1', detail:'仲間を励まし、士気を高める判定に使用します。戦闘中や困難な場面で成功すると、対象の次の判定に+1します。' },
   ]},
 ];
-const HAND_TYPE_OPTIONS = ['なし','短剣','片手剣','片手斧','片手槌','片手槍','杖','盾','大盾','魔導書','祈祷書','両手剣','大槌','長槍','弓','弩','大型弩'];
-const TWO_HAND_TYPES = new Set(['両手剣','大槌','長槍','弓','弩','大型弩']);
+const HAND_TYPE_OPTIONS = ['なし','短剣','片手剣','片手斧','片手槌','片手槍','杖','盾','大盾','魔導書','祈祷書','両手剣','大槌','長槍','弓','弩','大型弩','大鎌'];
+const TWO_HAND_TYPES = new Set(['両手剣','大槌','長槍','弓','弩','大型弩','大鎌']);
 const ELEMENT_TYPES = ['','物','火','水','風','雷','光','闇','無'];
 function elementSelectOptions(selected='') {
   const current = String(selected || '').trim();
@@ -1776,8 +1842,47 @@ function equipmentUpgradeModifierRows(item={}) {
 function activeEquipmentModifierRows(item={}) {
   return equipmentModifierRows(item).concat(equipmentUpgradeModifierRows(item));
 }
+
+function isDualOneHandWeaponSetup(equipment=getEquipmentState()) {
+  const right = equipment?.rightHand || {};
+  const left = equipment?.leftHand || {};
+  return canUseAsDualWeapon(right) && canUseAsDualWeapon(left);
+}
+function halfRoundSigned(value) {
+  const n = Number(value || 0);
+  if (!Number.isFinite(n) || n === 0) return 0;
+  return Math.sign(n) * Math.ceil(Math.abs(n) / 2);
+}
+function shouldHalfHandWeaponModifiers(slotKey, equipment=getEquipmentState()) {
+  return HAND_SLOT_KEYS.includes(slotKey) && isDualOneHandWeaponSetup(equipment);
+}
+function addDualAdjustedModifier(targetSums, target, value) {
+  if(!target) return;
+  const n = Number(value || 0);
+  if(!Number.isFinite(n) || n === 0) return;
+  targetSums[target] = (targetSums[target] || 0) + n;
+}
+function applyDualAdjustedModifierSums(targetSums={}, addFn=()=>{}) {
+  Object.entries(targetSums).forEach(([target,sum])=>{
+    const value = halfRoundSigned(sum);
+    if(value) addFn(target, value);
+  });
+}
+function equipmentHitModifierStats(equipment=getEquipmentState()) {
+  const right = equipment?.rightHand || {};
+  const left = equipment?.leftHand || {};
+  const rightType = normalizeEquipmentType(right.type || right.category || right.kind || 'なし');
+  const leftType = normalizeEquipmentType(left.type || left.category || left.kind || 'なし');
+  const rightTwoHand = right.name && (TWO_HAND_TYPES.has(rightType) || String(right.equipSlot || '').includes('両手'));
+  const leftTwoHand = left.name && (TWO_HAND_TYPES.has(leftType) || String(left.equipSlot || '').includes('両手'));
+  if(rightTwoHand) return { mode:'twoHand', right:0, left:0, twoHand:hitModifierValueForItem(right) };
+  if(leftTwoHand) return { mode:'twoHand', right:0, left:0, twoHand:hitModifierValueForItem(left) };
+  return { mode:'dualOrSingle', right:hitModifierValueForItem(right), left:hitModifierValueForItem(left), twoHand:0 };
+}
 function computeEquipmentAbilityModifiers(equipment=getEquipmentState()) {
   const mods = {};
+  const dualHandSums = {};
+  const add = (key, value) => { mods[key] = (mods[key] || 0) + value; };
   for (const slot of EQUIPMENT_SLOTS) {
     if (slot.kind === 'carry') continue;
     const item = (equipment || {})[slot.key] || {};
@@ -1785,26 +1890,38 @@ function computeEquipmentAbilityModifiers(equipment=getEquipmentState()) {
       const target = String(row.target || '');
       if (!target.startsWith('ability:')) continue;
       const key = target.replace('ability:', '');
-      mods[key] = (mods[key] || 0) + modifierValue(row);
+      const value = modifierValue(row);
+      if (shouldHalfHandWeaponModifiers(slot.key, equipment)) addDualAdjustedModifier(dualHandSums, key, value);
+      else add(key, value);
     }
   }
+  applyDualAdjustedModifierSums(dualHandSums, add);
   return mods;
 }
 function computeEquipmentCombatModifiers(equipment=getEquipmentState()) {
   const mods = { defense:0, evasion:0, initiative:0, maxHp:0, maxMp:0 };
+  const dualHandSums = {};
+  const add = (key, value) => { if(key in mods) mods[key] += value; };
+  const targetToKey = target => {
+    if (target === 'combat:defense') return 'defense';
+    if (target === 'combat:evasion') return 'evasion';
+    if (target === 'combat:initiative') return 'initiative';
+    if (target === 'resource:maxHp') return 'maxHp';
+    if (target === 'resource:maxMp') return 'maxMp';
+    return '';
+  };
   for (const slot of EQUIPMENT_SLOTS) {
     if (slot.kind === 'carry') continue;
     const item = (equipment || {})[slot.key] || {};
     for (const row of activeEquipmentModifierRows(item)) {
-      const target = String(row.target || '');
+      const key = targetToKey(String(row.target || ''));
+      if (!key) continue;
       const value = modifierValue(row);
-      if (target === 'combat:defense') mods.defense += value;
-      if (target === 'combat:evasion') mods.evasion += value;
-      if (target === 'combat:initiative') mods.initiative += value;
-      if (target === 'resource:maxHp') mods.maxHp += value;
-      if (target === 'resource:maxMp') mods.maxMp += value;
+      if (shouldHalfHandWeaponModifiers(slot.key, equipment)) addDualAdjustedModifier(dualHandSums, key, value);
+      else add(key, value);
     }
   }
+  applyDualAdjustedModifierSums(dualHandSums, add);
   return mods;
 }
 function computeEffectiveAbilities(base=getAbilityValues(), equipment=getEquipmentState()) {
@@ -1850,7 +1967,7 @@ function parseFlatBonus(value) {
   const n = Number(String(value ?? '').trim().replace(/^\+/, ''));
   return Number.isFinite(n) ? n : 0;
 }
-const RANGED_EQUIPMENT_TYPES = new Set(['弓','弩','大型弩']);
+const RANGED_EQUIPMENT_TYPES = new Set(['弓','弩','大型弩','大鎌']);
 function equipmentHitSkillKey(item={}) {
   const type = normalizeEquipmentType(item.type || item.category || item.kind || 'なし');
   if (!type || type === 'なし') return '';
@@ -1872,26 +1989,24 @@ function setBestEquipmentHitModifier(mods, key, value) {
 }
 function computeEquipmentSkillModifiers(equipment=getEquipmentState()) {
   const mods = {};
+  const dualHandSums = {};
+  const add = (key, value) => addEquipmentSkillModifier(mods, key, value);
   for (const slot of EQUIPMENT_SLOTS) {
     if (slot.kind === 'carry') continue;
     const item = (equipment || {})[slot.key] || {};
     const type = normalizeEquipmentType(item.type || 'なし');
     if (!item.name && (!type || type === 'なし')) continue;
     for (const row of activeEquipmentModifierRows(item)) {
-      if (row.target === 'hit' && HAND_SLOT_KEYS.includes(slot.key)) {
-        const hitValue = modifierValue(row);
-        const hitKey = equipmentHitSkillKey(item);
-        if (hitKey === 'melee') {
-          setBestEquipmentHitModifier(mods, 'melee', hitValue);
-          setBestEquipmentHitModifier(mods, 'force', hitValue);
-        } else {
-          setBestEquipmentHitModifier(mods, hitKey, hitValue);
-        }
-      }
-      if (String(row.target || '').startsWith('skill:')) addEquipmentSkillModifier(mods, row.target.replace('skill:', ''), modifierValue(row));
+      const target = String(row.target || '');
+      if (!target.startsWith('skill:')) continue;
+      const key = target.replace('skill:', '');
+      const value = modifierValue(row);
+      if (shouldHalfHandWeaponModifiers(slot.key, equipment)) addDualAdjustedModifier(dualHandSums, key, value);
+      else add(key, value);
     }
     if (HAND_SLOT_KEYS.includes(slot.key) && isPaletteTwoHandEquipment(item, null)) break;
   }
+  applyDualAdjustedModifierSums(dualHandSums, add);
   return mods;
 }
 
@@ -1910,8 +2025,8 @@ function computeDualWieldStats(equipment=getEquipmentState()) {
   const rightBonus = signedNumberText(right.offhand || EQUIPMENT_PRESETS[normalizeEquipmentType(right.type)]?.offhand || '');
   return {
     available:true,
-    rightMain:`右手主武器：命中${signedNumberText(hitModifierValueForItem(right))}-1 / 副手追撃${leftBonus}`,
-    leftMain:`左手主武器：命中${signedNumberText(hitModifierValueForItem(left))}-1 / 副手追撃${rightBonus}`,
+    rightMain:`右手主武器：命中${signedNumberText(hitModifierValueForItem(right) - 1)} / 副手追撃${leftBonus}`,
+    leftMain:`左手主武器：命中${signedNumberText(hitModifierValueForItem(left) - 1)} / 副手追撃${rightBonus}`,
     bestOffhandBonus: Math.max(parseFlatBonus(left.offhand), parseFlatBonus(right.offhand))
   };
 }
@@ -1922,10 +2037,14 @@ function computeCombatStats(abilities=computeAbilities(), alloc=getSkillAlloc(),
   const evadeSkill = totals.evade?.total || 0;
   const evadeModifier = (totals.evade?.equipmentOther || 0) + combatMods.evasion;
   const evasionTotal = 5 + evadeSkill + combatMods.evasion;
-  return { defenseTotal, evasionTotal, evadeSkill, evadeModifier, combatMods, dualWield: computeDualWieldStats(equipment) };
+  return { defenseTotal, evasionTotal, evadeSkill, evadeModifier, combatMods, hitMods: equipmentHitModifierStats(equipment), dualWield: computeDualWieldStats(equipment) };
 }
 function updateCombatStats() {
   const combat = computeCombatStats(computeAbilities(), getSkillAlloc(), getEquipmentState());
+  const hitCards = combat.hitMods?.mode === 'twoHand'
+    ? `<div class="ability-card computed-card"><div class="ability-name">両手命中補正</div><div class="computed-value big">${signedNumberText(combat.hitMods.twoHand || 0) || '0'}</div></div>`
+    : `<div class="ability-card computed-card"><div class="ability-name">右手命中補正</div><div class="computed-value big">${signedNumberText(combat.hitMods?.right || 0) || '0'}</div></div>
+       <div class="ability-card computed-card"><div class="ability-name">左手命中補正</div><div class="computed-value big">${signedNumberText(combat.hitMods?.left || 0) || '0'}</div></div>`;
   const el = $('derivedCombatStats');
   if (el) {
     el.innerHTML = `
@@ -1937,6 +2056,7 @@ function updateCombatStats() {
         <div class="ability-name">回避値</div>
         <div class="computed-value big">${combat.evasionTotal}</div>
       </div>
+      ${hitCards}
       ${combat.dualWield?.available ? `
       <div class="ability-card computed-card">
         <div class="ability-name">二刀攻撃</div>
@@ -4508,6 +4628,25 @@ function paletteCheckLineFromExpression(checkType, label, totals, extraMod='') {
   const rhs = parsed.right || '目標値';
   return `2D6+${v}${mod}>=${rhs} 【${label}】`;
 }
+function signedHitFormulaPart(value=0) {
+  const n = Number(value || 0);
+  if (!Number.isFinite(n) || n === 0) return '+0';
+  return signedNumberText(n);
+}
+function paletteWeaponCheckLineFromExpression(checkType, handLabel, totals, hitMod=0) {
+  const parsed = parseCheckExpression(checkType);
+  if (!parsed.skillName || !parsed.right || parsed.skillName === 'なし') return '';
+  const v = skillTotalByName(totals, parsed.skillName);
+  if (v === null) return '';
+  const rhs = parsed.right || '回避値';
+  return `2D6+(${v}${signedHitFormulaPart(hitMod)})>=${rhs} 【${handLabel}命中(${parsed.skillName})】`;
+}
+function weaponPaletteSkillNames(defaultSkill='') {
+  const skill = String(defaultSkill || '').trim();
+  if (skill === '近接') return ['近接','力業'];
+  if (skill === '射撃') return ['射撃'];
+  return skill ? [skill] : [];
+}
 function checkTypeOrDefault(item={}, defaultSkill='', defaultRight='目標値') {
   const raw = normalizeCheckExpression(item.checkType || '');
   if (defaultSkill) return forceCheckExpressionLeft(raw, defaultSkill, defaultRight);
@@ -4547,21 +4686,62 @@ function isPaletteTwoHandEquipment(item={}, source=null) {
   const slotText = String(source?.equipSlot || item.equipSlot || '').trim();
   return slotText === '両手' || slotText.includes('両手') || TWO_HAND_TYPES.has(type);
 }
-function collectWeaponDamagePaletteLines(data={}) {
+
+function paletteDamageSkillKeyForItem(item={}, slotKey='') {
+  const skillName = defaultSkillForEquipmentItem(item, slotKey);
+  if (skillName === '射撃') return 'shoot';
+  if (skillName === '近接') return 'melee';
+  return '';
+}
+function paletteDamageSkillBonus(totals={}, skillKey='') {
+  const row = totals?.[skillKey] || {};
+  return (Number(row.cat) || 0) + (Number(row.free) || 0);
+}
+function paletteOffhandBonusForItem(item={}, source=null) {
+  const type = normalizeEquipmentType(item.type || source?.category || source?.kind || 'なし');
+  const preset = EQUIPMENT_PRESETS[type] || {};
+  return parseFlatBonus(item.offhand || source?.offhandBonus || source?.offhand || preset.offhand || '');
+}
+function paletteDamageFormulaWithBonus(formula='', skillBonus=0, offhandBonus=0) {
+  const base = normalizePaletteFormula(formula);
+  if (!base) return '';
+  const skill = Number(skillBonus) || 0;
+  const offhand = Number(offhandBonus) || 0;
+  if (!skill && !offhand) return base;
+  return `${base}+(${skill}${offhand ? signedNumberText(offhand) : ''})`;
+}
+
+function collectWeaponDamagePaletteLines(data={}, totals={}) {
   const equipment = data.equipment || {};
   const items = paletteInventoryItems(data);
   const result = [];
   const used = new Set();
-  for (const spec of [{ key:'rightHand', label:'右手' }, { key:'leftHand', label:'左手' }]) {
+  const handSpecs = [{ key:'rightHand', label:'右手', otherKey:'leftHand' }, { key:'leftHand', label:'左手', otherKey:'rightHand' }];
+  for (const spec of handSpecs) {
     const item = equipment[spec.key] || {};
     const source = findPaletteInventoryItem(items, item);
-    const type = normalizeEquipmentType(item.type || source?.category || source?.kind || 'なし');
-    if (!item.name && (!type || type === 'なし')) continue;
-    if (spellContainerKind(type)) continue;
-    const formula = normalizePaletteFormula(item.power || source?.power || '');
+    const merged = normalizeInventoryItem({ ...(source || {}), ...(item || {}) });
+    const type = normalizeEquipmentType(merged.type || merged.category || merged.kind || 'なし');
+    if (!merged.name && (!type || type === 'なし')) continue;
+    if (spellContainerKind(type) || ['盾','大盾'].includes(type)) continue;
+    const power = merged.power || source?.power || item.power || '';
+    if (!normalizePaletteFormula(power)) continue;
+    const twoHand = isPaletteTwoHandEquipment(merged, source);
+    const skillKey = paletteDamageSkillKeyForItem(merged, spec.key);
+    const skillBonus = paletteDamageSkillBonus(totals, skillKey);
+    let offhandBonus = 0;
+    if (!twoHand) {
+      const other = equipment[spec.otherKey] || {};
+      const otherSource = findPaletteInventoryItem(items, other);
+      const otherMerged = normalizeInventoryItem({ ...(otherSource || {}), ...(other || {}) });
+      if (canUseAsDualWeapon(otherMerged) && !isPaletteTwoHandEquipment(otherMerged, otherSource)) {
+        offhandBonus = paletteOffhandBonusForItem(otherMerged, otherSource);
+      }
+    }
+    const formula = paletteDamageFormulaWithBonus(power, skillBonus, offhandBonus);
     if (!formula) continue;
-    const twoHand = isPaletteTwoHandEquipment(item, source);
-    const label = twoHand ? '両手武器ダメージ' : `${spec.label}武器ダメージ`;
+    const skillLabel = skillKey === 'shoot' ? '射撃' : (skillKey === 'melee' ? '近接' : '');
+    const label = twoHand ? `両手武器ダメージ${skillLabel ? '(' + skillLabel + ')' : ''}` : `${spec.label}武器ダメージ${skillLabel ? '(' + skillLabel + ')' : ''}`;
     const key = label + '::' + formula;
     if (used.has(key)) continue;
     used.add(key);
@@ -4636,7 +4816,13 @@ function collectCheckPaletteLines(data={}, totals={}) {
     used.add(line);
     result.push(line);
   };
-  for (const spec of [{ key:'rightHand', label:'右手武器命中' }, { key:'leftHand', label:'左手武器命中' }]) {
+  const pushWeaponLine = (checkType, handLabel, hitMod=0) => {
+    const line = paletteWeaponCheckLineFromExpression(checkType, handLabel, totals, hitMod);
+    if (!line || used.has(line)) return;
+    used.add(line);
+    result.push(line);
+  };
+  for (const spec of [{ key:'rightHand', label:'右手' }, { key:'leftHand', label:'左手' }]) {
     const eq = equipment[spec.key] || {};
     const source = findPaletteInventoryItem(items, eq);
     const merged = normalizeInventoryItem({ ...(source || {}), ...(eq || {}) });
@@ -4644,9 +4830,12 @@ function collectCheckPaletteLines(data={}, totals={}) {
     if (!merged.name && (!type || type === 'なし')) continue;
     if (spellContainerKind(type) || ['盾','大盾'].includes(type)) continue;
     const defaultSkill = defaultSkillForEquipmentItem(merged, spec.key);
-    const checkType = checkTypeOrDefault(merged, defaultSkill, '回避値');
-    const label = isPaletteTwoHandEquipment(merged, source) ? '両手武器命中' : spec.label;
-    pushLine(checkType, label, signedHitModifierForPalette(merged));
+    const rhs = checkExpressionRightDisplay(merged.checkType || '', '回避値') || '回避値';
+    const handLabel = isPaletteTwoHandEquipment(merged, source) ? '両手' : spec.label;
+    const hitMod = hitModifierValueForItem(merged);
+    for (const skillName of weaponPaletteSkillNames(defaultSkill)) {
+      pushWeaponLine(`${skillName}>=${rhs}`, handLabel, hitMod);
+    }
     if (isPaletteTwoHandEquipment(merged, source)) break;
   }
   for (const slot of EQUIPMENT_SLOTS) {
@@ -4666,8 +4855,9 @@ function collectCheckPaletteLines(data={}, totals={}) {
     const row = normalizeInventoryItem(item);
     if (!row.checkType || row.checkType === 'なし') continue;
     if (row.kind === '術式') continue; // 術式は装備にセットされたものを上で出す
+    if (row.kind === '武器') continue; // 武器攻撃判定は装備中の右手/左手/両手だけを上で出す
     const label = row.name || row.category || '判定';
-    const forcedSkill = defaultSkillForEquipmentItem(row) || (/祈祷|聖|神/.test(String(row.category || row.kind || '')) ? '祈祷' : (/魔法|魔導/.test(String(row.category || row.kind || '')) ? '魔法' : ''));
+    const forcedSkill = /祈祷|聖|神/.test(String(row.category || row.kind || '')) ? '祈祷' : (/魔法|魔導/.test(String(row.category || row.kind || '')) ? '魔法' : '');
     pushLine(checkTypeOrDefault(row, forcedSkill, '目標値'), label);
   }
   return result;
@@ -4684,12 +4874,12 @@ function generatePaletteExport(data=collectData(false)) {
       lines.push(`2D6+${v}>=目標値 【${sk.name}】`);
     }
   }
-  const checkLines = collectCheckPaletteLines(data, baseTotals);
+  const checkLines = collectCheckPaletteLines(data, totals);
   if (checkLines.length) {
     lines.push('');
     lines.push(...checkLines);
   }
-  const damageLines = collectWeaponDamagePaletteLines(data).concat(collectSetSpellDamagePaletteLines(data));
+  const damageLines = collectWeaponDamagePaletteLines(data, totals).concat(collectSetSpellDamagePaletteLines(data));
   if (damageLines.length) {
     lines.push('');
     lines.push(...damageLines);
@@ -5063,5 +5253,71 @@ document.addEventListener('change', (ev) => {
 });
 
 </script>
+<script>
+
+function isPublicViewMode(){
+  try{
+    const params = new URLSearchParams(location.search || '');
+    const hash = String(location.hash || '').toLowerCase();
+    return params.has('view') || params.has('share') || params.has('public') || params.get('mode') === 'view' || params.get('mode') === 'public' || hash.includes('view') || hash.includes('public');
+  }catch(_){
+    return false;
+  }
+}
+function privacyNormalizeText(value=''){
+  return String(value || '').replace(/\s+/g,'');
+}
+function markPrivateViewSections(){
+  const privateWords = ['倉庫','所持品','携行品','預け','預かり','登録ID','公開ID','プレイヤーキー','保存','読込','DB同期','データベース','管理','デバッグ'];
+  document.querySelectorAll('section, details, .panel, .card, .box, fieldset, article').forEach(el=>{
+    const heading = el.querySelector('h1,h2,h3,h4,summary,legend,.section-title,.panel-title');
+    const text = privacyNormalizeText(heading ? heading.textContent : '');
+    if(privateWords.some(w => text.includes(w))){
+      el.classList.add('private-view-only');
+      el.setAttribute('data-private-view','1');
+    }
+  });
+}
+function sanitizePublicView(){
+  if(!isPublicViewMode()) return;
+  document.body.classList.add('public-view');
+  markPrivateViewSections();
+  const privateSelectors = [
+    '#warehouseSection','#inventorySection','#carrySection','#storageSection','#depositSection',
+    '#warehousePanel','#inventoryPanel','#carryPanel','#storagePanel','#depositPanel',
+    '#warehouseList','#inventoryList','#carryList','#storageList','#depositList',
+    '#itemRegisterSection','#warehouseRegisterSection','#cloudSavePanel','#dbSyncPanel',
+    '#saveLoadPanel','#adminPanel','#debugPanel'
+  ];
+  privateSelectors.forEach(sel=>document.querySelectorAll(sel).forEach(el=>{
+    el.classList.add('private-view-only');
+    el.setAttribute('data-private-view','1');
+  }));
+  document.querySelectorAll('textarea[data-inventory-input="1"], textarea[data-equipment-input="1"], .internal-raw-field').forEach(el=>{
+    el.classList.add('private-view-only');
+    el.setAttribute('hidden','');
+    el.setAttribute('aria-hidden','true');
+    el.style.display='none';
+  });
+  document.querySelectorAll('button,[data-action],[data-row-save],[data-row-replace],[data-add-row],[data-delete-row]').forEach(el=>{
+    if(!el.classList.contains('public-view-allowed')){
+      el.classList.add('edit-only');
+    }
+  });
+}
+document.addEventListener('DOMContentLoaded', sanitizePublicView);
+
+</script>
+
+<script>
+const publicViewPrivacyObserver = new MutationObserver(()=>{ if(isPublicViewMode()) sanitizePublicView(); });
+document.addEventListener('DOMContentLoaded', ()=>{
+  if(isPublicViewMode()){
+    publicViewPrivacyObserver.observe(document.body,{childList:true,subtree:true});
+    sanitizePublicView();
+  }
+});
+</script>
+
 </body>
 </html>
