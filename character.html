@@ -2185,13 +2185,28 @@ function updateSpellSlotDetails(slotKey) {
     detail.innerHTML = row ? spellDetailHtml(row) : '<div class="spell-detail-empty">術式を選択すると、ここに説明・効果を表示します。</div>';
   }
 }
+function spellTextForTypeDetection(row={}) {
+  return [row.category, row.kind, row.type, row.itemType, row.masterSheet, row.setItem, row.tags, row.checkType, row.role, row.source, row.description, row.effect]
+    .map(v => String(v || '').trim())
+    .filter(Boolean)
+    .join(' / ');
+}
+function spellRowMatchesContainerInfo(row={}, info=null) {
+  if (!info) return true;
+  const text = spellTextForTypeDetection(row);
+  const cat = String(row.category || row.type || '').trim();
+  const aliases = spellTypeAliases(info.label);
+  if (aliases.includes(cat)) return true;
+  if (info.label === '魔法') return /魔法|魔術|魔導|魔印/.test(text) || /^魔法\s*>=/.test(String(row.checkType || ''));
+  if (info.label === '祈祷') return /祈祷|聖術|神聖|聖印/.test(text) || /^祈祷\s*>=/.test(String(row.checkType || ''));
+  return false;
+}
 function ownedSpellRowsForInfo(info) {
   if (!info) return [];
-  const aliases = spellTypeAliases(info.label);
   return (inventoryItemsState || []).map(item => normalizeInventoryItem(item)).filter(item => {
-    if (item.kind !== '術式' || !item.name) return false;
-    const cat = String(item.category || '').trim();
-    return aliases.includes(cat);
+    if (!item.name) return false;
+    if (!isSpellInventoryItem(item)) return false;
+    return spellRowMatchesContainerInfo(item, info);
   }).sort((a,b) => String(a.rank || '').localeCompare(String(b.rank || ''), 'ja') || String(a.name || '').localeCompare(String(b.name || ''), 'ja'));
 }
 function spellOptionLabel(item) {
@@ -2911,7 +2926,11 @@ function emptyInventoryItem() {
 }
 function normalizeInventoryItem(item={}) {
   const rawCategory = String(item.category || item.type || item.itemCategory || item.materialCategory || '').trim();
-  let kind = normalizeInventoryKind(item.kind || item.itemType || 'アイテム');
+  const rawCheckType = String(item.checkType || item['判定'] || '').trim();
+  const rawMasterSheet = String(item.masterSheet || item.sourceSheet || '').trim().toLowerCase();
+  const categoryLooksSpell = rawCategory.includes('術式') || ['魔法','祈祷','魔術','聖術','神聖術','攻撃魔法'].includes(rawCategory) || /^魔法\s*>=|^祈祷\s*>=/.test(rawCheckType) || rawMasterSheet === 'spells' || rawMasterSheet === 'spell';
+  let kind = normalizeInventoryKind(item.kind || item.itemType || (categoryLooksSpell ? '術式' : 'アイテム'));
+  if (kind === 'アイテム' && categoryLooksSpell) kind = '術式';
   if (isBagLikeFields({ ...item, kind, category:rawCategory })) kind = 'バッグ';
   if (isQuiverLikeFields({ ...item, kind, category:rawCategory })) kind = '矢筒';
   const oldDescription = item['fla' + 'vor' + 'Text'];
@@ -2960,10 +2979,14 @@ function isSpellInventoryItem(row={}) {
   const rawKind = String(row.kind || '').trim();
   const masterSheet = String(row.masterSheet || row.sourceSheet || '').trim().toLowerCase();
   const category = String(row.category || row.type || '').trim();
+  const checkType = String(row.checkType || row['判定'] || '').trim();
+  const spellText = [row.setItem, row.tags, row.role, row.description, row.effect].map(v => String(v || '')).join(' / ');
   if (kind === '術式') return true;
   if (masterSheet === 'spells' || masterSheet === 'spell') return true;
-  if (rawKind.includes('術式')) return true;
-  if (category.includes('術式') && !['武器','防具','装飾品'].includes(kind)) return true;
+  if (rawKind.includes('術式') || ['魔法','祈祷','魔術','聖術','神聖術'].includes(rawKind)) return true;
+  if ((category.includes('術式') || ['魔法','祈祷','魔術','聖術','神聖術','攻撃魔法'].includes(category)) && !['武器','防具','装飾品'].includes(kind)) return true;
+  if (/^魔法\s*>=|^祈祷\s*>=/.test(checkType) && !['武器','防具','装飾品'].includes(kind)) return true;
+  if (/魔導書|祈祷書|魔印|聖印|スクロール/.test(spellText) && /魔法|祈祷|術式|魔術|聖術|神聖/.test([category, rawKind, checkType, spellText].join(' / ')) && !['武器','防具','装飾品'].includes(kind)) return true;
   return false;
 }
 function findSpellInventoryItemByIdOrName(item={}) {
