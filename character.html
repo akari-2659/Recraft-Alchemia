@@ -2098,8 +2098,8 @@ function updateAll() { updateAbilities(); updateCategoryBonuses(); updateResourc
 
 function spellContainerKind(type) {
   const t = normalizeEquipmentType(type || 'なし');
-  if (t === '魔導書') return { kind:'magic', label:'魔法', pointKey:'magic', baseSlots:1, growsWithPoint:true };
-  if (t === '祈祷書') return { kind:'prayer', label:'祈祷', pointKey:'prayer', baseSlots:1, growsWithPoint:true };
+  if (t === '魔導書') return { kind:'magic', label:'魔法', pointKey:'magic', baseSlots:1, growsWithPoint:false };
+  if (t === '祈祷書') return { kind:'prayer', label:'祈祷', pointKey:'prayer', baseSlots:1, growsWithPoint:false };
   if (t === '魔印') return { kind:'magic', label:'魔法', pointKey:'magic', baseSlots:1, growsWithPoint:false };
   if (t === '聖印') return { kind:'prayer', label:'祈祷', pointKey:'prayer', baseSlots:1, growsWithPoint:false };
   return null;
@@ -2114,11 +2114,20 @@ function selectedSpellSlotBase(slotKey, info) {
   if (Number.isFinite(n) && n > 0) return Math.floor(n);
   return info?.baseSlots || 0;
 }
+function spellSlotUpgradeBonus(slotKey='') {
+  if (!slotKey) return 0;
+  return collectUpgradeEntries(slotKey).reduce((sum, entry) => {
+    const content = String(entry?.content || '').trim();
+    if (!/術式登録枠|術式枠増加/.test(content)) return sum;
+    const parsed = Number(String(entry?.value || '').replace(/[^0-9+.-]/g,''));
+    return sum + (Number.isFinite(parsed) && parsed !== 0 ? Math.max(0, Math.floor(parsed)) : 1);
+  }, 0);
+}
 function spellSlotLimitForType(type, alloc=getSkillAlloc(), slotKey='') {
   const info = spellContainerKind(type);
   if (!info) return 0;
   const base = slotKey ? selectedSpellSlotBase(slotKey, info) : info.baseSlots;
-  return base + (info.growsWithPoint ? getSkillPointTotal(info.pointKey, alloc) : 0);
+  return Math.max(0, base + spellSlotUpgradeBonus(slotKey));
 }
 function splitFormulaList(text) {
   return String(text || '').split(/[\n,、，\/]+/).map(v => v.trim()).filter(Boolean);
