@@ -2098,8 +2098,8 @@ function updateAll() { updateAbilities(); updateCategoryBonuses(); updateResourc
 
 function spellContainerKind(type) {
   const t = normalizeEquipmentType(type || 'なし');
-  if (t === '魔導書') return { kind:'magic', label:'魔法', pointKey:'magic', baseSlots:1, growsWithPoint:false };
-  if (t === '祈祷書') return { kind:'prayer', label:'祈祷', pointKey:'prayer', baseSlots:1, growsWithPoint:false };
+  if (t === '魔導書') return { kind:'magic', label:'魔法', pointKey:'magic', baseSlots:1, growsWithPoint:true };
+  if (t === '祈祷書') return { kind:'prayer', label:'祈祷', pointKey:'prayer', baseSlots:1, growsWithPoint:true };
   if (t === '魔印') return { kind:'magic', label:'魔法', pointKey:'magic', baseSlots:1, growsWithPoint:false };
   if (t === '聖印') return { kind:'prayer', label:'祈祷', pointKey:'prayer', baseSlots:1, growsWithPoint:false };
   return null;
@@ -2126,8 +2126,13 @@ function spellSlotUpgradeBonus(slotKey='') {
 function spellSlotLimitForType(type, alloc=getSkillAlloc(), slotKey='') {
   const info = spellContainerKind(type);
   if (!info) return 0;
-  const base = slotKey ? selectedSpellSlotBase(slotKey, info) : info.baseSlots;
-  return Math.max(0, base + spellSlotUpgradeBonus(slotKey));
+  // 魔導書・祈祷書は「1 + 対応技能ポイント + 強化による術式枠追加」。
+  // 魔印・聖印は装備固有の固定枠 + 強化分として扱う。
+  const base = info.growsWithPoint
+    ? info.baseSlots
+    : (slotKey ? selectedSpellSlotBase(slotKey, info) : info.baseSlots);
+  const skillPoint = info.growsWithPoint ? getSkillPointTotal(info.pointKey, alloc) : 0;
+  return Math.max(0, base + skillPoint + spellSlotUpgradeBonus(slotKey));
 }
 function splitFormulaList(text) {
   return String(text || '').split(/[\n,、，\/]+/).map(v => v.trim()).filter(Boolean);
@@ -2443,8 +2448,11 @@ function updateSpellSlotHints() {
       const limit = spellSlotLimitForType(type, alloc, slot.key);
       const used = selectedSpellNames(slot.key).length;
       const skillPoint = getSkillPointTotal(info.pointKey, alloc);
-      const base = selectedSpellSlotBase(slot.key, info);
-      const formula = info.growsWithPoint ? `基本${base}+${info.label}P${skillPoint}` : `固定${base}`;
+      const base = info.growsWithPoint ? info.baseSlots : selectedSpellSlotBase(slot.key, info);
+      const upgrade = spellSlotUpgradeBonus(slot.key);
+      const formula = info.growsWithPoint
+        ? `基本${base}+${info.label}P${skillPoint}+強化${upgrade}`
+        : `固定${base}+強化${upgrade}`;
       label.textContent = `${info.label}枠 ${limit}（${formula}） / セット${used}件`;
       label.classList.toggle('warning', used > limit);
       if (help) help.textContent = ownedSpellRowsForInfo(info).length ? `倉庫の${info.label}術式から選択してください。` : `倉庫に${info.label}術式がありません。倉庫タブで術式を登録してください。`;
