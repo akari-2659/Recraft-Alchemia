@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.126</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.127</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -642,12 +642,12 @@
 </style>
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.126 / 最終更新日：2026年7月11日</div>
+<div class="ra-build-info">Version：v90.8.127 / 最終更新日：2026年7月11日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.126 / 最終更新日：2026年7月11日</div>
+  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.127 / 最終更新日：2026年7月11日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -3363,6 +3363,30 @@ function dbSpellToInventoryItem(row) {
     note: row.notes || ''
   });
 }
+function dbRecipeToInventoryItem(row) {
+  const resultName=String(row.resultItem||row.name||'').trim();
+  const displayName=String(row.name||'').includes('レシピ') ? row.name : `${resultName||row.name||'名称未設定'}のレシピ`;
+  return normalizeInventoryItem({
+    id: row.id || row.name,
+    publicId: row.publicId || '',
+    masterId: row.id || row.name || '',
+    masterSheet: 'recipes',
+    masterSync: '',
+    name: displayName,
+    kind: 'レシピ',
+    category: row.craftType || row.category || 'レシピ',
+    count: 1,
+    rank: row.rank || '',
+    price: row.price || '',
+    source: row.unlockFacility || '',
+    tags: row.tags || '',
+    description: row.description || '',
+    effect: row.effect || '',
+    recipeResult: [resultName, row.resultCount ? `×${row.resultCount}` : ''].filter(Boolean).join(' '),
+    materials: row.requiredMaterials || '',
+    note: row.notes || ''
+  });
+}
 function setDbCharacterSheetMaster(res={}) {
   DB_INITIAL_ITEM_MASTER = Array.isArray(res.cs_items) ? res.cs_items : [];
   DB_INITIAL_SPELL_MASTER = Array.isArray(res.spells) ? res.spells : [];
@@ -3388,6 +3412,7 @@ function getInventoryMasterPresetsFromMaster(master={}) {
   const presets = [];
   for (const row of (master.cs_items || [])) presets.push(dbItemToInventoryItem(row));
   for (const row of (master.spells || [])) presets.push(dbSpellToInventoryItem(row));
+  for (const row of (master.recipes || [])) presets.push(dbRecipeToInventoryItem(row));
   return presets.filter(item => String(item.masterId || item.id || '').trim() && String(item.masterSheet || '').trim());
 }
 function masterPresetMapFromMaster(master={}) {
@@ -3469,10 +3494,13 @@ function findPresetByPublicId(master={}, publicId=''){
   if(!id) return null;
   const itemRows = Array.isArray(master.cs_items) ? master.cs_items : [];
   const spellRows = Array.isArray(master.spells) ? master.spells : [];
+  const recipeRows = Array.isArray(master.recipes) ? master.recipes : [];
   const row = itemRows.find(r=>String(r.publicId || '').trim().toUpperCase() === id);
   if(row) return dbItemToInventoryItem(row);
   const spell = spellRows.find(r=>String(r.publicId || '').trim().toUpperCase() === id);
   if(spell) return dbSpellToInventoryItem(spell);
+  const recipe = recipeRows.find(r=>String(r.publicId || '').trim().toUpperCase() === id);
+  if(recipe) return dbRecipeToInventoryItem(recipe);
   return null;
 }
 function mergePublicIdInventoryItem(existing={}, preset={}, addCount=1){
