@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.87</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.125</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -635,12 +635,19 @@
   }
 
 </style>
+
+<style id="raBuildInfoStyle">
+.ra-build-info{position:fixed;top:8px;right:8px;z-index:99999;padding:6px 10px;border:1px solid rgba(91,69,45,.28);border-radius:999px;background:rgba(255,253,248,.94);box-shadow:0 2px 10px rgba(0,0,0,.12);font-size:12px;font-weight:800;color:#5b452d;line-height:1.2;backdrop-filter:blur(4px)}
+@media(max-width:760px){.ra-build-info{position:static;margin:8px auto 0;width:max-content;max-width:calc(100% - 16px);text-align:center}}
+</style>
 </head>
 <body>
+<div class="ra-build-info">Version：v90.8.125 / 最終更新日：2026年7月11日</div>
+
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.87</div>
+  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.125 / 最終更新日：2026年7月11日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -2217,11 +2224,19 @@ function spellRowMatchesContainerInfo(row={}, info=null) {
 }
 function ownedSpellRowsForInfo(info) {
   if (!info) return [];
-  return (inventoryItemsState || []).map(item => normalizeInventoryItem(item)).filter(item => {
-    if (!item.name) return false;
-    if (!isSpellInventoryItem(item)) return false;
-    return spellRowMatchesContainerInfo(item, info);
-  }).sort((a,b) => String(a.rank || '').localeCompare(String(b.rank || ''), 'ja') || String(a.name || '').localeCompare(String(b.name || ''), 'ja'));
+  // 倉庫内の術式を正としつつ、DB同期直後の一瞬だけ候補が空にならないよう、
+  // DB上の「初期倉庫」術式もフォールバック候補へ含める。
+  const fallbackRows = (DB_INITIAL_SPELL_MASTER || [])
+    .filter(row => hasInitialMasterToken(row))
+    .map(row => dbSpellToInventoryItem(row));
+  const inventoryRows = (inventoryItemsState || []).map(item => normalizeInventoryItem(item));
+  const byKey = new Map();
+  for (const item of fallbackRows.concat(inventoryRows)) {
+    if (!item.name || !isSpellInventoryItem(item) || !spellRowMatchesContainerInfo(item, info)) continue;
+    const key = String(item.masterId || item.id || item.name || '').trim() || String(item.name || '').trim();
+    byKey.set(key, item); // 後から入る倉庫データを優先する。
+  }
+  return Array.from(byKey.values()).sort((a,b) => String(a.rank || '').localeCompare(String(b.rank || ''), 'ja') || String(a.name || '').localeCompare(String(b.name || ''), 'ja'));
 }
 function spellOptionLabel(item) {
   const row = normalizeInventoryItem(item || {});
@@ -2332,10 +2347,9 @@ function syncEquipmentUpgradeHidden(slotKey){
 function refreshSelectionListsForTarget(target=null){
   if(target && target.id?.startsWith('equip_') && target.id.endsWith('_itemSelect')) refreshEquipmentItemSelects();
   if(target && target.id?.startsWith('equip_') && target.id.endsWith('_type')) refreshEquipmentTypeSelects();
-  if(target && target.classList?.contains('spell-slot-select')) {
-    const slotKey = target.dataset.slotKey || '';
-    refreshSpellSetSelect(slotKey, spellContainerKind($('equip_' + slotKey + '_type')?.value || 'なし'));
-  }
+  // 術式セレクトはクリック直前に作り直さない。
+  // pointerdown / focusin 中にDOMを置換すると、ブラウザのプルダウンが開かず選択不能になる。
+  if(target && target.classList?.contains('spell-slot-select')) return;
   if(target && target.id === 'bagSelect') renderBagSelect();
   if(target && target.id === 'quiverSelect') renderQuiverControls();
 }
@@ -3353,6 +3367,11 @@ function setDbCharacterSheetMaster(res={}) {
   DB_INITIAL_ITEM_MASTER = Array.isArray(res.cs_items) ? res.cs_items : [];
   DB_INITIAL_SPELL_MASTER = Array.isArray(res.spells) ? res.spells : [];
   DB_RECIPE_MASTER = Array.isArray(res.recipes) ? res.recipes : [];
+  // DB取得後に、装備済みの魔導書・祈祷書の候補を即時更新する。
+  try {
+    refreshSpellSetSelects();
+    updateSpellSlotHints();
+  } catch (_) {}
 }
 async function loadCharacterSheetMasterFromDbForInitial() {
   const res = await cloudRequest('characterSheetMaster', {});
@@ -5216,6 +5235,15 @@ function bindEvents() {
   });
   document.addEventListener('input', e => {
     if (e.target.matches('#charName,#charGender,#charAge,#playerKey,#newPlayerKey,#charMemo')) { updateSummary(); return; }
+    if (e.target.classList?.contains('spell-slot-select')) {
+      // 選択中のselect自身をupdateAll()で再生成せず、選択値だけを反映する。
+      const slotKey = e.target.dataset.slotKey || '';
+      syncSpellSetHidden(slotKey);
+      updateSpellSlotDetails(slotKey);
+      updateEquipmentSummaries();
+      updateSummary();
+      return;
+    }
     if (e.target.closest('[data-char-modifier-editor]')) syncModifierEditor(e.target.closest('[data-char-modifier-editor]'));
     if (e.target.dataset.equipmentInput) { updateAll(); return; }
     if (e.target.dataset.inventoryInput) { if (e.target.closest('[data-char-modifier-editor]')) syncModifierEditor(e.target.closest('[data-char-modifier-editor]')); applyInventoryFilters(); updateSummary(); return; }
