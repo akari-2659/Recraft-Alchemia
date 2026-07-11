@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.129</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.133</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -642,12 +642,12 @@
 </style>
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.129 / 最終更新日：2026年7月11日</div>
+<div class="ra-build-info">Version：v90.8.133 / 最終更新日：2026年7月11日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.129 / 最終更新日：2026年7月11日</div>
+  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.133 / 最終更新日：2026年7月11日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -3474,10 +3474,26 @@ function isSameInventoryCore(a={}, b={}) {
   return keys.every(k => String(aa[k] ?? '') === String(bb[k] ?? '')) && Number(aa.count || 0) === Number(bb.count || 0);
 }
 
+const LEGACY_PUBLIC_ID_ALIASES = Object.freeze({
+  'RCA-CARA-001':'RCA-KEDC-9UQU',
+  'RCA-WING-001':'RCA-3YDC-2RAS',
+  'RCA-SPOR-001':'RCA-V9H2-9GQK',
+  'RCA-ROOT-001':'RCA-6V5N-TT45',
+  'RCA-MUDH-001':'RCA-Q73F-Z3F3',
+  'RCA-MUCU-001':'RCA-YEQU-W88X',
+  'RCA-LORD-001':'RCA-UHV9-XQEE',
+  'RCA-GKHO-001':'RCA-5Q8D-S9QU',
+  'RCA-FLHW-001':'RCA-2K6U-TN73'
+});
+function canonicalRegistrationId(value=''){
+  const id=String(value||'').trim().toUpperCase();
+  return LEGACY_PUBLIC_ID_ALIASES[id] || id;
+}
+
 function parsePublicIdPasteEntries(text=''){
   const raw = String(text || '').trim();
   if(!raw) return [];
-  const ids = [...raw.matchAll(/RCA-[A-Z0-9]{4}-[A-Z0-9]{4}/gi)].map(m=>({id:m[0].toUpperCase(), index:m.index}));
+  const ids = [...raw.matchAll(/RCA-[A-Z0-9]{4}-[A-Z0-9]{3,4}/gi)].map(m=>({id:canonicalRegistrationId(m[0]), index:m.index}));
   if(!ids.length) return [];
   return ids.map((entry, i)=>{
     const start = Math.max(0, raw.lastIndexOf('\n\n', entry.index));
@@ -3490,7 +3506,7 @@ function parsePublicIdPasteEntries(text=''){
   });
 }
 function findPresetByPublicId(master={}, publicId=''){
-  const id = String(publicId || '').trim().toUpperCase();
+  const id = canonicalRegistrationId(publicId);
   if(!id) return null;
   const itemRows = Array.isArray(master.cs_items) ? master.cs_items : [];
   const spellRows = Array.isArray(master.spells) ? master.spells : [];
@@ -3524,8 +3540,8 @@ async function addInventoryByPublicIdPaste(){
   const countInput = $('publicIdCountInput');
   const status = $('publicIdPasteStatus');
   const rawId = String(idInput?.value || '').trim().toUpperCase();
-  const idMatch = rawId.match(/RCA-[A-Z0-9]{4}-[A-Z0-9]{4}/i);
-  const publicId = idMatch ? idMatch[0].toUpperCase() : rawId;
+  const idMatch = rawId.match(/RCA-[A-Z0-9]{4}-[A-Z0-9]{3,4}/i);
+  const publicId = canonicalRegistrationId(idMatch ? idMatch[0] : rawId);
   const count = clampInt(countInput?.value || 1, 1, 9999);
   if(!publicId || !/^RCA-[A-Z0-9]{4}-[A-Z0-9]{4}$/i.test(publicId)){
     if(status){ status.className='status-box warn'; status.textContent='登録IDを RCA-XXXX-XXXX 形式で入力してください。'; }
