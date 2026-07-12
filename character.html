@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.141</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.142</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -642,12 +642,12 @@
 </style>
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.141 / 最終更新日：2026年7月12日</div>
+<div class="ra-build-info">Version：v90.8.142 / 最終更新日：2026年7月12日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.141 / 最終更新日：2026年7月12日</div>
+  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.142 / 最終更新日：2026年7月12日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -1835,8 +1835,19 @@ function migrateLegacyDefenseActionRows(rows=[], item={}) {
     return r;
   }).filter(Boolean);
 }
+function sanitizeKnownEquipmentModifierRows(rows=[], item={}) {
+  const id = String(item.itemId || item.masterId || item.id || '').trim();
+  const name = String(item.name || '').trim();
+  // 小盾・魔導盾には回避低下がない。旧保存データや古いカテゴリ補正が
+  // 残っていても、現在の装備仕様を優先して除外する。
+  if (id === 'shd_small' || id === 'shd_magic' || name === '小盾' || name === '魔導盾') {
+    return (rows || []).filter(row => !['skill:evade', 'combat:evasion'].includes(String(row && row.target || '')));
+  }
+  return rows || [];
+}
 function equipmentModifierRows(item={}) {
-  return migrateLegacyDefenseActionRows(parseModifierRows(itemModifierTextWithPresetFallback(item || {})), item || {});
+  const rows = migrateLegacyDefenseActionRows(parseModifierRows(itemModifierTextWithPresetFallback(item || {})), item || {});
+  return sanitizeKnownEquipmentModifierRows(rows, item || {});
 }
 function modifierValue(row={}) { return parseFlatBonus(row.value); }
 function sumModifierRows(rows=[], predicate=()=>false) {
@@ -2697,7 +2708,10 @@ function setEquipmentState(equipment={}) {
       if ($('equip_' + slot.key + '_reloadTurns')) $('equip_' + slot.key + '_reloadTurns').value = item.reloadTurns || '';
       if ($('equip_' + slot.key + '_target')) $('equip_' + slot.key + '_target').value = item.target || '';
       if ($('equip_' + slot.key + '_checkType')) $('equip_' + slot.key + '_checkType').value = checkExpressionRightDisplay(item.checkType || '');
-      const restoredModifiers = itemModifierTextWithPresetFallback(item);
+      // 倉庫から選択済みの装備は、現在の倉庫アイテム側を正として基本補正を復元する。
+      // これにより、旧保存データに残った小盾の誤った回避-1なども表示・再保存されない。
+      const modifierSourceItem = selectedRow || item;
+      const restoredModifiers = serializeModifierRows(equipmentModifierRows(modifierSourceItem));
       if ($('equip_' + slot.key + '_modifiers')) $('equip_' + slot.key + '_modifiers').value = restoredModifiers;
       renderModifierEditor('equip_' + slot.key + '_modifierRows', restoredModifiers);
       const inventoryHasUpgradeState = !!(selectedRow && ((selectedRow.upgradeEntries || []).length || String(selectedRow.upgradeLines || '').trim()));
@@ -4417,7 +4431,7 @@ function applyCsItemToEquipmentSlot(slotKey) {
     const value = row[field];
     el.value = value !== undefined && value !== null && String(value).trim() !== '' ? value : (selectedItemFallbacks[field] || '');
   }
-  const restoredModifiers = itemModifierTextWithPresetFallback(row);
+  const restoredModifiers = serializeModifierRows(equipmentModifierRows(row));
   if ($('equip_' + slotKey + '_modifiers')) $('equip_' + slotKey + '_modifiers').value = restoredModifiers;
   renderModifierEditor('equip_' + slotKey + '_modifierRows', restoredModifiers);
   renderEquipmentUpgradeSlots(slotKey, row.upgradeEntries || row.upgradeLines || []);
@@ -4799,26 +4813,46 @@ async function readTextFile(file) {
 
 function generateTokenExport(data=collectData(false)) {
   const abilities = resolveAbilities(data);
-  const res = computeResources(abilities, data.resources || getResourceState(), data.equipment || getEquipmentState());
-  const combat = computeCombatStats(abilities, data.skills || defaultSkillAlloc(), data.equipment || getEquipmentState());
+  const skills = data.skills || defaultSkillAlloc();
+  const equipment = data.equipment || getEquipmentState();
+  const res = computeResources(abilities, data.resources || getResourceState(), equipment);
+  const combat = computeCombatStats(abilities, skills, equipment);
+  const totals = skillTotals(abilities, skills, equipment);
+  const defense = Number(combat.constantDamageReduction) || 0;
+  const evasion = Number(combat.evasionTotal) || 0;
+  const resistance = Number(totals.resist?.total) || 0;
+  const initiative = (Number(abilities.sense) || 0) + (Number(combat.combatMods?.initiative) || 0);
   const params = ABILITIES.map(a => ({ label:a.name, value:String(abilities[a.key] ?? 0) }));
+
+  // いあきゃらのココフォリア駒出力と同じ CharacterClipboardData 形式。
   const token = {
     kind: 'character',
     data: {
       name: data.name || '無名のキャラクター',
-      initiative: abilities.sense || 0,
+      memo: '',
+      initiative,
+      externalUrl: '',
       status: [
-        { label:'HP', value:res.currentHp, max:res.maxHp },
-        { label:'MP', value:res.currentMp, max:res.maxMp },
-        { label:'防御', value:combat.constantDamageReduction, max:combat.constantDamageReduction },
-        { label:'回避', value:combat.evasionTotal, max:combat.evasionTotal },
-        { label:'抵抗', value:(totals.resist?.total || 0), max:(totals.resist?.total || 0) },
+        { label:'HP', value:Number(res.currentHp) || 0, max:Number(res.maxHp) || 0 },
+        { label:'MP', value:Number(res.currentMp) || 0, max:Number(res.maxMp) || 0 },
+        { label:'防御', value:defense, max:defense },
+        { label:'回避', value:evasion, max:evasion },
+        { label:'抵抗', value:resistance, max:resistance },
       ],
       params,
+      iconUrl: null,
+      faces: [],
+      angle: 0,
+      width: 4,
+      height: 4,
+      secret: false,
+      invisible: false,
+      hideStatus: false,
+      color: '#888888',
       commands: generatePaletteExport(data),
     },
   };
-  return JSON.stringify(token, null, 2);
+  return JSON.stringify(token);
 }
 function makeSummaryFromData(data) {
   const abilities = resolveAbilities(data);
@@ -5209,10 +5243,13 @@ async function copyOutput(kind, data=outputTargetData || collectData(false)) {
   const payload = getOutputPayload(kind, data);
   try {
     await copyTextDirect(payload.text);
-    setOutputStatus(`${payload.label}をクリップボードにコピーしました。`, true);
-    const dlg = $('outputDialog'); if (dlg?.open) dlg.close();
+    const message = `${payload.label}をコピーしました。`;
+    setOutputStatus(message, true);
+    const dlg = $('outputDialog');
+    if (dlg?.open) dlg.close();
+    outputTargetData = null;
   } catch (e) {
-    setOutputStatus('クリップボードへのコピーに失敗しました。ブラウザの権限設定を確認してください。', false);
+    setOutputStatus('コピーに失敗しました。ブラウザのクリップボード権限を確認してください。', false);
   }
 }
 function openOutputDialog(data=collectData(false)) {
