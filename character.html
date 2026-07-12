@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.135</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.137</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -642,12 +642,12 @@
 </style>
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.135 / 最終更新日：2026年7月11日</div>
+<div class="ra-build-info">Version：v90.8.137 / 最終更新日：2026年7月12日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.135 / 最終更新日：2026年7月11日</div>
+  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.137 / 最終更新日：2026年7月12日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -1511,7 +1511,7 @@ function renderStatic() {
             <summary>強化内容</summary>
             <div id="equip_${slot.key}_upgradeSlots" class="equipment-upgrade-list" data-equipment-input="1"></div>
             <input id="equip_${slot.key}_upgradeLines" data-equipment-input="1" type="hidden" value="" />
-            <div class="small">強化可能回数に応じて入力欄を表示します。各枠は「強化内容（選択）」と「強化値（任意入力）」で記録してください。</div>
+            <div class="small">強化可能回数に応じて入力欄を表示します。強化内容は選択した武器・防具などの装備ごとに保存され、付け替えても保持されます。</div>
           </details>
           <div class="field equipment-wide">
             <label for="equip_${slot.key}_description">説明</label>
@@ -2340,9 +2340,35 @@ function renderEquipmentUpgradeSlots(slotKey, sourceEntries=null){
   if(hidden) hidden.value = serializeUpgradeEntries(entries.slice(0, limit));
   if(typeof updateEquipmentFieldAvailability === 'function') updateEquipmentFieldAvailability();
 }
+function inventoryItemIndexForEquipmentSlot(slotKey=''){
+  const selectedKey = String($('equip_' + slotKey + '_itemSelect')?.value || '').trim();
+  if(!selectedKey) return -1;
+  return (inventoryItemsState || []).findIndex(raw => inventoryItemKey(normalizeInventoryItem(raw)) === selectedKey);
+}
+function syncEquipmentUpgradeToInventoryItem(slotKey=''){
+  const index = inventoryItemIndexForEquipmentSlot(slotKey);
+  if(index < 0) return false;
+  const current = normalizeInventoryItem(inventoryItemsState[index] || {});
+  if(!['武器','防具','装飾品'].includes(current.kind)) return false;
+  const limit = equipmentUpgradeLimit(slotKey);
+  const entries = collectUpgradeEntries(slotKey).slice(0, limit).map(normalizeUpgradeEntry);
+  inventoryItemsState[index] = normalizeInventoryItem({
+    ...inventoryItemsState[index],
+    upgradeLimit: String($('equip_' + slotKey + '_upgradeLimit')?.value || current.upgradeLimit || '').trim(),
+    upgradeEntries: entries,
+    upgradeLines: serializeUpgradeEntries(entries)
+  });
+  return true;
+}
+function syncAllEquipmentUpgradesToInventory(){
+  for(const slot of EQUIPMENT_SLOTS){
+    if(slot.kind !== 'carry') syncEquipmentUpgradeToInventoryItem(slot.key);
+  }
+}
 function syncEquipmentUpgradeHidden(slotKey){
   const hidden = $('equip_' + slotKey + '_upgradeLines');
   if(hidden) hidden.value = serializeUpgradeEntries(collectUpgradeEntries(slotKey).slice(0, equipmentUpgradeLimit(slotKey)));
+  syncEquipmentUpgradeToInventoryItem(slotKey);
 }
 function refreshSelectionListsForTarget(target=null){
   if(target && target.id?.startsWith('equip_') && target.id.endsWith('_itemSelect')) refreshEquipmentItemSelects();
@@ -2557,12 +2583,13 @@ function setEquipmentState(equipment={}) {
   const eq = { ...defaults, ...(equipment || {}) };
   for (const slot of EQUIPMENT_SLOTS) {
     let item = migrateLegacyEquipmentModifierFields({ ...defaults[slot.key], ...(eq[slot.key] || {}) });
+    let selectedRow = null;
     if (slot.kind === 'carry' && carryEquipmentLooksLikeSpell(item)) {
       item = { ...defaults[slot.key] };
     }
     if ($('equip_' + slot.key + '_itemSelect')) {
       let selectedId = item.itemId || findCsItemIdByName(item.name || '');
-      const selectedRow = selectedId ? findCsItemById(selectedId) : null;
+      selectedRow = selectedId ? findCsItemById(selectedId) : null;
       if (slot.kind === 'carry' && selectedRow && isSpellInventoryItem(selectedRow)) selectedId = '';
       $('equip_' + slot.key + '_itemSelect').value = selectedId && Array.from($('equip_' + slot.key + '_itemSelect').options).some(o=>o.value===selectedId) ? selectedId : '';
     }
@@ -2582,9 +2609,14 @@ function setEquipmentState(equipment={}) {
       const restoredModifiers = itemModifierTextWithPresetFallback(item);
       if ($('equip_' + slot.key + '_modifiers')) $('equip_' + slot.key + '_modifiers').value = restoredModifiers;
       renderModifierEditor('equip_' + slot.key + '_modifierRows', restoredModifiers);
-      if ($('equip_' + slot.key + '_upgradeLimit')) $('equip_' + slot.key + '_upgradeLimit').value = item.upgradeLimit || '';
-      if ($('equip_' + slot.key + '_upgradeLines')) $('equip_' + slot.key + '_upgradeLines').value = item.upgradeLines || serializeUpgradeEntries(item.upgradeEntries || []);
-      renderEquipmentUpgradeSlots(slot.key, item.upgradeEntries || item.upgradeLines || '');
+      const inventoryHasUpgradeState = !!(selectedRow && ((selectedRow.upgradeEntries || []).length || String(selectedRow.upgradeLines || '').trim()));
+      const upgradeSource = inventoryHasUpgradeState ? (selectedRow.upgradeEntries || selectedRow.upgradeLines || '') : (item.upgradeEntries || item.upgradeLines || '');
+      const upgradeLimitValue = selectedRow?.upgradeLimit || item.upgradeLimit || '';
+      if ($('equip_' + slot.key + '_upgradeLimit')) $('equip_' + slot.key + '_upgradeLimit').value = upgradeLimitValue;
+      if ($('equip_' + slot.key + '_upgradeLines')) $('equip_' + slot.key + '_upgradeLines').value = serializeUpgradeEntries(parseUpgradeLines(upgradeSource));
+      renderEquipmentUpgradeSlots(slot.key, upgradeSource);
+      // 旧保存データが装備枠にだけ強化内容を持っている場合、選択中の装備個体へ移行する。
+      if (selectedRow && !inventoryHasUpgradeState && parseUpgradeLines(upgradeSource).length) syncEquipmentUpgradeToInventoryItem(slot.key);
       if ($('equip_' + slot.key + '_knownSpells')) $('equip_' + slot.key + '_knownSpells').value = '';
       setSpellSelectValues(slot.key, item.setSpells || '');
       const hasManualDetail = !!(item.element || item.power || item.offhand || item.reloadTurns || item.target || item.checkType || item.modifiers || item.upgradeLimit || item.upgradeLines || (item.upgradeEntries || []).length || item.setSpells || item.description || item.note);
@@ -2953,7 +2985,7 @@ function renderBagSelect() {
   applyBagCapacityToEquipmentSlots();
 }
 function emptyInventoryItem() {
-  return { id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), masterId:'', masterSheet:'', masterSync:'', name:'', kind:defaultInventoryKind(), category:'', count:1, capacity:'', location:'倉庫', rank:'', price:'', equipSlot:'', power:'', offhand:'', reloadTurns:'', modifiers:'', spellSlots:'', target:'', element:'', cost:'', checkType:'', role:'', source:'', tags:'', setItem:'', description:'', effect:'', recipeResult:'', materials:'', note:'' };
+  return { id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), masterId:'', masterSheet:'', masterSync:'', name:'', kind:defaultInventoryKind(), category:'', count:1, capacity:'', location:'倉庫', rank:'', price:'', equipSlot:'', power:'', offhand:'', reloadTurns:'', modifiers:'', upgradeLimit:'', upgradeLines:'', upgradeEntries:[], spellSlots:'', target:'', element:'', cost:'', checkType:'', role:'', source:'', tags:'', setItem:'', description:'', effect:'', recipeResult:'', materials:'', note:'' };
 }
 function normalizeInventoryItem(item={}) {
   const rawCategory = String(item.category || item.type || item.itemCategory || item.materialCategory || '').trim();
@@ -2965,6 +2997,7 @@ function normalizeInventoryItem(item={}) {
   if (isBagLikeFields({ ...item, kind, category:rawCategory })) kind = 'バッグ';
   if (isQuiverLikeFields({ ...item, kind, category:rawCategory })) kind = '矢筒';
   const oldDescription = item['fla' + 'vor' + 'Text'];
+  const normalizedUpgradeEntries = parseUpgradeLines(item.upgradeEntries || item.upgradeLines || '');
   return {
     id: item.id || ('inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6)),
     publicId: String(item.publicId || item.publicID || '').trim(),
@@ -2988,6 +3021,8 @@ function normalizeInventoryItem(item={}) {
     reloadTurns: String(item.reloadTurns || item.reloadTurn || item.reload || '').trim(),
     modifiers: migratedModifierTextForItem(item),
     upgradeLimit: String(item.upgradeLimit || item.upgradeCount || item.upgradeSlots || '').trim(),
+    upgradeEntries: normalizedUpgradeEntries,
+    upgradeLines: serializeUpgradeEntries(normalizedUpgradeEntries),
     spellSlots: kind === 'バッグ' ? '' : String(item.spellSlots || item.slotCount || item.registerSlots || item.maxStack || '').trim(),
     target: String(item.target || item['対象'] || '').trim(),
     element: String(item.element || item.attribute || item.attributeType || item.elementName || item['属性'] || item['属性種別'] || item['攻撃属性'] || item['ダメージ属性'] || defaultElementForEquipmentRow(item) || '').trim(),
@@ -3046,6 +3081,7 @@ function isCarrySlotKey(slotKey) {
   return !!slot && slot.kind === 'carry';
 }
 function getInventoryState() {
+  syncAllEquipmentUpgradesToInventory();
   const items = inventoryItemsState.map(item => normalizeInventoryItem(item)).filter(item => item.name || item.category || item.power || item.description || item.effect || item.capacity || item.count > 0);
   return { items, bagId:selectedBagId || '' };
 }
@@ -3127,8 +3163,9 @@ function renderInventory() {
     const recipeMeta = item.kind === 'レシピ' ? [item.recipeResult ? '完成品：' + item.recipeResult : '', item.materials ? '必要素材：' + item.materials : ''].filter(Boolean).join('\n') : '';
     const itemUseMeta = ['アイテム','素材','矢筒','バッグ'].includes(item.kind) ? [item.target ? '対象：' + item.target : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : '', item.cost ? 'コスト：' + item.cost : '', item.checkType ? '判定：' + checkExpressionDisplay(item.checkType) : '', item.ammoKind ? '矢弾種別：' + item.ammoKind : '', item.spellSlots ? '最大スタック数：' + item.spellSlots : '', item.quiverCapacity ? '矢筒収納種類数：' + item.quiverCapacity : '', item.bagCapacity ? 'バッグ容量：' + item.bagCapacity : '', item.source ? '入手先：' + item.source : '', item.tags ? 'タグ：' + item.tags : ''].filter(Boolean).join(' / ') : '';
     const spellSlotMeta = item.spellSlots && ['武器','防具','装飾品','術式'].includes(item.kind) ? `術式登録枠：${item.spellSlots}` : '';
+    const savedUpgradeMeta = serializeUpgradeEntries(item.upgradeEntries || parseUpgradeLines(item.upgradeLines || ''));
     const bagMeta = item.kind === 'バッグ' ? `バッグ容量：${clampInt(item.capacity || 0, 0, 99)}` : '';
-    const searchText = [title, item.kind, item.category, item.rank, item.price, item.equipSlot, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.upgradeLimit, item.spellSlots, item.capacity, item.bagCapacity, item.quiverCapacity, item.ammoKind, item.target, item.element, item.cost, item.power, item.description, item.effect, item.checkType, item.role, item.source, item.tags, item.recipeResult, item.materials].filter(Boolean).join(' ');
+    const searchText = [title, item.kind, item.category, item.rank, item.price, item.equipSlot, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.upgradeLimit, item.spellSlots, item.capacity, item.bagCapacity, item.quiverCapacity, item.ammoKind, item.target, item.element, item.cost, item.power, item.description, item.effect, item.checkType, item.role, item.source, item.tags, item.recipeResult, item.materials, item.upgradeLines].filter(Boolean).join(' ');
     return `
     <details class="inventory-card" open data-inventory-row="${index}" data-inventory-id="${esc(item.id || '')}" data-inventory-location="倉庫" data-inventory-kind="${esc(item.kind || 'アイテム')}" data-inventory-search="${esc(searchText)}">
       <summary class="inventory-card-head">
@@ -3147,6 +3184,7 @@ function renderInventory() {
         <div class="meta-item"><span class="meta-label">ランク</span>${esc(item.rank || '—')}</div>
         <div class="meta-item"><span class="meta-label">価格/売価</span>${esc(item.price || '—')}</div>
         <div class="meta-item meta-wide"><span class="meta-label">装備/使用データ</span><div class="inventory-note">${esc([equipMeta, spellSlotMeta].filter(Boolean).join('\n'))}</div></div>
+        ${savedUpgradeMeta ? `<div class="meta-item meta-wide"><span class="meta-label">保存済み強化内容</span><div class="inventory-note">${esc(savedUpgradeMeta)}</div></div>` : ''}
         ${itemUseMeta ? `<div class="meta-item meta-wide"><span class="meta-label">使用データ</span><div class="inventory-note">${esc(itemUseMeta)}</div></div>` : ''}
         ${spellMeta ? `<div class="meta-item meta-wide"><span class="meta-label">術式データ</span><div class="inventory-note">${esc(spellMeta)}</div></div>` : ''}
         ${recipeMeta ? `<div class="meta-item meta-wide"><span class="meta-label">レシピ</span><div class="inventory-note">${esc(recipeMeta)}</div></div>` : ''}
@@ -3251,8 +3289,15 @@ function saveInventoryDialog() {
     return;
   }
   if (index >= 0 && inventoryItemsState[index]) {
-    item.id = inventoryItemsState[index].id || item.id || ('inv_' + Date.now().toString(36));
-    inventoryItemsState[index] = item;
+    const previous = normalizeInventoryItem(inventoryItemsState[index]);
+    item.id = previous.id || item.id || ('inv_' + Date.now().toString(36));
+    item.publicId = previous.publicId || item.publicId || '';
+    item.masterId = previous.masterId || item.masterId || '';
+    item.masterSheet = previous.masterSheet || item.masterSheet || '';
+    item.masterSync = previous.masterSync || item.masterSync || '';
+    item.upgradeEntries = previous.upgradeEntries || [];
+    item.upgradeLines = previous.upgradeLines || serializeUpgradeEntries(previous.upgradeEntries || []);
+    inventoryItemsState[index] = normalizeInventoryItem(item);
   } else {
     item.id = item.id || ('inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6));
     inventoryItemsState.push(item);
@@ -3448,6 +3493,8 @@ function mergeInitialPresetIntoInventoryItem(existing={}, preset={}) {
     masterSheet: base.masterSheet || oldItem.masterSheet || '',
     masterSync: INITIAL_MASTER_TOKEN,
     count: oldItem.count || base.count || 1,
+    upgradeEntries: oldItem.upgradeEntries || [],
+    upgradeLines: oldItem.upgradeLines || serializeUpgradeEntries(oldItem.upgradeEntries || []),
     location: '倉庫',
   });
 }
@@ -3464,6 +3511,8 @@ function mergeMasterPresetIntoInventoryItem(existing={}, preset={}) {
     masterSheet: base.masterSheet || oldItem.masterSheet || '',
     masterSync: isInitial ? INITIAL_MASTER_TOKEN : (oldItem.masterSync || base.masterSync || ''),
     count: oldItem.count || base.count || 1,
+    upgradeEntries: oldItem.upgradeEntries || [],
+    upgradeLines: oldItem.upgradeLines || serializeUpgradeEntries(oldItem.upgradeEntries || []),
     location: '倉庫',
   });
 }
@@ -3531,6 +3580,8 @@ function mergePublicIdInventoryItem(existing={}, preset={}, addCount=1){
     masterId: base.masterId || base.id || oldItem.masterId || '',
     masterSheet: base.masterSheet || oldItem.masterSheet || '',
     count: total || addCount || oldItem.count || base.count || 1,
+    upgradeEntries: oldItem.upgradeEntries || [],
+    upgradeLines: oldItem.upgradeLines || serializeUpgradeEntries(oldItem.upgradeEntries || []),
     location: '倉庫'
   });
 }
@@ -3702,6 +3753,7 @@ function emptyCharacter() {
 }
 function collectData(updateTime=true) {
   const base = currentCharacter || emptyCharacter();
+  syncAllEquipmentUpgradesToInventory();
   const equipment = getEquipmentState();
   const baseAbilities = getAbilityValues();
   const abilities = computeEffectiveAbilities(baseAbilities, equipment);
@@ -4270,7 +4322,7 @@ function applyCsItemToEquipmentSlot(slotKey) {
   const restoredModifiers = itemModifierTextWithPresetFallback(row);
   if ($('equip_' + slotKey + '_modifiers')) $('equip_' + slotKey + '_modifiers').value = restoredModifiers;
   renderModifierEditor('equip_' + slotKey + '_modifierRows', restoredModifiers);
-  renderEquipmentUpgradeSlots(slotKey, []);
+  renderEquipmentUpgradeSlots(slotKey, row.upgradeEntries || row.upgradeLines || []);
   const description = row.description || '';
   const effectText = row.effect || '';
   if ($('equip_' + slotKey + '_description')) $('equip_' + slotKey + '_description').value = description;
@@ -5289,6 +5341,15 @@ function bindEvents() {
       return;
     }
     if (e.target.closest('[data-char-modifier-editor]')) syncModifierEditor(e.target.closest('[data-char-modifier-editor]'));
+    if (e.target.closest?.('[data-upgrade-row]')) {
+      const row = e.target.closest('[data-upgrade-row]');
+      const slotRoot = row?.closest('[id$="_upgradeSlots"]');
+      const slotKey = slotRoot ? slotRoot.id.replace(/^equip_/, '').replace(/_upgradeSlots$/, '') : '';
+      if(slotKey) syncEquipmentUpgradeHidden(slotKey);
+      updateEquipmentSummaries();
+      updateSummary();
+      return;
+    }
     if (e.target.dataset.equipmentInput) { updateAll(); return; }
     if (e.target.dataset.inventoryInput) { if (e.target.closest('[data-char-modifier-editor]')) syncModifierEditor(e.target.closest('[data-char-modifier-editor]')); applyInventoryFilters(); updateSummary(); return; }
     if (e.target.id?.startsWith('stat_') || e.target.dataset.abilityInput || e.target.dataset.skillInput || e.target.id?.startsWith('manualBonus_') || ['currentHp','currentMp','hpBonus','mpBonus'].includes(e.target.id)) updateAll();
@@ -5334,6 +5395,7 @@ function bindEvents() {
     if (e.target.id?.startsWith('equip_') && e.target.id.endsWith('_upgradeLimit')) {
       const slotKey = e.target.id.replace(/^equip_/, '').replace(/_upgradeLimit$/, '');
       renderEquipmentUpgradeSlots(slotKey);
+      syncEquipmentUpgradeToInventoryItem(slotKey);
       updateEquipmentSummaries();
       updateSummary();
       return;
