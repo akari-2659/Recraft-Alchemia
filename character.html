@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.138</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.139</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -642,12 +642,12 @@
 </style>
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.138 / 最終更新日：2026年7月12日</div>
+<div class="ra-build-info">Version：v90.8.139 / 最終更新日：2026年7月12日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.138 / 最終更新日：2026年7月12日</div>
+  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.139 / 最終更新日：2026年7月12日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -1073,7 +1073,7 @@ const SKILL_CATEGORIES = [
     { key:'athletics', name:'運動', desc:'身体行動', detail:'走る、登る、泳ぐ、跳ぶなど、身体を大きく動かす判定に使用します。足場の悪い場所の移動、障害物の突破、落下や転倒を避ける場面でも使います。' },
     { key:'force', name:'力業', desc:'力任せの作業・大振り攻撃', detail:'重い物を動かす、押す、引く、壊す、こじ開けるなど、純粋な力で状況を動かす判定に使用します。戦闘中は近接の代わりに力業で武器攻撃を行えます。命中時、通常の武器ダメージに加えて、武器ダメージのダイスを+1個します。ただし追加ダメージに使う技能ポイントは近接を参照します。成否に関わらず、次の自分のターンは行動できず、次の自分のターン開始時まで防御-2を受けます。' },
     { key:'melee', name:'近接', desc:'近接攻撃', detail:'素手や近接武器で攻撃する時の命中判定に使用します。命中した場合、装備している武器ダメージに、近接へ振り分けたポイント分のダメージを追加します。' },
-    { key:'guard', name:'防御', desc:'防御行動・かばう', detail:'盾、防具、受け流し、かばうなど、攻撃を受け止める行動に使用します。防御値そのものは装備から計算しますが、この技能は防御行動や仲間を守る判定に使います。' },
+    { key:'guard', name:'防御', desc:'常時軽減・防御行動・かばう', detail:'防御技能に振り分けたポイントは、防御行動の有無にかかわらず受けるダメージを減らします。防御行動時は、装備の防御行動値も追加で適用します。かばう判定にも使用します。' },
   ]},
   { key:'dexterity', name:'器用系', ability:'dexterity', skills:[
     { key:'gather', name:'採取', desc:'素材採取・ドロップ補助', detail:'薬草、鉱石、魔物素材などを傷つけずに集める判定に使用します。素材の品質維持、希少部位の回収、採取量の増加に関わります。魔物の討伐時、採取判定に成功することでドロップ判定を+1します。' },
@@ -1606,7 +1606,7 @@ function makeSummary() {
   lines.push('■ HP・MP');
   lines.push(`HP:${res.currentHp}/${res.maxHp}（HPボーナス${res.hpBonus}点） / MP:${res.currentMp}/${res.maxMp}（MPボーナス${res.mpBonus}点）`);
   const combat = computeCombatStats(abilities, data.skills || defaultSkillAlloc(), data.equipment || {});
-  lines.push(`防御:${combat.defenseTotal} / 回避:${combat.evasionTotal}`);
+  lines.push(`防御値:${combat.defenseValue} / 防御技能軽減:${combat.defenseSkillPoints} / 常時軽減:${combat.constantDamageReduction} / 防御行動値:${combat.guardActionValue} / 回避:${combat.evasionTotal}`);
   if (combat.dualWield?.available) lines.push(`二刀攻撃:${combat.dualWield.rightMain} / ${combat.dualWield.leftMain}`);
   lines.push('');
   lines.push('■ 装備');
@@ -1679,7 +1679,7 @@ function modifierTargetOptionsHtml(selected='') {
     ]],
     ['技能', SKILL_CATEGORIES.flatMap(cat => cat.skills.map(sk => ['skill:' + sk.key, sk.name]))],
     ['戦闘', [
-      ['hit','命中'], ['combat:defense','防御'], ['combat:evasion','回避値'], ['combat:initiative','先制値']
+      ['hit','命中'], ['combat:defense','防御値'], ['combat:guardAction','防御行動値'], ['combat:evasion','回避値'], ['combat:initiative','先制値']
     ]],
     ['リソース', [
       ['resource:maxHp','最大HP'], ['resource:maxMp','最大MP']
@@ -1698,7 +1698,8 @@ function modifierTargetDisplayName(target='') {
   const key = String(target || '').trim();
   if(!key) return '';
   if(key === 'hit') return '命中';
-  if(key === 'combat:defense') return '防御';
+  if(key === 'combat:defense') return '防御値';
+  if(key === 'combat:guardAction') return '防御行動値';
   if(key === 'combat:evasion') return '回避値';
   if(key === 'combat:initiative') return '先制値';
   if(key === 'resource:maxHp') return '最大HP';
@@ -1723,7 +1724,7 @@ function normalizeModifierRow(row={}) {
     '防御':'combat:defense', '防御値':'combat:defense', '常時防御':'combat:defense', '常時防御値':'combat:defense', 'alwaysDefense':'combat:defense', 'defense':'combat:defense',
     '回避値':'combat:evasion',
     '回避':'skill:evade', '回避補正':'skill:evade', 'evasionMod':'skill:evade', 'evade':'skill:evade',
-    '防御行動':'skill:guard', '防御行動値':'skill:guard', 'guardValue':'skill:guard', 'guard':'skill:guard',
+    '防御行動':'combat:guardAction', '防御行動値':'combat:guardAction', 'guardValue':'combat:guardAction', 'guard':'combat:guardAction',
     '知識':'skill:knowledge',
     'monsterKnowledge':'skill:knowledge', 'materialKnowledge':'skill:knowledge', 'elementKnowledge':'skill:knowledge',
     'skill:monsterKnowledge':'skill:knowledge', 'skill:materialKnowledge':'skill:knowledge', 'skill:elementKnowledge':'skill:knowledge',
@@ -1795,7 +1796,7 @@ function legacyModifierRowsFromEquipment(item={}) {
   const rows = [];
   const hit=first('hit','hitMod'); if(hit && !isZeroModifierText(hit)) rows.push({target:'hit', value:hit});
   const defense=first('defense','alwaysDefense'); if(defense && !isZeroModifierText(defense)) rows.push({target:'combat:defense', value:defense});
-  const guard=first('guard','guardValue'); if(guard && !isZeroModifierText(guard)) rows.push({target:'skill:guard', value:guard});
+  const guard=first('guard','guardValue'); if(guard && !isZeroModifierText(guard)) rows.push({target:'combat:guardAction', value:guard});
   const evade=first('evade','evasionMod'); if(evade && !isZeroModifierText(evade)) rows.push({target:'skill:evade', value:evade});
   return rows;
 }
@@ -1818,8 +1819,24 @@ function itemModifierTextWithPresetFallback(item={}) {
   return presetModifierTextForType(item.type || item.category || item.kind || item.itemCategory || '');
 }
 
+function isDefenseEquipmentItem(item={}) {
+  const text = [item.kind, item.type, item.category, item.itemType, item.itemCategory, item.equipSlot, item.name]
+    .map(v => String(v || ''))
+    .join('/');
+  return /防具|盾|軽装|中装|重装|魔導衣|祈祷衣|普段着|ジャケット|ベスト|胴衣|ケープ|ストール/.test(text);
+}
+function migrateLegacyDefenseActionRows(rows=[], item={}) {
+  const defenseEquipment = isDefenseEquipmentItem(item);
+  return (rows || []).map(row => {
+    const r = normalizeModifierRow(row);
+    if (!r) return null;
+    // v90.8.138以前は防具・盾の防御行動値が skill:guard に混在していた。
+    if (defenseEquipment && r.target === 'skill:guard') return { ...r, target:'combat:guardAction' };
+    return r;
+  }).filter(Boolean);
+}
 function equipmentModifierRows(item={}) {
-  return parseModifierRows(itemModifierTextWithPresetFallback(item || {}));
+  return migrateLegacyDefenseActionRows(parseModifierRows(itemModifierTextWithPresetFallback(item || {})), item || {});
 }
 function modifierValue(row={}) { return parseFlatBonus(row.value); }
 function sumModifierRows(rows=[], predicate=()=>false) {
@@ -1831,10 +1848,10 @@ function upgradeEntryModifierRow(entry={}) {
   if(!content || !value || isZeroModifierText(value)) return null;
   const aliases = {
     '命中':'hit', '命中補正':'hit',
-    '防御':'combat:defense', '常時防御':'combat:defense', '常時防御値':'combat:defense',
+    '防御':'combat:defense', '防御値':'combat:defense', '常時防御':'combat:defense', '常時防御値':'combat:defense',
     '回避値':'combat:evasion',
     '回避':'skill:evade', '回避補正':'skill:evade',
-    '防御行動':'skill:guard', '防御行動値':'skill:guard',
+    '防御行動':'combat:guardAction', '防御行動値':'combat:guardAction',
     'HP':'resource:maxHp', '最大HP':'resource:maxHp',
     'MP':'resource:maxMp', '最大MP':'resource:maxMp',
     '体力':'ability:body', '器用':'ability:dexterity', '感覚':'ability:sense', '知性':'ability:intellect', '意志':'ability:will', '魅力':'ability:charm'
@@ -1905,10 +1922,57 @@ function computeEquipmentAbilityModifiers(equipment=getEquipmentState()) {
   applyDualAdjustedModifierSums(dualHandSums, add);
   return mods;
 }
+
+function parseGuardActionExpression(value='') {
+  const raw = String(value || '').trim().toUpperCase().replace(/Ｄ/g, 'D').replace(/＋/g, '+').replace(/－/g, '-').replace(/\s+/g, '');
+  if (!raw) return { dice:new Map(), flat:0, unknown:[] };
+  const out = { dice:new Map(), flat:0, unknown:[] };
+  const tokens = raw.match(/[+-]?(?:\d*D\d+|\d+)/g) || [];
+  if (!tokens.length || tokens.join('') !== raw) {
+    out.unknown.push(raw);
+    return out;
+  }
+  for (const token of tokens) {
+    const dm = token.match(/^([+-]?)(\d*)D(\d+)$/);
+    if (dm) {
+      const sign = dm[1] === '-' ? -1 : 1;
+      const count = Number(dm[2] || 1) * sign;
+      const sides = Number(dm[3]);
+      out.dice.set(sides, (out.dice.get(sides) || 0) + count);
+      continue;
+    }
+    const n = Number(token);
+    if (Number.isFinite(n)) out.flat += n;
+    else out.unknown.push(token);
+  }
+  return out;
+}
+function combineGuardActionValues(values=[]) {
+  const dice = new Map();
+  let flat = 0;
+  const unknown = [];
+  for (const value of values || []) {
+    const parsed = parseGuardActionExpression(value);
+    for (const [sides, count] of parsed.dice.entries()) dice.set(sides, (dice.get(sides) || 0) + count);
+    flat += parsed.flat;
+    unknown.push(...parsed.unknown);
+  }
+  const parts = [];
+  for (const [sides, count] of Array.from(dice.entries()).sort((a,b)=>b[0]-a[0])) {
+    if (!count) continue;
+    const sign = count < 0 ? '-' : (parts.length ? '+' : '');
+    parts.push(`${sign}${Math.abs(count)}D${sides}`);
+  }
+  if (flat) parts.push(`${flat > 0 && parts.length ? '+' : ''}${flat}`);
+  for (const value of unknown) parts.push(`${parts.length ? '+' : ''}(${value})`);
+  return parts.join('') || '0';
+}
+
 function computeEquipmentCombatModifiers(equipment=getEquipmentState()) {
-  const mods = { defense:0, evasion:0, initiative:0, maxHp:0, maxMp:0 };
+  const mods = { defense:0, evasion:0, initiative:0, maxHp:0, maxMp:0, guardActionValue:'0', guardActionTerms:[] };
   const dualHandSums = {};
-  const add = (key, value) => { if(key in mods) mods[key] += value; };
+  const guardActionTerms = [];
+  const add = (key, value) => { if(key in mods && key !== 'guardActionValue' && key !== 'guardActionTerms') mods[key] += value; };
   const targetToKey = target => {
     if (target === 'combat:defense') return 'defense';
     if (target === 'combat:evasion') return 'evasion';
@@ -1921,7 +1985,13 @@ function computeEquipmentCombatModifiers(equipment=getEquipmentState()) {
     if (slot.kind === 'carry') continue;
     const item = (equipment || {})[slot.key] || {};
     for (const row of activeEquipmentModifierRows(item)) {
-      const key = targetToKey(String(row.target || ''));
+      const target = String(row.target || '');
+      if (target === 'combat:guardAction') {
+        const value = String(row.value || '').trim();
+        if (value && !isZeroModifierText(value)) guardActionTerms.push(value);
+        continue;
+      }
+      const key = targetToKey(target);
       if (!key) continue;
       const value = modifierValue(row);
       if (shouldHalfHandWeaponModifiers(slot.key, equipment)) addDualAdjustedModifier(dualHandSums, key, value);
@@ -1929,6 +1999,8 @@ function computeEquipmentCombatModifiers(equipment=getEquipmentState()) {
     }
   }
   applyDualAdjustedModifierSums(dualHandSums, add);
+  mods.guardActionTerms = guardActionTerms;
+  mods.guardActionValue = combineGuardActionValues(guardActionTerms);
   return mods;
 }
 function computeEffectiveAbilities(base=getAbilityValues(), equipment=getEquipmentState()) {
@@ -2037,14 +2109,21 @@ function computeDualWieldStats(equipment=getEquipmentState()) {
     bestOffhandBonus: Math.max(parseFlatBonus(left.offhand), parseFlatBonus(right.offhand))
   };
 }
+function allocatedSkillPoints(skillKey, alloc=getSkillAlloc()) {
+  const row = alloc?.[skillKey] || {};
+  return (Number(row.cat) || 0) + (Number(row.free) || 0);
+}
 function computeCombatStats(abilities=computeAbilities(), alloc=getSkillAlloc(), equipment=getEquipmentState()) {
   const totals = skillTotals(abilities, alloc, equipment);
   const combatMods = computeEquipmentCombatModifiers(equipment);
-  const defenseTotal = combatMods.defense;
+  const defenseValue = combatMods.defense;
+  const defenseSkillPoints = allocatedSkillPoints('guard', alloc);
+  const constantDamageReduction = defenseValue + defenseSkillPoints;
+  const guardActionValue = combatMods.guardActionValue || '0';
   const evadeSkill = totals.evade?.total || 0;
   const evadeModifier = (totals.evade?.equipmentOther || 0) + combatMods.evasion;
   const evasionTotal = 5 + evadeSkill + combatMods.evasion;
-  return { defenseTotal, evasionTotal, evadeSkill, evadeModifier, combatMods, hitMods: equipmentHitModifierStats(equipment), dualWield: computeDualWieldStats(equipment) };
+  return { defenseTotal:defenseValue, defenseValue, defenseSkillPoints, constantDamageReduction, guardActionValue, evasionTotal, evadeSkill, evadeModifier, combatMods, hitMods: equipmentHitModifierStats(equipment), dualWield: computeDualWieldStats(equipment) };
 }
 function updateCombatStats() {
   const combat = computeCombatStats(computeAbilities(), getSkillAlloc(), getEquipmentState());
@@ -2056,8 +2135,20 @@ function updateCombatStats() {
   if (el) {
     el.innerHTML = `
       <div class="ability-card computed-card">
-        <div class="ability-name">常時防御値</div>
-        <div class="computed-value big">${combat.defenseTotal}</div>
+        <div class="ability-name">防御値</div>
+        <div class="computed-value big">${combat.defenseValue}</div>
+      </div>
+      <div class="ability-card computed-card">
+        <div class="ability-name">防御技能軽減</div>
+        <div class="computed-value big">${combat.defenseSkillPoints}</div>
+      </div>
+      <div class="ability-card computed-card">
+        <div class="ability-name">常時軽減合計</div>
+        <div class="computed-value big">${combat.constantDamageReduction}</div>
+      </div>
+      <div class="ability-card computed-card">
+        <div class="ability-name">防御行動値</div>
+        <div class="computed-value big">${esc(combat.guardActionValue)}</div>
       </div>
       <div class="ability-card computed-card">
         <div class="ability-name">回避値</div>
@@ -2250,7 +2341,7 @@ function syncSpellSetHidden(slotKey) {
   hidden.value = names.join('\n');
   hidden.dataset.pendingSpells = hidden.value;
 }
-const EQUIPMENT_UPGRADE_OPTIONS = ['','威力','命中補正','常時防御値','防御行動値','回避補正','副手追撃値','術式登録枠','最大スタック数','HP','MP','属性効果','特殊効果','その他'];
+const EQUIPMENT_UPGRADE_OPTIONS = ['','威力','命中補正','防御値','防御行動値','回避補正','副手追撃値','術式登録枠','最大スタック数','HP','MP','属性効果','特殊効果','その他'];
 
 function normalizeUpgradeEntry(entry={}){
   let content = String(entry.content || entry.type || entry.name || entry.label || '').trim();
@@ -2998,6 +3089,9 @@ function normalizeInventoryItem(item={}) {
   if (isQuiverLikeFields({ ...item, kind, category:rawCategory })) kind = '矢筒';
   const oldDescription = item['fla' + 'vor' + 'Text'];
   const normalizedUpgradeEntries = parseUpgradeLines(item.upgradeEntries || item.upgradeLines || '');
+  const normalizedModifierRows = migrateLegacyDefenseActionRows(parseModifierRows(migratedModifierTextForItem(item)), item);
+  const normalizedModifiers = serializeModifierRows(normalizedModifierRows);
+  const firstModifierText = target => String(normalizedModifierRows.find(row => row.target === target)?.value || '').trim();
   return {
     id: item.id || ('inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6)),
     publicId: String(item.publicId || item.publicID || '').trim(),
@@ -3017,9 +3111,13 @@ function normalizeInventoryItem(item={}) {
     price: String(item.price || '').trim(),
     equipSlot: inferEquipSlotForInventory({ ...item, kind }),
     power: String(item.power || item.damage || item.damageValue || '').trim(),
+    hit: String(item.hit || item.hitMod || firstModifierText('hit')).trim(),
+    defense: String(item.defense || item.alwaysDefense || firstModifierText('combat:defense')).trim(),
+    guard: String(item.guard || item.guardValue || firstModifierText('combat:guardAction')).trim(),
+    evade: String(item.evade || item.evasionMod || firstModifierText('skill:evade') || firstModifierText('combat:evasion')).trim(),
     offhand: String(item.offhand || item.offhandBonus || '').trim(),
     reloadTurns: String(item.reloadTurns || item.reloadTurn || item.reload || '').trim(),
-    modifiers: migratedModifierTextForItem(item),
+    modifiers: normalizedModifiers,
     upgradeLimit: String(item.upgradeLimit || item.upgradeCount || item.upgradeSlots || '').trim(),
     upgradeEntries: normalizedUpgradeEntries,
     upgradeLines: serializeUpgradeEntries(normalizedUpgradeEntries),
@@ -3158,7 +3256,7 @@ function renderInventory() {
     const title = item.name || '未設定アイテム';
     const description = item.description || '';
     const effectText = item.effect || '';
-    const equipMeta = [item.equipSlot ? '装備/使用枠：' + item.equipSlot : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : '', item.hit ? '命中補正：' + item.hit : '', item.defense ? '常時防御値：' + item.defense : '', item.guard ? '防御行動値：' + item.guard : '', item.evade ? '回避補正：' + item.evade : '', item.offhand ? '副手追撃値：' + item.offhand : '', item.upgradeLimit ? '強化可能回数：' + item.upgradeLimit : ''].filter(Boolean).join(' / ') || '—';
+    const equipMeta = [item.equipSlot ? '装備/使用枠：' + item.equipSlot : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : '', item.hit ? '命中補正：' + item.hit : '', item.defense ? '防御値：' + item.defense : '', item.guard ? '防御行動値：' + item.guard : '', item.evade ? '回避補正：' + item.evade : '', item.offhand ? '副手追撃値：' + item.offhand : '', item.upgradeLimit ? '強化可能回数：' + item.upgradeLimit : ''].filter(Boolean).join(' / ') || '—';
     const spellMeta = item.kind === '術式' ? [item.category ? '種別：' + item.category : '', item.element ? '属性：' + item.element : '', item.cost ? 'コスト：' + item.cost : '', item.target ? '対象：' + item.target : '', item.power ? 'ダメージ/威力：' + item.power : '', item.checkType ? '判定：' + checkExpressionDisplay(item.checkType) : '', item.role ? '役割：' + item.role : ''].filter(Boolean).join(' / ') : '';
     const recipeMeta = item.kind === 'レシピ' ? [item.recipeResult ? '完成品：' + item.recipeResult : '', item.materials ? '必要素材：' + item.materials : ''].filter(Boolean).join('\n') : '';
     const itemUseMeta = ['アイテム','素材','矢筒','バッグ'].includes(item.kind) ? [item.target ? '対象：' + item.target : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : '', item.cost ? 'コスト：' + item.cost : '', item.checkType ? '判定：' + checkExpressionDisplay(item.checkType) : '', item.ammoKind ? '矢弾種別：' + item.ammoKind : '', item.spellSlots ? '最大スタック数：' + item.spellSlots : '', item.quiverCapacity ? '矢筒収納種類数：' + item.quiverCapacity : '', item.bagCapacity ? 'バッグ容量：' + item.bagCapacity : '', item.source ? '入手先：' + item.source : '', item.tags ? 'タグ：' + item.tags : ''].filter(Boolean).join(' / ') : '';
@@ -4712,7 +4810,10 @@ function generateTokenExport(data=collectData(false)) {
       status: [
         { label:'HP', value:res.currentHp, max:res.maxHp },
         { label:'MP', value:res.currentMp, max:res.maxMp },
-        { label:'防御', value:combat.defenseTotal, max:combat.defenseTotal },
+        { label:'防御値', value:combat.defenseValue, max:combat.defenseValue },
+        { label:'防御技能軽減', value:combat.defenseSkillPoints, max:combat.defenseSkillPoints },
+        { label:'常時軽減', value:combat.constantDamageReduction, max:combat.constantDamageReduction },
+        { label:'防御行動値', value:combat.guardActionValue, max:combat.guardActionValue },
         { label:'回避', value:combat.evasionTotal, max:combat.evasionTotal },
       ],
       params,
@@ -4736,7 +4837,7 @@ function makeSummaryFromData(data) {
   lines.push('■ HP・MP');
   lines.push(`HP:${res.currentHp}/${res.maxHp}（HPボーナス${res.hpBonus}点） / MP:${res.currentMp}/${res.maxMp}（MPボーナス${res.mpBonus}点）`);
   const combat = computeCombatStats(abilities, data.skills || defaultSkillAlloc(), data.equipment || {});
-  lines.push(`防御:${combat.defenseTotal} / 回避:${combat.evasionTotal}`);
+  lines.push(`防御値:${combat.defenseValue} / 防御技能軽減:${combat.defenseSkillPoints} / 常時軽減:${combat.constantDamageReduction} / 防御行動値:${combat.guardActionValue} / 回避:${combat.evasionTotal}`);
   if (combat.dualWield?.available) lines.push(`二刀攻撃:${combat.dualWield.rightMain} / ${combat.dualWield.leftMain}`);
   lines.push('');
   lines.push('■ 装備');
@@ -5060,6 +5161,12 @@ function generatePaletteExport(data=collectData(false)) {
   if (checkLines.length) {
     lines.push('');
     lines.push(...checkLines);
+  }
+  const combat = computeCombatStats(abilities, data.skills || defaultSkillAlloc(), data.equipment || {});
+  if (combat.guardActionValue && combat.guardActionValue !== '0') {
+    lines.push('');
+    lines.push(`// 常時軽減：防御値${combat.defenseValue}＋防御技能${combat.defenseSkillPoints}＝${combat.constantDamageReduction}`);
+    lines.push(`${combat.guardActionValue} 【防御行動値】`);
   }
   const damageLines = collectWeaponDamagePaletteLines(data, totals).concat(collectSetSpellDamagePaletteLines(data));
   if (damageLines.length) {
