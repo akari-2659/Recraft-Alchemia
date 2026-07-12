@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.140</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.141</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -642,12 +642,12 @@
 </style>
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.140 / 最終更新日：2026年7月12日</div>
+<div class="ra-build-info">Version：v90.8.141 / 最終更新日：2026年7月12日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.140 / 最終更新日：2026年7月12日</div>
+  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.141 / 最終更新日：2026年7月12日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -4810,11 +4810,9 @@ function generateTokenExport(data=collectData(false)) {
       status: [
         { label:'HP', value:res.currentHp, max:res.maxHp },
         { label:'MP', value:res.currentMp, max:res.maxMp },
-        { label:'防御値', value:combat.defenseValue, max:combat.defenseValue },
-        { label:'防御技能軽減', value:combat.defenseSkillPoints, max:combat.defenseSkillPoints },
-        { label:'常時軽減', value:combat.constantDamageReduction, max:combat.constantDamageReduction },
-        { label:'防御行動値', value:combat.guardActionValue, max:combat.guardActionValue },
+        { label:'防御', value:combat.constantDamageReduction, max:combat.constantDamageReduction },
         { label:'回避', value:combat.evasionTotal, max:combat.evasionTotal },
+        { label:'抵抗', value:(totals.resist?.total || 0), max:(totals.resist?.total || 0) },
       ],
       params,
       commands: generatePaletteExport(data),
