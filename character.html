@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.154</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.157</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -642,12 +642,12 @@
 </style>
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.154 / 最終更新日：2026年7月13日</div>
+<div class="ra-build-info">Version：v90.8.157 / 最終更新日：2026年7月13日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.154 / 最終更新日：2026年7月13日</div>
+  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.157 / 最終更新日：2026年7月13日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -1121,7 +1121,7 @@ const EQUIPMENT_PRESETS = {
   '片手槌': { element:'物', power:'1D6+1', hit:'0', defense:'', guard:'', evade:'-1', offhand:'2', description:'硬い装甲や障害物を打ち砕く片手槌。重い打撃で敵の姿勢を崩す。', note:'' },
   '槍': { element:'物', power:'1D6', hit:'+1', defense:'', guard:'', evade:'0', offhand:'2', description:'片手で扱える短めの槍。間合いを取りながら敵を突き止める。', note:'' },
   '片手槍': { element:'物', power:'1D6', hit:'+1', defense:'', guard:'', evade:'0', offhand:'2', description:'片手で扱える短めの槍。間合いを取りながら敵を突き止める。', note:'' },
-  '鞭': { element:'物', power:'1D6', hit:'0', defense:'', guard:'', evade:'0', offhand:'2', description:'敵後衛を一時的に前衛へ引き出し、近接攻撃の機会を作る片手武器。', note:'敵前衛がいる状態でも後衛1体へ引き寄せ攻撃を行える。共通の後衛狙い命中ペナルティを受け、命中時はダメージなしで対象を前衛へ移動。対象は自身の手番開始時、味方前衛が残っていれば後衛へ戻る。引き寄せ不可には無効。' },
+  '鞭': { element:'物', power:'1D6', hit:'0', defense:'', guard:'', evade:'0', offhand:'2', description:'敵後衛を前衛へ引き出し、近接攻撃の機会を作る片手武器。', note:'敵後衛1体への引き寄せ攻撃が可能。命中時はダメージを与えず対象を前衛へ移動する。引き寄せ不可には無効。' },
   '杖': { element:'物', power:'1D6', hit:'0', defense:'', guard:'', evade:'+1', offhand:'1', description:'魔力を通しやすい杖。身体の支えにもなり、術者の集中を助ける。', note:'' },
   '盾': { power:'', hit:'', defense:'+1', guard:'+2', evade:'0', description:'腕に構えて攻撃を受け止める防具。仲間を守る時にも頼りになる。', note:'' },
   '大盾': { power:'', hit:'', defense:'+2', guard:'+3', evade:'-1', description:'大きな面で攻撃を遮る重盾。取り回しは重いが守りは厚い。', note:'' },
@@ -3538,11 +3538,11 @@ function dbRecipeToInventoryItem(row) {
     category: row.craftType || row.category || 'レシピ',
     count: 1,
     rank: row.rank || '',
-    price: row.price || '',
-    source: row.unlockFacility || '',
+    price: row.recipePrice || '',
+    source: row.recipeSource || row.unlockFacility || '',
     tags: row.tags || '',
     description: row.description || '',
-    effect: row.effect || '',
+    effect: [row.effect, `自作：レシピ必須 / ${row.craftSkill || (row.craftType==='調合'?'調合':row.craftType==='細工'?'細工':'鍛冶')}>=${row.difficulty || '未設定'} / 道具:${row.requiredTools || '未設定'}以上`, `施設依頼：レシピ不要${row.price ? ' / '+row.price+'G' : ''}`].filter(Boolean).join('\n'),
     recipeResult: [resultName, row.resultCount ? `×${row.resultCount}` : ''].filter(Boolean).join(' '),
     materials: row.requiredMaterials || '',
     note: row.notes || ''
