@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.149</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.154</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -642,12 +642,12 @@
 </style>
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.149 / 最終更新日：2026年7月12日</div>
+<div class="ra-build-info">Version：v90.8.154 / 最終更新日：2026年7月13日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.149 / 最終更新日：2026年7月12日</div>
+  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.154 / 最終更新日：2026年7月13日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -1106,7 +1106,7 @@ const SKILL_CATEGORIES = [
     { key:'leadership', name:'鼓舞', desc:'次の判定+1', detail:'仲間を励まし、士気を高める判定に使用します。戦闘中や困難な場面で成功すると、対象の次の判定に+1します。' },
   ]},
 ];
-const HAND_TYPE_OPTIONS = ['なし','短剣','片手剣','片手斧','片手槌','片手槍','杖','盾','大盾','魔導書','祈祷書','両手剣','大槌','長槍','弓','弩','大型弩','大鎌'];
+const HAND_TYPE_OPTIONS = ['なし','短剣','片手剣','片手斧','片手槌','片手槍','鞭','杖','盾','大盾','魔導書','祈祷書','両手剣','大槌','長槍','弓','弩','大型弩','大鎌'];
 const TWO_HAND_TYPES = new Set(['両手剣','大槌','長槍','弓','弩','大型弩','大鎌']);
 const ELEMENT_TYPES = ['','物','火','水','風','雷','光','闇','無'];
 function elementSelectOptions(selected='') {
@@ -1121,6 +1121,7 @@ const EQUIPMENT_PRESETS = {
   '片手槌': { element:'物', power:'1D6+1', hit:'0', defense:'', guard:'', evade:'-1', offhand:'2', description:'硬い装甲や障害物を打ち砕く片手槌。重い打撃で敵の姿勢を崩す。', note:'' },
   '槍': { element:'物', power:'1D6', hit:'+1', defense:'', guard:'', evade:'0', offhand:'2', description:'片手で扱える短めの槍。間合いを取りながら敵を突き止める。', note:'' },
   '片手槍': { element:'物', power:'1D6', hit:'+1', defense:'', guard:'', evade:'0', offhand:'2', description:'片手で扱える短めの槍。間合いを取りながら敵を突き止める。', note:'' },
+  '鞭': { element:'物', power:'1D6', hit:'0', defense:'', guard:'', evade:'0', offhand:'2', description:'敵後衛を一時的に前衛へ引き出し、近接攻撃の機会を作る片手武器。', note:'敵前衛がいる状態でも後衛1体へ引き寄せ攻撃を行える。共通の後衛狙い命中ペナルティを受け、命中時はダメージなしで対象を前衛へ移動。対象は自身の手番開始時、味方前衛が残っていれば後衛へ戻る。引き寄せ不可には無効。' },
   '杖': { element:'物', power:'1D6', hit:'0', defense:'', guard:'', evade:'+1', offhand:'1', description:'魔力を通しやすい杖。身体の支えにもなり、術者の集中を助ける。', note:'' },
   '盾': { power:'', hit:'', defense:'+1', guard:'+2', evade:'0', description:'腕に構えて攻撃を受け止める防具。仲間を守る時にも頼りになる。', note:'' },
   '大盾': { power:'', hit:'', defense:'+2', guard:'+3', evade:'-1', description:'大きな面で攻撃を遮る重盾。取り回しは重いが守りは厚い。', note:'' },
@@ -1151,7 +1152,7 @@ const EQUIPMENT_PRESETS = {
 const HAND_SLOT_KEYS = ['rightHand','leftHand'];
 
 const CARRY_SLOT_MAX = 30;
-const CARRY_SLOT_TYPE_OPTIONS = ['なし','回復薬','魔力薬','爆弾','特殊矢弾','補助品','浄化品','道具','素材','重要品','その他'];
+const CARRY_SLOT_TYPE_OPTIONS = ['なし','回復薬','魔力薬','爆弾','罠','特殊矢弾','補助品','浄化品','道具','素材','重要品','その他'];
 const BASE_EQUIPMENT_SLOTS = [
   { key:'rightHand', name:'右手', kind:'hand', typeOptions:HAND_TYPE_OPTIONS },
   { key:'leftHand', name:'左手', kind:'hand', typeOptions:HAND_TYPE_OPTIONS },
@@ -2925,6 +2926,9 @@ function defaultInventoryKind() {
   return 'アイテム';
 }
 function normalizeInventoryLocation(location) { return '倉庫'; }
+function inventoryKindSupportsUpgradeLimit(kind='') {
+  return ['武器','防具','装飾品','術式'].includes(String(kind || '').trim());
+}
 function normalizeInventoryKind(kind) {
   const raw = String(kind || '').trim();
   if (raw === '武器/防具') return '武器';
@@ -3132,7 +3136,7 @@ function normalizeInventoryItem(item={}) {
     offhand: String(item.offhand || item.offhandBonus || '').trim(),
     reloadTurns: String(item.reloadTurns || item.reloadTurn || item.reload || '').trim(),
     modifiers: normalizedModifiers,
-    upgradeLimit: String(item.upgradeLimit || item.upgradeCount || item.upgradeSlots || '').trim(),
+    upgradeLimit: inventoryKindSupportsUpgradeLimit(kind) ? String(item.upgradeLimit || item.upgradeCount || item.upgradeSlots || '').trim() : '',
     upgradeEntries: normalizedUpgradeEntries,
     upgradeLines: serializeUpgradeEntries(normalizedUpgradeEntries),
     spellSlots: kind === 'バッグ' ? '' : String(item.spellSlots || item.slotCount || item.registerSlots || item.maxStack || '').trim(),
@@ -3270,7 +3274,7 @@ function renderInventory() {
     const title = item.name || '未設定アイテム';
     const description = item.description || '';
     const effectText = item.effect || '';
-    const equipMeta = [item.equipSlot ? '装備/使用枠：' + item.equipSlot : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : '', item.hit ? '命中補正：' + item.hit : '', item.defense ? '防御値：' + item.defense : '', item.guard ? '防御行動値：' + item.guard : '', item.evade ? '回避補正：' + item.evade : '', item.offhand ? '副手追撃値：' + item.offhand : '', item.upgradeLimit ? '強化可能回数：' + item.upgradeLimit : ''].filter(Boolean).join(' / ') || '—';
+    const equipMeta = [item.equipSlot ? '装備/使用枠：' + item.equipSlot : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : '', item.hit ? '命中補正：' + item.hit : '', item.defense ? '防御値：' + item.defense : '', item.guard ? '防御行動値：' + item.guard : '', item.evade ? '回避補正：' + item.evade : '', item.offhand ? '副手追撃値：' + item.offhand : '', inventoryKindSupportsUpgradeLimit(item.kind) && item.upgradeLimit ? '強化可能回数：' + item.upgradeLimit : ''].filter(Boolean).join(' / ') || '—';
     const spellMeta = item.kind === '術式' ? [item.category ? '種別：' + item.category : '', item.element ? '属性：' + item.element : '', item.cost ? 'コスト：' + item.cost : '', item.target ? '対象：' + item.target : '', item.power ? 'ダメージ/威力：' + item.power : '', item.checkType ? '判定：' + checkExpressionDisplay(item.checkType) : '', item.role ? '役割：' + item.role : ''].filter(Boolean).join(' / ') : '';
     const recipeMeta = item.kind === 'レシピ' ? [item.recipeResult ? '完成品：' + item.recipeResult : '', item.materials ? '必要素材：' + item.materials : ''].filter(Boolean).join('\n') : '';
     const itemUseMeta = ['アイテム','素材','矢筒','バッグ'].includes(item.kind) ? [item.target ? '対象：' + item.target : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : '', item.cost ? 'コスト：' + item.cost : '', item.checkType ? '判定：' + checkExpressionDisplay(item.checkType) : '', item.ammoKind ? '矢弾種別：' + item.ammoKind : '', item.spellSlots ? '最大スタック数：' + item.spellSlots : '', item.quiverCapacity ? '矢筒収納種類数：' + item.quiverCapacity : '', item.bagCapacity ? 'バッグ容量：' + item.bagCapacity : '', item.source ? '入手先：' + item.source : '', item.tags ? 'タグ：' + item.tags : ''].filter(Boolean).join(' / ') : '';
@@ -4297,7 +4301,7 @@ function defaultElementForEquipmentRow(row={}) {
   if (/魔導書|祈祷書|魔印|聖印/.test(text)) return '';
   if (/盾|大盾/.test(text) && !/剣|斧|槌|杖|槍|弓|弩|短剣/.test(text)) return '';
   const slotKind = (typeof equipmentSlotKind === 'function') ? equipmentSlotKind(row) : '';
-  if (slotKind === 'hand' && /武器|近接|射撃|短剣|剣|斧|槌|杖|槍|弓|弩/.test(text)) return '物';
+  if (slotKind === 'hand' && /武器|近接|射撃|短剣|剣|斧|槌|杖|槍|鞭|弓|弩/.test(text)) return '物';
   if (/武器|近接武器|射撃武器/.test(text)) return '物';
   return '';
 }
