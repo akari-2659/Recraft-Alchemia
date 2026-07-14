@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.160</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.164</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -634,6 +634,21 @@
     pointer-events:none;
   }
 
+
+/* v90.8.164: レイアウト安定化・左揃え・ボタン折返し */
+html,body{max-width:100%;overflow-x:hidden}
+body,button,input,select,textarea,label,summary,th,td,.tab,.subtab,.tab-btn,.quest-category-btn,.facility-chip,.badge{text-align:left!important}
+button,.tab,.subtab,.tab-btn,.quest-category-btn{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;overflow-wrap:anywhere;word-break:normal;line-height:1.35;height:auto;min-width:0;max-width:100%}
+.buttons,.tabs,.subtabs,.tab-nav,.quest-category-bar,.section-actions,.filter-actions,.facility-actions,.modal-foot{justify-content:flex-start!important;max-width:100%}
+.toolbar,.filter-head,.facility-card-head,.header-inner,.top{max-width:100%;min-width:0}
+.field,.card,.panel,.facility-card,.facility-product,.facility-upgrade-box,.tab-panel{min-width:0;max-width:100%}
+@media(max-width:760px){
+  .buttons,.subtabs,.tab-nav,.quest-category-bar,.section-actions,.filter-actions,.facility-actions,.modal-foot{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%}
+  .buttons>button,.subtabs>button,.tab-nav>button,.quest-category-bar>button,.section-actions>button,.filter-actions>button,.facility-actions>button,.modal-foot>button{width:100%!important;min-width:0!important}
+}
+@media(max-width:460px){
+  .buttons,.subtabs,.tab-nav,.quest-category-bar,.section-actions,.filter-actions,.facility-actions,.modal-foot{grid-template-columns:1fr!important}
+}
 </style>
 
 <style id="raBuildInfoStyle">
@@ -642,12 +657,12 @@
 </style>
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.160 / 最終更新日：2026年7月13日</div>
+<div class="ra-build-info">Version：v90.8.164 / 最終更新日：2026年7月14日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.160 / 最終更新日：2026年7月13日</div>
+  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.164 / 最終更新日：2026年7月14日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
