@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.165</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.166</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -635,7 +635,7 @@
   }
 
 
-/* v90.8.165: レイアウト安定化・左揃え・ボタン折返し */
+/* v90.8.166: レイアウト安定化・左揃え・ボタン折返し */
 html,body{max-width:100%;overflow-x:hidden}
 body,button,input,select,textarea,label,summary,th,td,.tab,.subtab,.tab-btn,.quest-category-btn,.facility-chip,.badge{text-align:left!important}
 button,.tab,.subtab,.tab-btn,.quest-category-btn{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;overflow-wrap:anywhere;word-break:normal;line-height:1.35;height:auto;min-width:0;max-width:100%}
@@ -657,7 +657,7 @@ button,.tab,.subtab,.tab-btn,.quest-category-btn{white-space:normal!important;ov
 </style>
 
 <style id="raNoHorizontalScrollV165">
-/* v90.8.165: キャラシ横スクロール廃止・折り返し */
+/* v90.8.166: キャラシ横スクロール廃止・折り返し */
 html,body{width:100%;max-width:100%;overflow-x:hidden!important}
 main,header,section,.card,.panel,details,summary,.list-item,.inventory-card,.equipment-card,.inventory-filter-panel,.editor-tabs,.editor-action-bar{min-width:0;max-width:100%}
 button,input,select,textarea,label,summary,th,td{max-width:100%;min-width:0;text-align:left!important;white-space:normal;overflow-wrap:anywhere;word-break:break-word}
@@ -677,14 +677,50 @@ th,td{white-space:normal!important;overflow-wrap:anywhere;word-break:break-word}
 @media(max-width:380px){.list-item .button-row{grid-template-columns:1fr!important}}
 </style>
 
+
+<style id="raCompactButtonsV166">
+/* v90.8.166: キャラシの操作ボタンを内容幅中心にして自然に折り返す */
+button,.tab,.subtab,.editor-tab{
+  width:auto!important;
+  max-width:100%!important;
+  min-width:0!important;
+  height:auto!important;
+  padding-left:12px;
+  padding-right:12px;
+  text-align:left!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere;
+  flex:0 1 auto!important;
+  justify-self:start!important;
+}
+.button-row,.inventory-toolbar,.editor-tabs,.editor-action-inner{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  align-items:flex-start!important;
+  justify-content:flex-start!important;
+  gap:7px!important;
+  width:100%;
+  max-width:100%;
+}
+.button-row>button,.inventory-toolbar>button,.editor-tabs>button,.editor-action-inner>button{
+  width:auto!important;
+  flex:0 1 auto!important;
+  justify-self:start!important;
+}
+@media(max-width:520px){
+  button,.tab,.subtab,.editor-tab{padding-left:10px;padding-right:10px}
+  .button-row,.inventory-toolbar,.editor-tabs,.editor-action-inner{gap:6px!important}
+}
+</style>
+
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.165 / 最終更新日：2026年7月14日</div>
+<div class="ra-build-info">Version：v90.8.166 / 最終更新日：2026年7月14日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.165 / 最終更新日：2026年7月14日</div>
+  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.166 / 最終更新日：2026年7月14日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
