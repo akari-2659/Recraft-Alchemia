@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.170</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.181</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -108,6 +108,7 @@
   .button-row.vertical { flex-direction: column; }
   .storage-choice { display: grid; grid-template-columns: 1fr; gap: 12px; }
   @media (min-width: 760px) { .storage-choice { grid-template-columns: 1fr 1fr; } }
+  .storage-choice > .choice-card:only-child { grid-column: 1 / -1; }
   .choice-card {
     background: rgba(255, 253, 248, .86);
     border: 1px solid rgba(221, 203, 176, .9);
@@ -635,7 +636,7 @@
   }
 
 
-/* v90.8.170: レイアウト安定化・左揃え・ボタン折返し */
+/* v90.8.175: レイアウト安定化・左揃え・ボタン折返し */
 html,body{max-width:100%;overflow-x:hidden}
 body,button,input,select,textarea,label,summary,th,td,.tab,.subtab,.tab-btn,.quest-category-btn,.facility-chip,.badge{text-align:left!important}
 button,.tab,.subtab,.tab-btn,.quest-category-btn{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;overflow-wrap:anywhere;word-break:normal;line-height:1.35;height:auto;min-width:0;max-width:100%}
@@ -657,7 +658,7 @@ button,.tab,.subtab,.tab-btn,.quest-category-btn{white-space:normal!important;ov
 </style>
 
 <style id="raNoHorizontalScrollV165">
-/* v90.8.170: キャラシ横スクロール廃止・折り返し */
+/* v90.8.175: キャラシ横スクロール廃止・折り返し */
 html,body{width:100%;max-width:100%;overflow-x:hidden!important}
 main,header,section,.card,.panel,details,summary,.list-item,.inventory-card,.equipment-card,.inventory-filter-panel,.editor-tabs,.editor-action-bar{min-width:0;max-width:100%}
 button,input,select,textarea,label,summary,th,td{max-width:100%;min-width:0;text-align:left!important;white-space:normal;overflow-wrap:anywhere;word-break:break-word}
@@ -679,7 +680,7 @@ th,td{white-space:normal!important;overflow-wrap:anywhere;word-break:break-word}
 
 
 <style id="raCompactButtonsV166">
-/* v90.8.170: キャラシの操作ボタンを内容幅中心にして自然に折り返す */
+/* v90.8.175: キャラシの操作ボタンを内容幅中心にして自然に折り返す */
 button,.tab,.subtab,.editor-tab{
   width:auto!important;
   max-width:100%!important;
@@ -715,7 +716,7 @@ button,.tab,.subtab,.editor-tab{
 
 
 <style id="raCharacterLayoutAuditV167">
-/* v90.8.170: キャラシのページ切替と主要操作を、巨大化させず用途別に整理 */
+/* v90.8.175: キャラシのページ切替と主要操作を、巨大化させず用途別に整理 */
 .editor-tabs{
   display:flex!important;flex-wrap:wrap!important;gap:7px!important;width:100%!important;
   padding:7px!important;border:1px solid #d9c7ae;border-radius:14px;background:#fffaf3;overflow:visible!important;
@@ -739,27 +740,22 @@ button,.tab,.subtab,.editor-tab{
 
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.170 / 最終更新日：2026年7月14日</div>
+<div class="ra-build-info">Version：v90.8.181 / 最終更新日：2026年7月15日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / ローカル・クラウド対応版 v90.8.170 / 最終更新日：2026年7月14日</div>
+  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.181 / 最終更新日：2026年7月15日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
     <section>
-      <h2>保存先を選択</h2>
-      <p class="hint">最初に保存先を選びます。選択後、それぞれの作成リストから閲覧・編集・削除・出力、または新規作成ができます。</p>
+      <h2>クラウドキャラクター</h2>
+      <p class="hint">プレイヤーキーを入力すると、そのキーに紐づくキャラクターの閲覧・編集・削除・出力、新規作成ができます。</p>
       <div class="storage-choice">
         <div class="choice-card">
-          <h3>ローカル保存</h3>
-          <p class="hint">初回に保存フォルダを選択し、そのフォルダ内のキャラクターJSONを一覧・保存します。</p>
-          <button id="chooseLocalBtn" type="button" onclick="return startLocalList(event)">ローカルの作成リストへ</button>
-        </div>
-        <div class="choice-card">
           <h3>クラウド保存</h3>
-          <p class="hint">Google Apps Script とスプレッドシートを使って保存します。</p>
+          <p class="hint">Google Apps Script とスプレッドシートへキャラクターデータを保存します。</p>
           <div class="field">
             <label>クラウド接続先</label>
             <div class="status-box ok">固定URLを使用中です。</div>
@@ -770,11 +766,11 @@ button,.tab,.subtab,.editor-tab{
             <input id="cloudPlayerKeyInput" type="password" placeholder="このキーに紐づくキャラクターだけ表示" autocomplete="off" />
           </div>
           <div class="button-row">
-            <button id="chooseCloudBtn" class="blue" type="button" onclick="return startCloudList(event)">クラウドの作成リストへ</button>
+            <button id="chooseCloudBtn" class="blue" type="button" onclick="return startCloudList(event)">作成リストを開く</button>
           </div>
         </div>
       </div>
-      <div id="homeStatus" class="status-box">保存先を選んで開始してください。</div>
+      <div id="homeStatus" class="status-box">プレイヤーキーを入力して開始してください。</div>
     </section>
   </div>
 
@@ -786,11 +782,8 @@ button,.tab,.subtab,.editor-tab{
           <div id="listSub" class="hint"></div>
         </div>
         <div class="button-row">
-          <button id="backHomeBtn" class="ghost">保存先選択へ戻る</button>
+          <button id="backHomeBtn" class="ghost">プレイヤーキー入力へ戻る</button>
           <button id="changeCloudKeyBtn" class="blue">プレイヤーキー変更</button>
-          <button id="changeLocalFolderBtn" class="secondary">保存先変更</button>
-          <button id="syncToCloudBtn" class="blue">ローカル→クラウド</button>
-          <button id="syncToLocalBtn" class="secondary">クラウド→ローカル</button>
           <button id="refreshListBtn" class="blue">リスト更新</button>
           <button id="newCharacterBtn">新規作成</button>
         </div>
@@ -1102,7 +1095,7 @@ button,.tab,.subtab,.editor-tab{
       <div class="field" data-inventory-kind-field="bag"><label for="inventoryFormCapacity">バッグ容量</label><input id="inventoryFormCapacity" type="number" min="0" max="99" value="8" placeholder="例：8" /></div>
       <div class="field" data-inventory-kind-field="quiver"><label for="inventoryFormQuiverCapacity">矢筒収納種類数</label><input id="inventoryFormQuiverCapacity" type="number" min="0" max="9" value="1" placeholder="例：1 / 2 / 3" /></div>
       <div class="field" data-inventory-kind-field="item"><label for="inventoryFormAmmoKind">矢弾種別</label><input id="inventoryFormAmmoKind" type="text" placeholder="例：弓矢 / ボルト / 大型ボルト / 特殊矢" /></div>
-      <div class="field"><label for="inventoryFormRank">ランク</label><input id="inventoryFormRank" type="text" placeholder="例：初級 / 低級 / 良質" /></div>
+      <div class="field"><label for="inventoryFormRank">ランク</label><input id="inventoryFormRank" type="text" placeholder="例：★1" /></div>
       <div class="field"><label for="inventoryFormPrice">価格/売価</label><input id="inventoryFormPrice" type="text" placeholder="例：30G" /></div>
       <div class="field inventory-wide"><label for="inventoryFormCategory">カテゴリ</label><input id="inventoryFormCategory" type="text" placeholder="例：短剣 / 回復薬 / 草花 / 調合レシピ" /></div>
       <div class="field" data-inventory-kind-field="weapon armor accessory item material important other"><label for="inventoryFormEquipSlot">装備/所持品枠</label><select id="inventoryFormEquipSlot"><option value="">なし</option><option>右手/左手</option><option>両手</option><option>鎧</option><option>装飾品</option><option>所持品</option><option>矢筒</option></select></div>
@@ -1149,10 +1142,6 @@ let CS_ITEM_MASTER = [];
 let DB_INITIAL_ITEM_MASTER = [];
 let DB_INITIAL_SPELL_MASTER = [];
 let DB_RECIPE_MASTER = [];
-const FILE_HANDLE_DB = APP_NAME + '.fileHandles';
-const FILE_HANDLE_STORE = 'handles';
-const LOCAL_DIR_HANDLE_ID = 'localDirectory';
-const LOCAL_STORAGE_CHARACTERS_KEY = APP_NAME + '.localCharacters.v1';
 
 const STAT_ORDER = ['STR','CON','POW','DEX','APP','SIZ','INT','EDU'];
 const STAT_MAX = { STR:18, CON:18, POW:18, DEX:18, APP:18, SIZ:18, INT:18, EDU:21 };
@@ -1282,7 +1271,6 @@ const EQUIPMENT_SLOTS = BASE_EQUIPMENT_SLOTS.concat(Array.from({ length:CARRY_SL
 const SKILL_BY_KEY = {};
 for (const cat of SKILL_CATEGORIES) for (const sk of cat.skills) SKILL_BY_KEY[sk.key] = { ...sk, category: cat.key, ability: cat.ability, categoryName: cat.name };
 
-let currentStorage = 'local';
 let currentCloudPlayerKey = '';
 let currentMode = 'edit'; // new/edit/view
 let currentCharacter = null;
@@ -1332,6 +1320,19 @@ function stage(raw, stat) {
   if (v <= 15) return 3;
   return 4;
 }
+
+function computeAbilitiesFromStats(stats={}) {
+  const raw = Object.fromEntries(STAT_ORDER.map(stat => [stat, nval(stats?.[stat], 0)]));
+  return {
+    body: Math.max(stage(raw.STR, 'STR'), stage(raw.CON, 'CON'), stage(raw.SIZ, 'SIZ')),
+    dexterity: stage(raw.DEX, 'DEX'),
+    sense: stage(raw.INT, 'INT'),
+    intellect: Math.max(stage(raw.INT, 'INT'), stage(raw.EDU, 'EDU')),
+    will: stage(raw.POW, 'POW'),
+    charm: stage(raw.APP, 'APP')
+  };
+}
+
 function computeAbilities(stats) {
   if (arguments.length === 0) return computeEffectiveAbilities(getAbilityValues(), getEquipmentState());
   return computeAbilitiesFromStats(stats || {});
@@ -1773,7 +1774,7 @@ function pushInventorySummaryLines(lines, inventory={}) {
   lines.push('■ 倉庫');
   for (const item of items) {
     if (!(item.name || item.category || item.note)) continue;
-    lines.push(`${item.name || '未設定'}${item.count ? ' ×' + item.count : ''}${item.location ? ' / ' + item.location : ''}${item.kind ? ' / ' + item.kind : ''}${item.rank ? ' / ' + item.rank : ''}${item.element ? ' / 属性:' + item.element : ''}${item.cost ? ' / コスト:' + item.cost : ''}`);
+    lines.push(`${item.name || '未設定'}${item.count ? ' ×' + item.count : ''}${item.location ? ' / ' + item.location : ''}${item.kind ? ' / ' + item.kind : ''}${item.rank ? ' / ' + inventoryRankLabel(item) : ''}${item.element ? ' / 属性:' + item.element : ''}${item.cost ? ' / コスト:' + item.cost : ''}`);
     if (item.category || item.price) lines.push(`  ${[item.category ? 'カテゴリ:' + item.category : '', item.price ? '価格/売価:' + item.price : ''].filter(Boolean).join(' / ')}`);
     if (item.description) lines.push(`  ${String(item.description).replace(/\n/g, ' ')}`);
     if (item.note) lines.push(`  ${String(item.note).replace(/\n/g, ' ')}`);
@@ -2381,6 +2382,19 @@ function spellTypeAliases(label) {
   if (label === '祈祷') return ['祈祷','祈祷術式','聖術','神聖術'];
   return [label];
 }
+const LEGACY_CHARACTER_NUMERIC_RANKS = {'初期':1,'初級':1,'低級':1,'中級':2,'普通':2,'上級':3,'良質':3,'特級':4,'希少':4,'最上級':5,'高級':5};
+function characterNumericRankValue(value, fallback=''){
+  if(typeof value==='number' && Number.isFinite(value) && value>=1) return Math.floor(value);
+  const raw=String(value ?? '').trim();
+  if(!raw) return fallback;
+  if(Object.prototype.hasOwnProperty.call(LEGACY_CHARACTER_NUMERIC_RANKS,raw)) return LEGACY_CHARACTER_NUMERIC_RANKS[raw];
+  const m=raw.match(/(?:★|Rank\s*[:：]?\s*)?(\d+)/i); const n=m?Number(m[1]):NaN;
+  return Number.isFinite(n)&&n>=1?Math.floor(n):fallback;
+}
+function characterPlayerRankLabel(value){ const n=characterNumericRankValue(value,''); return n?`★${n}`:String(value ?? '').trim(); }
+function inventoryRankLabel(item={}){
+  return characterPlayerRankLabel(item.rank);
+}
 function spellDisplayMeta(item={}) {
   const row = normalizeInventoryItem(item || {});
   return [
@@ -2390,7 +2404,7 @@ function spellDisplayMeta(item={}) {
     row.power ? 'ダメージ/威力 ' + row.power : '',
     row.target ? '対象 ' + row.target : '',
     row.checkType ? '判定 ' + checkExpressionDisplay(row.checkType) : '',
-    row.rank ? 'ランク ' + row.rank : ''
+    row.rank ? 'ランク ' + characterPlayerRankLabel(row.rank) : ''
   ].filter(Boolean);
 }
 function spellDetailHtml(item, {open=false}={}) {
@@ -2456,7 +2470,7 @@ function ownedSpellRowsForInfo(info) {
     const key = String(item.masterId || item.id || item.name || '').trim() || String(item.name || '').trim();
     byKey.set(key, item); // 後から入る倉庫データを優先する。
   }
-  return Array.from(byKey.values()).sort((a,b) => String(a.rank || '').localeCompare(String(b.rank || ''), 'ja') || String(a.name || '').localeCompare(String(b.name || ''), 'ja'));
+  return Array.from(byKey.values()).sort((a,b) => (characterNumericRankValue(a.rank,9999)-characterNumericRankValue(b.rank,9999)) || String(a.name || '').localeCompare(String(b.name || ''), 'ja'));
 }
 function spellOptionLabel(item) {
   const row = normalizeInventoryItem(item || {});
@@ -2752,7 +2766,7 @@ function defaultEquipment() {
   for (const slot of EQUIPMENT_SLOTS) {
     equipment[slot.key] = slot.kind === 'carry'
       ? { itemId:'', name:'', type:'なし', count:1, element:'', description:'', note:'' }
-      : { itemId:'', name:'', type:'なし', element:'', power:'', offhand:'', reloadTurns:'', modifiers:'', upgradeLimit:'', upgradeLines:'', upgradeEntries:[], knownSpells:'', setSpells:'', description:'', target:'', checkType:'', role:'', source:'', tags:'', setItem:'', note:'' };
+      : { itemId:'', name:'', type:'なし', element:'', power:'', offhand:'', reloadTurns:'', modifiers:'', upgradeLimit:'', upgradeMaterialMinRank:'', upgradeLines:'', upgradeEntries:[], knownSpells:'', setSpells:'', description:'', target:'', checkType:'', role:'', source:'', tags:'', setItem:'', note:'' };
   }
   equipment.memo = '';
   return equipment;
@@ -2962,7 +2976,7 @@ let selectedQuiverId = '';
 let quiverAmmoSlotsState = {};
 
 function defaultInventory() {
-  const basicBag = { id:'bag_simple', masterId:'', masterSheet:'', masterSync:'', name:'簡素なバッグ', kind:'バッグ', itemType:'バッグ', category:'バッグ', itemCategory:'バッグ', count:1, capacity:8, bagCapacity:8, location:'倉庫', rank:'初期', price:'', equipSlot:'', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', spellSlots:'', target:'', element:'', cost:'', checkType:'', role:'', source:'初期支給 / 鍛冶屋', tags:'バッグ,初期倉庫', setItem:'', description:'冒険に必要な最低限の荷物を入れられる簡素なバッグ。', effect:'所持品枠8。', recipeResult:'', materials:'', note:'' };
+  const basicBag = { id:'bag_simple', masterId:'', masterSheet:'', masterSync:'', name:'簡素なバッグ', kind:'バッグ', itemType:'バッグ', category:'バッグ', itemCategory:'バッグ', count:1, capacity:8, bagCapacity:8, location:'倉庫', rank:1, price:'', equipSlot:'', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', spellSlots:'', target:'', element:'', cost:'', checkType:'', role:'', source:'初期支給 / 鍛冶屋', tags:'バッグ,初期倉庫', setItem:'', description:'冒険に必要な最低限の荷物を入れられる簡素なバッグ。', effect:'所持品枠8。', recipeResult:'', materials:'', note:'' };
   return { items: [basicBag], bagId:'bag_simple', quiverId:'', quiverAmmoSlots:{} };
 }
 
@@ -2992,7 +3006,7 @@ function ensureDefaultBagItem() {
     capacity:8,
     bagCapacity:8,
     location:'倉庫',
-    rank:'初期',
+    rank:1,
     price:'',
     equipSlot:'',
     power:'',
@@ -3211,7 +3225,7 @@ function renderBagSelect() {
   applyBagCapacityToEquipmentSlots();
 }
 function emptyInventoryItem() {
-  return { id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), masterId:'', masterSheet:'', masterSync:'', name:'', kind:defaultInventoryKind(), category:'', count:1, capacity:'', location:'倉庫', rank:'', price:'', equipSlot:'', power:'', offhand:'', reloadTurns:'', modifiers:'', upgradeLimit:'', upgradeLines:'', upgradeEntries:[], spellSlots:'', target:'', element:'', cost:'', checkType:'', role:'', source:'', tags:'', setItem:'', description:'', effect:'', recipeResult:'', materials:'', note:'' };
+  return { id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), masterId:'', masterSheet:'', masterSync:'', name:'', kind:defaultInventoryKind(), category:'', count:1, capacity:'', location:'倉庫', rank:'', price:'', equipSlot:'', power:'', offhand:'', reloadTurns:'', modifiers:'', upgradeLimit:'', upgradeMaterialMinRank:'', upgradeLines:'', upgradeEntries:[], spellSlots:'', target:'', element:'', cost:'', checkType:'', role:'', source:'', tags:'', setItem:'', description:'', effect:'', recipeResult:'', materials:'', note:'' };
 }
 function normalizeInventoryItem(item={}) {
   const rawCategory = String(item.category || item.type || item.itemCategory || item.materialCategory || '').trim();
@@ -3254,6 +3268,7 @@ function normalizeInventoryItem(item={}) {
     reloadTurns: String(item.reloadTurns || item.reloadTurn || item.reload || '').trim(),
     modifiers: normalizedModifiers,
     upgradeLimit: inventoryKindSupportsUpgradeLimit(kind) ? String(item.upgradeLimit || item.upgradeCount || item.upgradeSlots || '').trim() : '',
+    upgradeMaterialMinRank: inventoryKindSupportsUpgradeLimit(kind) ? String(item.upgradeMaterialMinRank || item.rank || '').trim() : '',
     upgradeEntries: normalizedUpgradeEntries,
     upgradeLines: serializeUpgradeEntries(normalizedUpgradeEntries),
     spellSlots: kind === 'バッグ' ? '' : String(item.spellSlots || item.slotCount || item.registerSlots || item.maxStack || '').trim(),
@@ -3391,14 +3406,14 @@ function renderInventory() {
     const title = item.name || '未設定アイテム';
     const description = item.description || '';
     const effectText = item.effect || '';
-    const equipMeta = [item.equipSlot ? '装備/使用枠：' + item.equipSlot : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : '', item.hit ? '命中補正：' + item.hit : '', item.defense ? '防御値：' + item.defense : '', item.guard ? '防御行動値：' + item.guard : '', item.evade ? '回避補正：' + item.evade : '', item.offhand ? '副手追撃値：' + item.offhand : '', inventoryKindSupportsUpgradeLimit(item.kind) && item.upgradeLimit ? '強化可能回数：' + item.upgradeLimit : ''].filter(Boolean).join(' / ') || '—';
+    const equipMeta = [item.equipSlot ? '装備/使用枠：' + item.equipSlot : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : '', item.hit ? '命中補正：' + item.hit : '', item.defense ? '防御値：' + item.defense : '', item.guard ? '防御行動値：' + item.guard : '', item.evade ? '回避補正：' + item.evade : '', item.offhand ? '副手追撃値：' + item.offhand : '', inventoryKindSupportsUpgradeLimit(item.kind) && item.upgradeLimit ? '強化可能回数：' + item.upgradeLimit : '', inventoryKindSupportsUpgradeLimit(item.kind) && item.upgradeMaterialMinRank ? '強化素材最低ランク：' + characterPlayerRankLabel(item.upgradeMaterialMinRank) : ''].filter(Boolean).join(' / ') || '—';
     const spellMeta = item.kind === '術式' ? [item.category ? '種別：' + item.category : '', item.element ? '属性：' + item.element : '', item.cost ? 'コスト：' + item.cost : '', item.target ? '対象：' + item.target : '', item.power ? 'ダメージ/威力：' + item.power : '', item.checkType ? '判定：' + checkExpressionDisplay(item.checkType) : '', item.role ? '役割：' + item.role : ''].filter(Boolean).join(' / ') : '';
     const recipeMeta = item.kind === 'レシピ' ? [item.recipeResult ? '完成品：' + item.recipeResult : '', item.materials ? '必要素材：' + item.materials : ''].filter(Boolean).join('\n') : '';
     const itemUseMeta = ['アイテム','素材','矢筒','バッグ'].includes(item.kind) ? [item.target ? '対象：' + item.target : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : '', item.cost ? 'コスト：' + item.cost : '', item.checkType ? '判定：' + checkExpressionDisplay(item.checkType) : '', item.ammoKind ? '矢弾種別：' + item.ammoKind : '', item.spellSlots ? '最大スタック数：' + item.spellSlots : '', item.quiverCapacity ? '矢筒収納種類数：' + item.quiverCapacity : '', item.bagCapacity ? 'バッグ容量：' + item.bagCapacity : '', item.source ? '入手先：' + item.source : '', item.tags ? 'タグ：' + item.tags : ''].filter(Boolean).join(' / ') : '';
     const spellSlotMeta = item.spellSlots && ['武器','防具','装飾品','術式'].includes(item.kind) ? `術式登録枠：${item.spellSlots}` : '';
     const savedUpgradeMeta = serializeUpgradeEntries(item.upgradeEntries || parseUpgradeLines(item.upgradeLines || ''));
     const bagMeta = item.kind === 'バッグ' ? `バッグ容量：${clampInt(item.capacity || 0, 0, 99)}` : '';
-    const searchText = [title, item.kind, item.category, item.rank, item.price, item.equipSlot, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.upgradeLimit, item.spellSlots, item.capacity, item.bagCapacity, item.quiverCapacity, item.ammoKind, item.target, item.element, item.cost, item.power, item.description, item.effect, item.checkType, item.role, item.source, item.tags, item.recipeResult, item.materials, item.upgradeLines].filter(Boolean).join(' ');
+    const searchText = [title, item.kind, item.category, item.rank, item.price, item.equipSlot, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.upgradeLimit, item.upgradeMaterialMinRank, item.spellSlots, item.capacity, item.bagCapacity, item.quiverCapacity, item.ammoKind, item.target, item.element, item.cost, item.power, item.description, item.effect, item.checkType, item.role, item.source, item.tags, item.recipeResult, item.materials, item.upgradeLines].filter(Boolean).join(' ');
     return `
     <details class="inventory-card" open data-inventory-row="${index}" data-inventory-id="${esc(item.id || '')}" data-inventory-location="倉庫" data-inventory-kind="${esc(item.kind || 'アイテム')}" data-inventory-search="${esc(searchText)}">
       <summary class="inventory-card-head">
@@ -3414,7 +3429,7 @@ function renderInventory() {
         ${item.publicId ? `<div class="meta-item"><span class="meta-label">登録ID</span>${esc(item.publicId)}</div>` : ''}
         <div class="meta-item"><span class="meta-label">個数</span>${esc(item.count ?? 0)}</div>
         ${bagMeta ? `<div class="meta-item"><span class="meta-label">バッグ容量</span>${esc(item.capacity || 0)}</div>` : ''}
-        <div class="meta-item"><span class="meta-label">ランク</span>${esc(item.rank || '—')}</div>
+        <div class="meta-item"><span class="meta-label">ランク</span>${esc(inventoryRankLabel(item) || '—')}</div>
         <div class="meta-item"><span class="meta-label">価格/売価</span>${esc(item.price || '—')}</div>
         <div class="meta-item meta-wide"><span class="meta-label">装備/使用データ</span><div class="inventory-note">${esc([equipMeta, spellSlotMeta].filter(Boolean).join('\n'))}</div></div>
         ${savedUpgradeMeta ? `<div class="meta-item meta-wide"><span class="meta-label">保存済み強化内容</span><div class="inventory-note">${esc(savedUpgradeMeta)}</div></div>` : ''}
@@ -3598,6 +3613,7 @@ function dbItemToInventoryItem(row) {
     power: row.power || '',
     offhand: row.offhandBonus || '',
     upgradeLimit: row.upgradeLimit || '',
+    upgradeMaterialMinRank: row.upgradeMaterialMinRank || row.rank || '',
     spellSlots: row.maxStack || row.spellSlots || '',
     target: row.target || '',
     element: row.element || row.attribute || row.attributeType || row.elementName || row['属性'] || row['属性種別'] || row['攻撃属性'] || row['ダメージ属性'] || '',
@@ -3752,7 +3768,7 @@ function mergeMasterPresetIntoInventoryItem(existing={}, preset={}) {
 function isSameInventoryCore(a={}, b={}) {
   const aa = normalizeInventoryItem(a);
   const bb = normalizeInventoryItem(b);
-  const keys = ['publicId','masterId','masterSheet','masterSync','name','kind','category','rank','price','equipSlot','power','hit','defense','guard','evade','offhand','upgradeLimit','spellSlots','target','element','cost','description','effect','checkType','role','source','tags','setItem','recipeResult','materials'];
+  const keys = ['publicId','masterId','masterSheet','masterSync','name','kind','category','rank','price','equipSlot','power','hit','defense','guard','evade','offhand','upgradeLimit','upgradeMaterialMinRank','spellSlots','target','element','cost','description','effect','checkType','role','source','tags','setItem','recipeResult','materials'];
   return keys.every(k => String(aa[k] ?? '') === String(bb[k] ?? '')) && Number(aa.count || 0) === Number(bb.count || 0);
 }
 
@@ -4013,7 +4029,7 @@ function applyData(data) {
   $('charName').value = currentCharacter.name || '';
   $('charGender').value = currentCharacter.gender || '';
   $('charAge').value = currentCharacter.age || '';
-  if ($('playerKey')) $('playerKey').value = currentStorage === 'cloud' ? currentCloudPlayerKey : '';
+  if ($('playerKey')) $('playerKey').value = currentCloudPlayerKey;
   if ($('newPlayerKey')) $('newPlayerKey').value = '';
   setStats(currentCharacter.stats || {}, false);
   setAbilityValues(currentCharacter.abilities || computeAbilitiesFromStats(currentCharacter.stats || {}));
@@ -4067,43 +4083,20 @@ function setView(name) {
   try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { window.scrollTo(0, 0); }
   return true;
 }
-function storageLabel() { return currentStorage === 'cloud' ? 'クラウド保存' : 'ローカル保存'; }
-function prepareListView(storage) {
-  currentStorage = storage;
-  $('listTitle').textContent = `${storageLabel()}：作成リスト`;
-  $('listSub').textContent = storage === 'cloud' ? 'プレイヤーキーに紐づくキャラクターだけを表示します。必要に応じてローカルへ変換できます。' : '選択した保存フォルダ内のキャラクターJSONを表示します。必要に応じてクラウドへ変換できます。';
-  if ($('changeCloudKeyBtn')) $('changeCloudKeyBtn').style.display = storage === 'cloud' ? '' : 'none';
-  if ($('changeLocalFolderBtn')) $('changeLocalFolderBtn').style.display = storage === 'local' ? '' : 'none';
-  if ($('syncToCloudBtn')) $('syncToCloudBtn').style.display = storage === 'local' ? '' : 'none';
-  if ($('syncToLocalBtn')) $('syncToLocalBtn').style.display = storage === 'cloud' ? '' : 'none';
+function storageLabel() { return 'クラウド保存'; }
+function prepareListView() {
+  $('listTitle').textContent = 'クラウド保存：作成リスト';
+  $('listSub').textContent = 'プレイヤーキーに紐づくキャラクターだけを表示します。';
   if ($('characterList')) $('characterList').innerHTML = '';
   if ($('listStatus')) {
     $('listStatus').className = 'status-box';
-    $('listStatus').textContent = storage === 'cloud' ? 'クラウドの作成リストを読み込み中です。' : 'ローカルの作成リストを読み込み中です。';
+    $('listStatus').textContent = 'クラウドの作成リストを読み込み中です。';
   }
   setView('list');
 }
-async function openList(storage) {
-  prepareListView(storage);
+async function openList() {
+  prepareListView();
   await refreshList();
-}
-async function startLocalList(event) {
-  if (event) { event.preventDefault(); event.stopPropagation(); if (event.stopImmediatePropagation) event.stopImmediatePropagation(); }
-  const btn = $('chooseLocalBtn');
-  try {
-    if (btn) btn.disabled = true;
-    if ($('homeStatus')) { $('homeStatus').className = 'status-box'; $('homeStatus').textContent = 'ローカルの作成リストへ移動します。'; }
-    prepareListView('local');
-    await refreshList();
-  } catch (e) {
-    prepareListView('local');
-    $('listStatus').className = 'status-box error';
-    $('listStatus').textContent = e.message || 'ローカル作成リストへの移行に失敗しました。';
-    showToast($('listStatus').textContent, 'error');
-  } finally {
-    if (btn) btn.disabled = false;
-  }
-  return false;
 }
 async function startCloudList(event) {
   if (event) { event.preventDefault(); event.stopPropagation(); if (event.stopImmediatePropagation) event.stopImmediatePropagation(); }
@@ -4112,13 +4105,13 @@ async function startCloudList(event) {
     setGasUrl(gasUrl());
     currentCloudPlayerKey = ($('cloudPlayerKeyInput')?.value || '').trim();
     if (!gasUrl()) { $('homeStatus').className = 'status-box error'; $('homeStatus').textContent = '固定クラウド接続先が未設定です。'; showToast('固定クラウド接続先が未設定です。', 'error'); return false; }
-    if (!currentCloudPlayerKey) { $('homeStatus').className = 'status-box error'; $('homeStatus').textContent = 'クラウドリスト表示にはプレイヤーキーが必要です。'; showToast('クラウドリスト表示にはプレイヤーキーが必要です。', 'error'); return false; }
+    if (!currentCloudPlayerKey) { $('homeStatus').className = 'status-box error'; $('homeStatus').textContent = '作成リストの表示にはプレイヤーキーが必要です。'; showToast('プレイヤーキーを入力してください。', 'error'); return false; }
     if (btn) btn.disabled = true;
     if ($('homeStatus')) { $('homeStatus').className = 'status-box'; $('homeStatus').textContent = 'クラウドの作成リストへ移動します。'; }
-    prepareListView('cloud');
+    prepareListView();
     await refreshList();
   } catch (e) {
-    prepareListView('cloud');
+    prepareListView();
     $('listStatus').className = 'status-box error';
     $('listStatus').textContent = e.message || 'クラウド作成リストへの移行に失敗しました。';
     showToast($('listStatus').textContent, 'error');
@@ -4135,7 +4128,7 @@ function openEditor(mode, data=null) {
   $('editorSub').textContent = `${storageLabel()} / ID: ${currentCharacter.id}`;
   setReadOnly(mode === 'view');
   $('editorStatus').className = 'status-box';
-  $('editorStatus').textContent = mode === 'view' ? '閲覧モードです。編集する場合は「編集に切替」を押してください。' : '編集中です。保存先に応じて保存できます。';
+  $('editorStatus').textContent = mode === 'view' ? '閲覧モードです。編集する場合は「編集に切替」を押してください。' : '編集中です。クラウドへ保存できます。';
   if ($('editorActionBar')) $('editorActionBar').classList.add('collapsed');
   showEditorTab('ability');
   setView('editor');
@@ -4144,161 +4137,6 @@ function openEditor(mode, data=null) {
 
 
 
-function openFileHandleDb() {
-  if (!('indexedDB' in window)) return Promise.resolve(null);
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(FILE_HANDLE_DB, 1);
-    req.onupgradeneeded = () => req.result.createObjectStore(FILE_HANDLE_STORE);
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-async function getStoredFileHandle(id) {
-  const db = await openFileHandleDb();
-  if (!db) return null;
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(FILE_HANDLE_STORE, 'readonly');
-    const req = tx.objectStore(FILE_HANDLE_STORE).get(id);
-    req.onsuccess = () => resolve(req.result || null);
-    req.onerror = () => reject(req.error);
-  });
-}
-async function setStoredFileHandle(id, handle) {
-  const db = await openFileHandleDb();
-  if (!db) throw new Error('このブラウザではローカル保存先を記憶できません。');
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(FILE_HANDLE_STORE, 'readwrite');
-    tx.objectStore(FILE_HANDLE_STORE).put(handle, id);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
-async function ensureHandlePermission(handle, mode='readwrite') {
-  if (!handle || !handle.queryPermission) return true;
-  let perm = await handle.queryPermission({ mode });
-  if (perm === 'granted') return true;
-  perm = await handle.requestPermission({ mode });
-  return perm === 'granted';
-}
-
-function supportsLocalFolderStorage() {
-  return typeof window !== 'undefined' && 'showDirectoryPicker' in window;
-}
-function readBrowserLocalCharacters() {
-  try {
-    const raw = localStorage.getItem(LOCAL_STORAGE_CHARACTERS_KEY);
-    const parsed = raw ? JSON.parse(raw) : {};
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
-  } catch (e) {
-    console.warn('ブラウザ内ローカル保存の読み込みに失敗しました。', e);
-    return {};
-  }
-}
-function writeBrowserLocalCharacters(map) {
-  localStorage.setItem(LOCAL_STORAGE_CHARACTERS_KEY, JSON.stringify(map || {}));
-}
-async function saveBrowserLocal(data) {
-  const map = readBrowserLocalCharacters();
-  const clean = { ...stripRuntimeOnlyData(data), storageType:'local', updatedAt: nowIso() };
-  map[clean.id] = clean;
-  writeBrowserLocalCharacters(map);
-  return { saved:true, browserSaved:true, folderName:'ブラウザ内保存' };
-}
-async function listBrowserLocalItems() {
-  const map = readBrowserLocalCharacters();
-  const items = Object.values(map).filter(data => data && data.id).map(data => ({
-    id:data.id,
-    name:data.name || '無名のキャラクター',
-    updatedAt:data.updatedAt,
-    createdAt:data.createdAt,
-    fileName:data.id + '.json'
-  }));
-  items.sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
-  return { items, folderName:'ブラウザ内保存' };
-}
-async function loadBrowserLocal(id) {
-  const map = readBrowserLocalCharacters();
-  const data = map[String(id || '')];
-  if (!data) throw new Error('ブラウザ内保存に対象キャラクターが見つかりません。');
-  return data;
-}
-async function deleteBrowserLocal(id) {
-  const map = readBrowserLocalCharacters();
-  delete map[String(id || '')];
-  writeBrowserLocalCharacters(map);
-}
-
-function assertLocalFolderSupport() {
-  if (!('showDirectoryPicker' in window)) throw new Error('このブラウザではフォルダ選択によるローカル保存を使用できません。Chrome / Edge などの対応ブラウザで開いてください。');
-}
-async function chooseLocalDirectory() {
-  if (!supportsLocalFolderStorage()) { showToast('この環境ではブラウザ内保存を使用します。', 'warn'); return null; }
-  assertLocalFolderSupport();
-  const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
-  const ok = await ensureHandlePermission(handle, 'readwrite');
-  if (!ok) throw new Error('保存フォルダへの読み書き許可がありません。');
-  await setStoredFileHandle(LOCAL_DIR_HANDLE_ID, handle);
-  return handle;
-}
-async function getLocalDirectory(options={}) {
-  assertLocalFolderSupport();
-  const ask = options.ask !== false;
-  let handle = await getStoredFileHandle(LOCAL_DIR_HANDLE_ID);
-  if (!handle && ask) handle = await chooseLocalDirectory();
-  if (!handle) throw new Error('ローカル保存フォルダが未選択です。');
-  const ok = await ensureHandlePermission(handle, 'readwrite');
-  if (!ok) {
-    if (!ask) throw new Error('ローカル保存フォルダへのアクセス許可がありません。保存先変更から選択し直してください。');
-    handle = await chooseLocalDirectory();
-  }
-  return handle;
-}
-function localFileName(id) { return safeName(id || uuid()) + '.json'; }
-async function writeJsonToHandle(handle, data) {
-  const writable = await handle.createWritable();
-  await writable.write(JSON.stringify(data, null, 2));
-  await writable.close();
-}
-async function saveLocal(data) {
-  if (!supportsLocalFolderStorage()) return await saveBrowserLocal(data);
-  const dir = await getLocalDirectory({ ask:true });
-  const fileHandle = await dir.getFileHandle(localFileName(data.id), { create:true });
-  await writeJsonToHandle(fileHandle, { ...data, storageType:'local' });
-  return { saved:true, directorySaved:true, folderName:dir.name };
-}
-async function readJsonFileHandle(fileHandle) {
-  const file = await fileHandle.getFile();
-  const text = await file.text();
-  return JSON.parse(text);
-}
-async function listLocalItems() {
-  if (!supportsLocalFolderStorage()) return await listBrowserLocalItems();
-  const dir = await getLocalDirectory({ ask:true });
-  const items = [];
-  for await (const [name, entry] of dir.entries()) {
-    if (entry.kind !== 'file' || !name.toLowerCase().endsWith('.json')) continue;
-    try {
-      const data = await readJsonFileHandle(entry);
-      if (!data || !data.id) continue;
-      items.push({ id:data.id, name:data.name || '無名のキャラクター', updatedAt:data.updatedAt, createdAt:data.createdAt, fileName:name });
-    } catch (e) {
-      // キャラクターJSONではないファイルは無視する
-    }
-  }
-  items.sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
-  return { items, folderName:dir.name };
-}
-async function loadLocal(id) {
-  if (!supportsLocalFolderStorage()) return await loadBrowserLocal(id);
-  const dir = await getLocalDirectory({ ask:true });
-  const fileHandle = await dir.getFileHandle(localFileName(id), { create:false });
-  return await readJsonFileHandle(fileHandle);
-}
-async function deleteLocal(id) {
-  if (!supportsLocalFolderStorage()) return await deleteBrowserLocal(id);
-  const dir = await getLocalDirectory({ ask:true });
-  await dir.removeEntry(localFileName(id));
-}
 function stripRuntimeOnlyData(data) {
   const clone = JSON.parse(JSON.stringify(data || {}));
   delete clone.playerKey;
@@ -4695,25 +4533,21 @@ async function autoSyncEquipmentCategoriesFromDb() {
 
 
 async function listItems() {
-  if (currentStorage === 'local') return await listLocalItems();
-  if (!currentCloudPlayerKey) throw new Error('クラウドリスト表示にはプレイヤーキーが必要です。保存先選択画面で入力してください。');
+  if (!currentCloudPlayerKey) throw new Error('作成リストの表示にはプレイヤーキーが必要です。プレイヤーキー入力画面で入力してください。');
   const res = await cloudRequest('list', { playerKey: currentCloudPlayerKey });
   return { items: res.items || [] };
 }
 async function loadItem(id) {
-  if (currentStorage === 'local') return await loadLocal(id);
   if (!currentCloudPlayerKey) throw new Error('クラウド読み込みにはプレイヤーキーが必要です。');
   const res = await cloudRequest('load', { id, playerKey: currentCloudPlayerKey });
   return res.data;
 }
 async function deleteItem(id) {
-  if (currentStorage === 'local') return await deleteLocal(id);
   const playerKey = currentCloudPlayerKey || prompt('削除用のプレイヤーキーを入力してください。') || '';
   if (!String(playerKey).trim()) throw new Error('削除にはプレイヤーキーが必要です。');
   await cloudRequest('delete', { id, playerKey });
 }
 async function saveItem(data) {
-  if (currentStorage === 'local') return await saveLocal(stripRuntimeOnlyData(data));
   const auth = getCloudAuth();
   if (!auth.playerKey && !auth.newPlayerKey) throw new Error('クラウド保存にはプレイヤーキーが必要です。');
   await cloudRequest('save', { data: stripRuntimeOnlyData(data), playerKey: auth.playerKey, newPlayerKey: auth.newPlayerKey });
@@ -4732,11 +4566,7 @@ async function refreshList() {
   try {
     const listResult = await listItems();
     const items = Array.isArray(listResult) ? listResult : (listResult.items || []);
-    if (currentStorage === 'local' && listResult.folderName) {
-      $('listSub').textContent = `保存フォルダ：${listResult.folderName}`;
-    } else if (currentStorage === 'cloud') {
-      $('listSub').textContent = 'プレイヤーキー設定済み：このキーに紐づくキャラクターだけを表示中';
-    }
+    $('listSub').textContent = 'プレイヤーキー設定済み：このキーに紐づくキャラクターだけを表示中';
     if (!items.length) {
       $('listStatus').className = 'status-box warn';
       $('listStatus').textContent = '保存済みキャラクターはありません。新規作成できます。';
@@ -4753,110 +4583,10 @@ async function refreshList() {
           <button class="blue" data-action="view" data-id="${esc(item.id)}">閲覧</button>
           <button class="secondary" data-action="export" data-id="${esc(item.id)}">出力</button>
           <button class="blue" data-action="share" data-id="${esc(item.id)}">共有</button>
-          ${currentStorage === 'local' ? `<button class="blue" data-action="toCloud" data-id="${esc(item.id)}">クラウドへ保存</button>` : `<button class="secondary" data-action="toLocal" data-id="${esc(item.id)}">ローカルへ保存</button>`}
           <button class="danger" data-action="delete" data-id="${esc(item.id)}">削除</button>
         </div>
       </div>
     `).join('');
-  } catch (e) {
-    $('listStatus').className = 'status-box error';
-    $('listStatus').textContent = e.message;
-  }
-}
-
-async function promptCloudPlayerKey(message='クラウド保存用のプレイヤーキーを入力してください。') {
-  const key = prompt(message) || '';
-  if (!key.trim()) throw new Error('クラウド保存にはプレイヤーキーが必要です。');
-  return key.trim();
-}
-function requireCloudConnection() {
-  if (!gasUrl()) throw new Error('固定クラウド接続先が未設定です。');
-}
-async function saveDataToCloud(data, playerKey) {
-  requireCloudConnection();
-  if (!String(playerKey || '').trim()) throw new Error('クラウド保存にはプレイヤーキーが必要です。');
-  const clean = stripRuntimeOnlyData({ ...data, storageType:'cloud', updatedAt: nowIso() });
-  await cloudRequest('save', { data: clean, playerKey });
-  return clean;
-}
-async function saveDataToLocalFolder(data) {
-  const clean = stripRuntimeOnlyData({ ...data, storageType:'local', updatedAt: nowIso() });
-  await saveLocal(clean);
-  return clean;
-}
-async function convertOneToCloud(id, options={}) {
-  const playerKey = options.playerKey || await promptCloudPlayerKey('このキャラクターをクラウドへ保存するためのプレイヤーキーを入力してください。');
-  const data = await loadLocal(id);
-  await saveDataToCloud(data, playerKey);
-  return data;
-}
-async function convertOneToLocal(id) {
-  if (!currentCloudPlayerKey) throw new Error('クラウド読み込みにはプレイヤーキーが必要です。');
-  const res = await cloudRequest('load', { id, playerKey: currentCloudPlayerKey });
-  const data = res.data;
-  await saveDataToLocalFolder(data);
-  return data;
-}
-async function convertAllLocalToCloud() {
-  try {
-    requireCloudConnection();
-    const listResult = await listLocalItems();
-    const items = listResult.items || [];
-    if (!items.length) throw new Error('ローカル保存フォルダに変換できるキャラクターがありません。');
-    const playerKey = await promptCloudPlayerKey('ローカル内のキャラクターをクラウドへ保存するためのプレイヤーキーを入力してください。\n既存クラウドデータを更新する場合も同じキーを使います。');
-    if (!confirm(`${items.length}件をクラウドへ保存します。よろしいですか？`)) return;
-    let ok = 0, failed = 0;
-    const errors = [];
-    for (const item of items) {
-      try { await convertOneToCloud(item.id, { playerKey }); ok++; }
-      catch (e) { failed++; errors.push(`${item.name || item.id}: ${e.message}`); }
-    }
-    $('listStatus').className = failed ? 'status-box warn' : 'status-box ok';
-    $('listStatus').textContent = `ローカル→クラウド変換完了：成功${ok}件 / 失敗${failed}件` + (errors.length ? '\n' + errors.slice(0, 6).join('\n') : '');
-    showToast(`ローカル→クラウド変換完了：成功${ok}件 / 失敗${failed}件`, failed ? 'warn' : 'ok');
-  } catch (e) {
-    $('listStatus').className = 'status-box error';
-    $('listStatus').textContent = e.message;
-    showToast(e.message, 'error');
-  }
-}
-async function convertAllCloudToLocal() {
-  try {
-    assertLocalFolderSupport();
-    if (!currentCloudPlayerKey) throw new Error('クラウドリスト取得にはプレイヤーキーが必要です。');
-    const res = await cloudRequest('list', { playerKey: currentCloudPlayerKey });
-    const items = res.items || [];
-    if (!items.length) throw new Error('クラウドに変換できるキャラクターがありません。');
-    await getLocalDirectory({ ask:true });
-    if (!confirm(`${items.length}件をローカル保存フォルダへ保存します。よろしいですか？`)) return;
-    let ok = 0, failed = 0;
-    const errors = [];
-    for (const item of items) {
-      try { await convertOneToLocal(item.id); ok++; }
-      catch (e) { failed++; errors.push(`${item.name || item.id}: ${e.message}`); }
-    }
-    $('listStatus').className = failed ? 'status-box warn' : 'status-box ok';
-    $('listStatus').textContent = `クラウド→ローカル変換完了：成功${ok}件 / 失敗${failed}件` + (errors.length ? '\n' + errors.slice(0, 6).join('\n') : '');
-    showToast(`クラウド→ローカル変換完了：成功${ok}件 / 失敗${failed}件`, failed ? 'warn' : 'ok');
-  } catch (e) {
-    $('listStatus').className = 'status-box error';
-    $('listStatus').textContent = e.message;
-    showToast(e.message, 'error');
-  }
-}
-async function convertListItem(action, id) {
-  try {
-    if (action === 'toCloud') {
-      const data = await convertOneToCloud(id);
-      $('listStatus').className = 'status-box ok';
-      $('listStatus').textContent = `「${data.name || '無名のキャラクター'}」をクラウドへ保存しました。`;
-      showToast('クラウドへ保存しました。', 'ok');
-    } else if (action === 'toLocal') {
-      const data = await convertOneToLocal(id);
-      $('listStatus').className = 'status-box ok';
-      $('listStatus').textContent = `「${data.name || '無名のキャラクター'}」をローカル保存フォルダへ保存しました。`;
-      showToast('ローカルへ保存しました。', 'ok');
-    }
   } catch (e) {
     $('listStatus').className = 'status-box error';
     $('listStatus').textContent = e.message;
@@ -4877,27 +4607,43 @@ function rollSet() {
 }
 
 function parseIacharaText(text) {
+  const source=String(text||'').replace(/\u3000/g,' ').replace(/\r/g,'');
   const result = { stats: {}, name: '', gender: '', age: '' };
-  const nameMatch = text.match(/名前\s*[:：]\s*([^\n\r]+)/);
+  const nameMatch = source.match(/名前\s*[:：]\s*([^\n]+)/);
   if (nameMatch) result.name = nameMatch[1].trim();
-  const ageMatch = text.match(/年齢\s*[:：]\s*([^\/\n\r]+)/);
+  const ageMatch = source.match(/年齢\s*[:：]\s*([^\/\n]+)/);
   if (ageMatch) result.age = ageMatch[1].trim();
-  const genderMatch = text.match(/性別\s*[:：]\s*([^\/\n\r]+)/);
+  const genderMatch = source.match(/性別\s*[:：]\s*([^\/\n]+)/);
   if (genderMatch) result.gender = genderMatch[1].trim();
-  const lines = text.split(/\r?\n/);
+
+  const lines = source.split('\n').map(line=>line.trim()).filter(Boolean);
   for (const line of lines) {
-    const m = line.match(/^\s*(STR|CON|POW|DEX|APP|SIZ|INT|EDU)\s+(-?\d+)\s+(-?\d+)?/i);
-    if (m) {
-      const stat = m[1].toUpperCase();
-      // いあきゃら表は「現在値 能力値 増加分 一時的」の順。
-      // 超過ボーナス判定には18/21で丸める前の現在値を使う。
-      result.stats[stat] = Number(m[2]);
+    const m = line.match(/^(STR|CON|POW|DEX|APP|SIZ|INT|EDU)(?:\s*[（(][^）)]*[）)])?\s*(?:[:：=|｜\t]\s*|\s+)(-?\d+(?:\.\d+)?)/i);
+    if (m) result.stats[m[1].toUpperCase()] = Number(m[2]);
+  }
+
+  // 横表形式（STR CON ... の次行に「現在値 12 10 ...」などが並ぶ形式）にも対応。
+  if (Object.keys(result.stats).length < STAT_ORDER.length) {
+    for (let i=0;i<lines.length;i++) {
+      const upper=lines[i].toUpperCase();
+      if (!STAT_ORDER.every(stat=>upper.includes(stat))) continue;
+      const candidates=[];
+      for (let j=i+1;j<Math.min(lines.length,i+7);j++) {
+        const nums=(lines[j].match(/-?\d+(?:\.\d+)?/g)||[]).map(Number);
+        if(nums.length<STAT_ORDER.length) continue;
+        const priority=/現在値/.test(lines[j])?3:/能力値/.test(lines[j])?2:1;
+        candidates.push({nums:nums.slice(0,STAT_ORDER.length),priority});
+      }
+      candidates.sort((a,b)=>b.priority-a.priority);
+      if(candidates[0]) STAT_ORDER.forEach((stat,index)=>{ if(!Number.isFinite(result.stats[stat])) result.stats[stat]=candidates[0].nums[index]; });
+      if(Object.keys(result.stats).length===STAT_ORDER.length) break;
     }
   }
-  if (Object.keys(result.stats).length < 8) {
+
+  if (Object.keys(result.stats).length < STAT_ORDER.length) {
     for (const stat of STAT_ORDER) {
-      const reg = new RegExp(stat + '\\s*[:：=]\\s*(-?\\d+)', 'i');
-      const m = text.match(reg);
+      const reg = new RegExp('(?:^|[\\s|｜])' + stat + '(?:\\s*[（(][^）)]*[）)])?\\s*[:：=]?\\s*(-?\\d+(?:\\.\\d+)?)', 'im');
+      const m = source.match(reg);
       if (m) result.stats[stat] = Number(m[1]);
     }
   }
@@ -4914,10 +4660,15 @@ function applyParsedText(text, options={}) {
     }
     return false;
   }
+  // 変換処理を先に検証し、途中で名前だけが反映される状態を防ぐ。
+  const convertedAbilities = computeAbilitiesFromStats(parsed.stats);
   if (parsed.name) $('charName').value = parsed.name;
   if (parsed.gender) $('charGender').value = parsed.gender;
   if (parsed.age) $('charAge').value = parsed.age;
-  setStats(parsed.stats, true);
+  for (const stat of STAT_ORDER) if ($('stat_' + stat)) $('stat_' + stat).value = parsed.stats[stat];
+  setAbilityValues(convertedAbilities);
+  if ($('currentHp')) $('currentHp').value = '';
+  if ($('currentMp')) $('currentMp').value = '';
   updateAll();
   $('parseStatus').className = 'status-box ok';
   $('parseStatus').textContent = `読み取り成功：${parsed.name || '名前なし'}。能力値と技能ボーナスを反映しました。`;
@@ -5433,24 +5184,11 @@ async function copyShareData() {
 
 async function copyShareUrlForListItem(id) {
   try {
-    if (currentStorage === 'cloud') {
-      const url = buildShareUrl(id);
-      await copyTextDirect(url);
-      showToast('共有URLをコピーしました。', 'ok');
-      $('listStatus').className = 'status-box ok';
-      $('listStatus').textContent = '共有URLをクリップボードにコピーしました。';
-      return;
-    }
-    const data = await loadLocal(id);
-    const playerKey = currentCloudPlayerKey || await promptCloudPlayerKey('共有URLを発行するため、クラウド保存用のプレイヤーキーを入力してください。');
-    currentCloudPlayerKey = playerKey;
-    if ($('cloudPlayerKeyInput')) $('cloudPlayerKeyInput').value = playerKey;
-    await saveDataToCloud(data, playerKey);
-    const url = buildShareUrl(data.id);
+    const url = buildShareUrl(id);
     await copyTextDirect(url);
-    showToast('クラウドへ保存して共有URLをコピーしました。', 'ok');
+    showToast('共有URLをコピーしました。', 'ok');
     $('listStatus').className = 'status-box ok';
-    $('listStatus').textContent = 'クラウドへ保存し、共有URLをクリップボードにコピーしました。';
+    $('listStatus').textContent = '共有URLをクリップボードにコピーしました。';
   } catch (e) {
     $('listStatus').className = 'status-box error';
     $('listStatus').textContent = e.message;
@@ -5478,13 +5216,8 @@ async function onSave() {
     currentCharacter = data;
     currentMode = 'edit';
     $('editorStatus').className = result?.reason ? 'status-box warn' : 'status-box ok';
-    if (currentStorage === 'local') {
-      $('editorStatus').textContent = `保存しました。保存フォルダ${result?.folderName ? '「' + result.folderName + '」' : ''}へJSONを書き込みました。`;
-      showToast('ローカルへ保存しました。', 'ok');
-    } else {
-      $('editorStatus').textContent = 'クラウドへ保存しました。';
-      showToast('クラウドへ保存しました。', 'ok');
-    }
+    $('editorStatus').textContent = 'クラウドへ保存しました。';
+    showToast('クラウドへ保存しました。', 'ok');
   } catch (e) {
     $('editorStatus').className = 'status-box error';
     $('editorStatus').textContent = e.message;
@@ -5496,7 +5229,6 @@ function bindEvents() {
   try { localStorage.removeItem(APP_NAME + '.master.adminKey'); } catch(e) {}
   try { setGasUrl(gasUrl()); } catch(e) {}
   if ($('loadEquipmentCategoriesBtn')) $('loadEquipmentCategoriesBtn').addEventListener('click', async () => { try { await loadEquipmentCategoriesFromDb(); } catch (e) { showToast(e.message, 'error'); const st=$('equipmentCategoryStatus'); if(st) st.textContent=e.message; } });
-  $('chooseLocalBtn').addEventListener('click', startLocalList);
   $('chooseCloudBtn').addEventListener('click', startCloudList);
   $('backHomeBtn').addEventListener('click', () => setView('home'));
   $('changeCloudKeyBtn').addEventListener('click', async () => {
@@ -5507,9 +5239,6 @@ function bindEvents() {
     await refreshList();
     showToast('プレイヤーキーを変更しました。', 'ok');
   });
-  $('changeLocalFolderBtn').addEventListener('click', async () => { try { if (!supportsLocalFolderStorage()) { $('listStatus').className = 'status-box warn'; $('listStatus').textContent = 'この環境ではブラウザ内保存を使用しています。'; showToast('この環境ではブラウザ内保存を使用しています。', 'warn'); await refreshList(); return; } await chooseLocalDirectory(); await refreshList(); showToast('保存先フォルダを変更しました。', 'ok'); } catch (e) { $('listStatus').className = 'status-box error'; $('listStatus').textContent = e.message; showToast(e.message, 'error'); } });
-  $('syncToCloudBtn').addEventListener('click', convertAllLocalToCloud);
-  $('syncToLocalBtn').addEventListener('click', convertAllCloudToLocal);
   $('refreshListBtn').addEventListener('click', refreshList);
   $('newCharacterBtn').addEventListener('click', () => openEditor('new', emptyCharacter()));
   $('backListBtn').addEventListener('click', () => { setView('list'); refreshList(); });
@@ -5520,9 +5249,16 @@ function bindEvents() {
   $('txtFileBtn').addEventListener('click', () => $('txtFileInput').click());
   $('txtFileInput').addEventListener('change', async e => {
     const file = e.target.files?.[0]; if (!file) return;
-    const text = await readTextFile(file);
-    applyParsedText(text);
-    e.target.value = '';
+    try {
+      const text = await readTextFile(file);
+      applyParsedText(text);
+    } catch (err) {
+      $('parseStatus').className = 'status-box error';
+      $('parseStatus').textContent = `読み込みに失敗しました：${err.message}`;
+      showToast('いあきゃらtxtの読み込みに失敗しました。', 'error');
+    } finally {
+      e.target.value = '';
+    }
   });
   $('outputBtn').addEventListener('click', () => openOutputDialog(collectData(false)));
   $('shareBtn').addEventListener('click', copyShareData);
@@ -5594,7 +5330,6 @@ function bindEvents() {
         await deleteItem(id); await refreshList(); showToast('削除しました。', 'ok'); return;
       }
       if (action === 'share') { await copyShareUrlForListItem(id); return; }
-      if (action === 'toCloud' || action === 'toLocal') { await convertListItem(action, id); return; }
       if ($('listStatus')) { $('listStatus').className = 'status-box'; $('listStatus').textContent = action === 'export' ? '出力データを読み込み中です。' : '編集画面を開いています。'; }
       const data = await loadItem(id);
       if (action === 'export') { openOutputDialog(data); return; }
