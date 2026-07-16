@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.192</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.194</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -740,12 +740,12 @@ button,.tab,.subtab,.editor-tab{
 
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.192 / 最終更新日：2026年7月16日</div>
+<div class="ra-build-info">Version：v90.8.194 / 最終更新日：2026年7月16日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.192 / 最終更新日：2026年7月16日</div>
+  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.194 / 最終更新日：2026年7月16日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -1102,7 +1102,7 @@ button,.tab,.subtab,.editor-tab{
       <div class="field" data-inventory-kind-field="weapon item spell"><label for="inventoryFormPower">威力</label><input id="inventoryFormPower" type="text" placeholder="例：1D6+1 / 武器依存 / 1D6" /></div>
       <div class="field" data-inventory-kind-field="weapon"><label for="inventoryFormOffhand">副手追撃値</label><input id="inventoryFormOffhand" type="text" placeholder="例：+2" /></div>
       <div class="field" data-inventory-kind-field="weapon"><label for="inventoryFormReloadTurns">装填ターン</label><input id="inventoryFormReloadTurns" type="number" min="0" max="9" value="" placeholder="例：1" /></div>
-      <div class="field" data-inventory-kind-field="weapon armor accessory"><label for="inventoryFormUpgradeLimit">強化可能回数</label><input id="inventoryFormUpgradeLimit" type="number" min="0" max="9" value="" placeholder="例：2" /></div>
+      <div class="field" data-inventory-kind-field="weapon armor accessory"><label for="inventoryFormUpgradeLimit">強化枠上限</label><input id="inventoryFormUpgradeLimit" type="number" min="0" max="9" value="" placeholder="例：2" /></div>
       <div class="field inventory-wide" data-inventory-kind-field="weapon armor accessory item spell">
         <label>補正値</label>
         <textarea id="inventoryFormModifiers" class="hidden internal-raw-field" data-inventory-input="1" hidden aria-hidden="true" tabindex="-1" style="display:none!important"></textarea>
@@ -1203,7 +1203,7 @@ const SKILL_CATEGORIES = [
     { key:'negotiate', name:'交渉', desc:'条件交渉', detail:'相手と話し合い、条件を整える判定に使用します。値引き、依頼、説得、情報交換、取引、相手の態度を和らげる場面で使います。' },
     { key:'service', name:'共感', desc:'感情や本心を読む', detail:'相手の感情や本心を読み取り、寄り添う判定に使用します。不安を落ち着かせる、嘘や隠し事に気づく、相手の悩みや望みを察する場面で使います。' },
     { key:'art', name:'社交', desc:'場の空気と人付き合い', detail:'礼儀、場の空気、集団内での立ち回りに関わる判定に使用します。人脈作り、評判の確認、貴族・商人・町人などとの交流、集まりの中で自然に情報を得る場面で使います。' },
-    { key:'leadership', name:'鼓舞', desc:'次の判定+1', detail:'仲間を励まし、士気を高める判定に使用します。戦闘中や困難な場面で成功すると、対象の次の判定に+1します。' },
+    { key:'leadership', name:'鼓舞', desc:'次の判定+2', detail:'仲間を励まし、士気を高める判定に使用します。戦闘中や困難な場面で成功すると、対象の次の判定に+2します。' },
   ]},
 ];
 const HAND_TYPE_OPTIONS = ['なし','短剣','片手剣','片手斧','片手槌','片手槍','鞭','杖','盾','大盾','魔導書','祈祷書','両手剣','大槌','長槍','弓','弩','大型弩','大鎌'];
@@ -1617,14 +1617,14 @@ function renderStatic() {
             <button type="button" class="ghost" data-modifier-add="equip_${slot.key}_modifierRows">補正値を追加</button>
           </div>
           <div class="field">
-            <label for="equip_${slot.key}_upgradeLimit">強化可能回数</label>
+            <label for="equip_${slot.key}_upgradeLimit">強化枠上限</label>
             <input id="equip_${slot.key}_upgradeLimit" data-equipment-input="1" type="number" min="0" max="9" value="" placeholder="例：2" />
           </div>
           <details id="equip_${slot.key}_upgradeDetails" class="equipment-upgrade-details equipment-wide">
             <summary>強化内容</summary>
-            <div id="equip_${slot.key}_upgradeSlots" class="equipment-upgrade-list" data-equipment-input="1"></div>
+            <div id="equip_${slot.key}_upgradeUsage" class="small"></div><div id="equip_${slot.key}_upgradeSlots" class="equipment-upgrade-list" data-equipment-input="1"></div>
             <input id="equip_${slot.key}_upgradeLines" data-equipment-input="1" type="hidden" value="" />
-            <div class="small">強化可能回数に応じて入力欄を表示します。強化内容は選択した武器・防具などの装備ごとに保存され、付け替えても保持されます。</div>
+            <div class="small">強化枠上限に応じて入力欄を表示します。強化内容は選択した武器・防具などの装備ごとに保存され、付け替えても保持されます。</div>
           </details>
           <div class="field equipment-wide">
             <label for="equip_${slot.key}_description">説明</label>
@@ -2484,12 +2484,17 @@ function syncSpellSetHidden(slotKey) {
   hidden.value = names.join('\n');
   hidden.dataset.pendingSpells = hidden.value;
 }
-const EQUIPMENT_UPGRADE_OPTIONS = ['','威力','命中補正','防御値','防御行動値','回避補正','副手追撃値','術式登録枠','最大スタック数','HP','MP','属性効果','特殊効果','その他'];
+const EQUIPMENT_UPGRADE_OPTIONS = ['','威力','命中補正','防御値','防御行動値','回避補正','副手追撃値','術式登録枠','消費コスト軽減','回復量','最大スタック数','HP','MP','属性効果','特殊効果','その他'];
 
 function normalizeUpgradeEntry(entry={}){
   let content = String(entry.content || entry.type || entry.name || entry.label || '').trim();
   let value = String(entry.value || entry.amount || entry.detail || '').trim();
   let rank = String(entry.rank || entry.materialRank || '').trim();
+  const strongSlotEffect=/防御値|消費コスト|回復量/.test(content);
+  let slotCost = strongSlotEffect ? 2 : Math.max(1, Number(entry.slotCost || entry.upgradeSlotCost || 0) || 1);
+  const slotPattern=/(?:\s*(?:\/|／|\||｜)\s*)?(?:消費枠|slotCost)\s*[：:=]\s*(\d+)/i;
+  const slotMatch=value.match(slotPattern)||content.match(slotPattern);
+  if(slotMatch){slotCost=Math.max(1,Number(slotMatch[1])||1);value=value.replace(slotMatch[0],'').trim();content=content.replace(slotMatch[0],'').trim();}
   const rankPattern = /(?:\s*(?:\/|／|\||｜)\s*)?(?:素材ランク|ランク|rank)\s*[：:=]\s*([^\/／\|｜\n]+)/i;
   const valueRank = value.match(rankPattern);
   if(valueRank){
@@ -2501,7 +2506,7 @@ function normalizeUpgradeEntry(entry={}){
     if(!rank) rank = String(contentRank[1] || '').trim();
     content = content.replace(contentRank[0], '').trim();
   }
-  return { content, value, rank };
+  return { content, value, rank, slotCost };
 }
 function parseUpgradeLines(value=''){
   if(Array.isArray(value)) return value.map(normalizeUpgradeEntry).filter(e=>e.content || e.value || e.rank);
@@ -2522,9 +2527,10 @@ function parseUpgradeLines(value=''){
 function serializeUpgradeEntries(entries=[]){
   return (entries || []).map(normalizeUpgradeEntry).filter(e=>e.content || e.value || e.rank).map(e=>{
     const rankPart = e.rank ? ` / ランク：${e.rank}` : '';
-    if(e.content && e.value) return `${e.content}：${e.value}${rankPart}`;
-    if(e.content) return `${e.content}${rankPart}`;
-    if(e.value) return `その他：${e.value}${rankPart}`;
+    const slotPart = ` / 消費枠：${e.slotCost||1}`;
+    if(e.content && e.value) return `${e.content}：${e.value}${rankPart}${slotPart}`;
+    if(e.content) return `${e.content}${rankPart}${slotPart}`;
+    if(e.value) return `その他：${e.value}${rankPart}${slotPart}`;
     return `ランク：${e.rank}`;
   }).join('\n');
 }
@@ -2533,12 +2539,15 @@ function collectUpgradeEntries(slotKey){
   if(!list) return parseUpgradeLines($('equip_' + slotKey + '_upgradeLines')?.value || '');
   return Array.from(list.querySelectorAll('[data-upgrade-row]')).map(row=>normalizeUpgradeEntry({
     content: row.querySelector('[data-upgrade-content]')?.value || '',
-    value: row.querySelector('[data-upgrade-value]')?.value || ''
+    value: row.querySelector('[data-upgrade-value]')?.value || '',
+    slotCost: row.querySelector('[data-upgrade-slot-cost]')?.value || ''
   })).filter(e=>e.content || e.value || e.rank);
 }
 function equipmentUpgradeLimit(slotKey){
   return clampInt($('equip_' + slotKey + '_upgradeLimit')?.value || 0, 0, 9);
 }
+function equipmentUpgradeUsedSlots(entries=[]){return parseUpgradeLines(entries).reduce((sum,e)=>sum+Math.max(1,Number(e.slotCost)||1),0);}
+function trimUpgradeEntriesToSlotLimit(entries=[],limit=0){const out=[];let used=0;for(const raw of parseUpgradeLines(entries)){const e=normalizeUpgradeEntry(raw);const cost=Math.max(1,Number(e.slotCost)||1);if(used+cost>limit)break;out.push(e);used+=cost;}return out;}
 function upgradeOptionHtml(selected=''){
   const current = String(selected || '').trim();
   const base = EQUIPMENT_UPGRADE_OPTIONS.slice();
@@ -2557,7 +2566,10 @@ function renderEquipmentUpgradeSlots(slotKey, sourceEntries=null){
   const details = $('equip_' + slotKey + '_upgradeDetails');
   if(!list) return;
   const limit = equipmentUpgradeLimit(slotKey);
-  const entries = sourceEntries !== null ? parseUpgradeLines(sourceEntries) : collectUpgradeEntries(slotKey);
+  const rawEntries = sourceEntries !== null ? parseUpgradeLines(sourceEntries) : collectUpgradeEntries(slotKey);
+  const entries=trimUpgradeEntriesToSlotLimit(rawEntries,limit);
+  const usage=$('equip_' + slotKey + '_upgradeUsage');
+  if(usage)usage.textContent=`使用済み強化枠：${equipmentUpgradeUsedSlots(entries)} / ${limit}`;
   if(details) details.style.display = limit > 0 ? '' : 'none';
   if(limit <= 0){
     list.innerHTML = '<div class="small">この装備は強化できません。</div>';
@@ -2568,7 +2580,7 @@ function renderEquipmentUpgradeSlots(slotKey, sourceEntries=null){
     const entry = normalizeUpgradeEntry(entries[i] || {});
     return `<div class="equipment-upgrade-row" data-upgrade-row="${i}">
       <div class="field"><label>強化内容 ${i+1}</label><select data-upgrade-content data-equipment-input="1">${upgradeOptionHtml(entry.content)}</select></div>
-      <div class="field"><label>強化値</label><input data-upgrade-value data-equipment-input="1" type="text" value="${esc(entry.value)}" placeholder="任意入力" /></div>
+      <div class="field"><label>強化値</label><input data-upgrade-value data-equipment-input="1" type="text" value="${esc(entry.value)}" placeholder="任意入力" /></div><div class="field"><label>消費強化枠</label><select data-upgrade-slot-cost data-equipment-input="1"><option value="1" ${entry.slotCost===1?'selected':''}>1枠</option><option value="2" ${entry.slotCost===2?'selected':''}>2枠</option></select></div>
     </div>`;
   }).join('');
   if(hidden) hidden.value = serializeUpgradeEntries(entries.slice(0, limit));
@@ -2585,7 +2597,7 @@ function syncEquipmentUpgradeToInventoryItem(slotKey=''){
   const current = normalizeInventoryItem(inventoryItemsState[index] || {});
   if(!['武器','防具','装飾品'].includes(current.kind)) return false;
   const limit = equipmentUpgradeLimit(slotKey);
-  const entries = collectUpgradeEntries(slotKey).slice(0, limit).map(normalizeUpgradeEntry);
+  const entries = trimUpgradeEntriesToSlotLimit(collectUpgradeEntries(slotKey),limit).map(normalizeUpgradeEntry);
   inventoryItemsState[index] = normalizeInventoryItem({
     ...inventoryItemsState[index],
     upgradeLimit: String($('equip_' + slotKey + '_upgradeLimit')?.value || current.upgradeLimit || '').trim(),
@@ -2601,7 +2613,7 @@ function syncAllEquipmentUpgradesToInventory(){
 }
 function syncEquipmentUpgradeHidden(slotKey){
   const hidden = $('equip_' + slotKey + '_upgradeLines');
-  if(hidden) hidden.value = serializeUpgradeEntries(collectUpgradeEntries(slotKey).slice(0, equipmentUpgradeLimit(slotKey)));
+  if(hidden) hidden.value = serializeUpgradeEntries(trimUpgradeEntriesToSlotLimit(collectUpgradeEntries(slotKey), equipmentUpgradeLimit(slotKey)));
   syncEquipmentUpgradeToInventoryItem(slotKey);
 }
 function refreshSelectionListsForTarget(target=null){
@@ -3406,7 +3418,7 @@ function renderInventory() {
     const title = item.name || '未設定アイテム';
     const description = item.description || '';
     const effectText = item.effect || '';
-    const equipMeta = [item.equipSlot ? '装備/使用枠：' + item.equipSlot : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : '', item.hit ? '命中補正：' + item.hit : '', item.defense ? '防御値：' + item.defense : '', item.guard ? '防御行動値：' + item.guard : '', item.evade ? '回避補正：' + item.evade : '', item.offhand ? '副手追撃値：' + item.offhand : '', inventoryKindSupportsUpgradeLimit(item.kind) && item.upgradeLimit ? '強化可能回数：' + item.upgradeLimit : '', inventoryKindSupportsUpgradeLimit(item.kind) && item.upgradeMaterialMinRank ? '強化素材最低ランク：' + characterPlayerRankLabel(item.upgradeMaterialMinRank) : ''].filter(Boolean).join(' / ') || '—';
+    const equipMeta = [item.equipSlot ? '装備/使用枠：' + item.equipSlot : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : '', item.hit ? '命中補正：' + item.hit : '', item.defense ? '防御値：' + item.defense : '', item.guard ? '防御行動値：' + item.guard : '', item.evade ? '回避補正：' + item.evade : '', item.offhand ? '副手追撃値：' + item.offhand : '', inventoryKindSupportsUpgradeLimit(item.kind) && item.upgradeLimit ? '強化枠上限：' + item.upgradeLimit : '', inventoryKindSupportsUpgradeLimit(item.kind) && item.upgradeMaterialMinRank ? '強化素材最低ランク：' + characterPlayerRankLabel(item.upgradeMaterialMinRank) : ''].filter(Boolean).join(' / ') || '—';
     const spellMeta = item.kind === '術式' ? [item.category ? '種別：' + item.category : '', item.element ? '属性：' + item.element : '', item.cost ? 'コスト：' + item.cost : '', item.target ? '対象：' + item.target : '', item.power ? 'ダメージ/威力：' + item.power : '', item.checkType ? '判定：' + checkExpressionDisplay(item.checkType) : '', item.role ? '役割：' + item.role : ''].filter(Boolean).join(' / ') : '';
     const recipeMeta = item.kind === 'レシピ' ? [item.recipeResult ? '完成品：' + item.recipeResult : '', item.materials ? '必要素材：' + item.materials : ''].filter(Boolean).join('\n') : '';
     const itemUseMeta = ['アイテム','素材','矢筒','バッグ'].includes(item.kind) ? [item.target ? '対象：' + item.target : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : '', item.cost ? 'コスト：' + item.cost : '', item.checkType ? '判定：' + checkExpressionDisplay(item.checkType) : '', item.ammoKind ? '矢弾種別：' + item.ammoKind : '', item.spellSlots ? '最大スタック数：' + item.spellSlots : '', item.quiverCapacity ? '矢筒収納種類数：' + item.quiverCapacity : '', item.bagCapacity ? 'バッグ容量：' + item.bagCapacity : '', item.source ? '入手先：' + item.source : '', item.tags ? 'タグ：' + item.tags : ''].filter(Boolean).join(' / ') : '';
@@ -4956,6 +4968,11 @@ function findPaletteSpellByName(items=[], name='') {
   const dbSpell = (DB_INITIAL_SPELL_MASTER || []).map(row => dbSpellToInventoryItem(row)).find(row => String(row.name || '').trim() === target);
   return dbSpell || null;
 }
+function equipmentUpgradeNumericBonus(item={}, patterns=[]){return parseUpgradeLines(item.upgradeLines||item.upgradeEntries||'').reduce((sum,e)=>patterns.some(p=>p.test(String(e.content||'')))?sum+parseFlatBonus(e.value||1):sum,0);}
+function spellBookPowerBonus(item={}){return equipmentUpgradeNumericBonus(item,[/^威力$/, /術式威力/, /祈祷威力/]);}
+function spellBookHitBonus(item={}){return equipmentUpgradeNumericBonus(item,[/^命中$/, /^命中補正$/]);}
+function spellBookCostReduction(item={}){return equipmentUpgradeNumericBonus(item,[/消費コスト/, /コスト軽減/]);}
+function spellBookHealBonus(item={}){return equipmentUpgradeNumericBonus(item,[/回復量/]);}
 function collectSetSpellDamagePaletteLines(data={}) {
   const equipment = data.equipment || {};
   const items = paletteInventoryItems(data);
@@ -4969,8 +4986,10 @@ function collectSetSpellDamagePaletteLines(data={}) {
     const names = splitFormulaList(item.setSpells || item.knownSpells || '');
     for (const name of names) {
       const spell = findPaletteSpellByName(items, name) || normalizeInventoryItem({ name, kind:'術式' });
-      const formula = normalizePaletteFormula(spell.power || spell.damage || '');
-      if (!formula) continue;
+      const rawFormula = normalizePaletteFormula(spell.power || spell.damage || '');
+      if (!rawFormula) continue;
+      const powerBonus=spellBookPowerBonus(item);
+      const formula=paletteDamageFormulaWithBonus(rawFormula,powerBonus,0);
       const label = String(spell.name || name).trim();
       const key = label + '::' + formula;
       if (used.has(key)) continue;
@@ -5046,7 +5065,7 @@ function collectCheckPaletteLines(data={}, totals={}) {
       const spell = findPaletteSpellByName(items, name) || normalizeInventoryItem({ name, kind:'術式' });
       const spellKind = String(spell.category || spell.kind || type || '').trim();
       const defaultSkill = /祈祷|聖|神/.test(spellKind) ? '祈祷' : '魔法';
-      pushLine(checkTypeOrDefault(spell, defaultSkill, defaultSkill === '魔法' ? '回避値' : '目標値'), String(spell.name || name).trim());
+      pushLine(checkTypeOrDefault(spell, defaultSkill, defaultSkill === '魔法' ? '回避値' : '目標値'), String(spell.name || name).trim(), signedNumberText(spellBookHitBonus(eq)));
     }
   }
   for (const item of items) {
