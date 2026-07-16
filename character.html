@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.194</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.199</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -740,12 +740,12 @@ button,.tab,.subtab,.editor-tab{
 
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.194 / 最終更新日：2026年7月16日</div>
+<div class="ra-build-info">Version：v90.8.199 / 最終更新日：2026年7月16日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.194 / 最終更新日：2026年7月16日</div>
+  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.199 / 最終更新日：2026年7月16日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -1094,7 +1094,8 @@ button,.tab,.subtab,.editor-tab{
       <div class="field"><label for="inventoryFormCount">個数</label><input id="inventoryFormCount" type="number" min="0" max="9999" value="1" /></div>
       <div class="field" data-inventory-kind-field="bag"><label for="inventoryFormCapacity">バッグ容量</label><input id="inventoryFormCapacity" type="number" min="0" max="99" value="8" placeholder="例：8" /></div>
       <div class="field" data-inventory-kind-field="quiver"><label for="inventoryFormQuiverCapacity">矢筒収納種類数</label><input id="inventoryFormQuiverCapacity" type="number" min="0" max="9" value="1" placeholder="例：1 / 2 / 3" /></div>
-      <div class="field" data-inventory-kind-field="item"><label for="inventoryFormAmmoKind">矢弾種別</label><input id="inventoryFormAmmoKind" type="text" placeholder="例：弓矢 / ボルト / 大型ボルト / 特殊矢" /></div>
+      <div class="field" data-inventory-kind-field="item"><label for="inventoryFormAmmoKind">矢弾種別</label><input id="inventoryFormAmmoKind" type="text" placeholder="例：矢 / ボルト / 大型ボルト / 汎用矢弾" /></div>
+      <div class="field" data-inventory-kind-field="item"><label for="inventoryFormCompatibleWeaponTypes">対応武器種</label><input id="inventoryFormCompatibleWeaponTypes" type="text" placeholder="例：弓 / 弩 / 大型弩" /></div>
       <div class="field"><label for="inventoryFormRank">ランク</label><input id="inventoryFormRank" type="text" placeholder="例：★1" /></div>
       <div class="field"><label for="inventoryFormPrice">価格/売価</label><input id="inventoryFormPrice" type="text" placeholder="例：30G" /></div>
       <div class="field inventory-wide"><label for="inventoryFormCategory">カテゴリ</label><input id="inventoryFormCategory" type="text" placeholder="例：短剣 / 回復薬 / 草花 / 調合レシピ" /></div>
@@ -1113,7 +1114,7 @@ button,.tab,.subtab,.editor-tab{
       <div class="field" data-inventory-kind-field="accessory"><label for="inventoryFormSpellSlots">術式登録枠</label><input id="inventoryFormSpellSlots" type="number" min="0" max="99" value="" placeholder="魔印/聖印用" /></div>
       <div class="field" data-inventory-kind-field="weapon item spell"><label for="inventoryFormTarget">対象</label><input id="inventoryFormTarget" type="text" placeholder="例：味方1体 / 敵1体" /></div>
       <div class="field" data-inventory-kind-field="weapon item spell"><label for="inventoryFormCheckType">判定</label><input id="inventoryFormCheckType" type="text" placeholder="例：回避値 / 防御値 / 抵抗値" /></div>
-      <div class="field" data-inventory-kind-field="weapon item spell"><label for="inventoryFormElement">属性</label><select id="inventoryFormElement"><option value="">未選択</option><option>物</option><option>火</option><option>水</option><option>風</option><option>雷</option><option>光</option><option>闇</option><option>無</option></select></div>
+      <div class="field" data-inventory-kind-field="weapon item spell"><label for="inventoryFormElement">属性</label><select id="inventoryFormElement"><option value="">未選択</option><option>物</option><option>火</option><option>水</option><option>風</option><option>雷</option><option>光</option><option>闇</option><option>無</option><option>可変</option><option>矢弾依存</option></select></div>
       <div class="field" data-inventory-kind-field="spell"><label for="inventoryFormCost">コスト</label><input id="inventoryFormCost" type="text" placeholder="例：MP1 / MP2" /></div>
       <div class="field inventory-wide" data-inventory-kind-field="recipe"><label for="inventoryFormRecipeResult">完成品</label><input id="inventoryFormRecipeResult" type="text" placeholder="例：ポーション ×1" /></div>
       <div class="field inventory-wide" data-inventory-kind-field="recipe"><label for="inventoryFormMaterials">必要素材</label><textarea id="inventoryFormMaterials" placeholder="例：薬草×1、澄んだ水×1"></textarea></div>
@@ -1208,7 +1209,7 @@ const SKILL_CATEGORIES = [
 ];
 const HAND_TYPE_OPTIONS = ['なし','短剣','片手剣','片手斧','片手槌','片手槍','鞭','杖','盾','大盾','魔導書','祈祷書','両手剣','大槌','長槍','弓','弩','大型弩','大鎌'];
 const TWO_HAND_TYPES = new Set(['両手剣','大槌','長槍','弓','弩','大型弩','大鎌']);
-const ELEMENT_TYPES = ['','物','火','水','風','雷','光','闇','無'];
+const ELEMENT_TYPES = ['','物','火','水','風','雷','光','闇','無','可変','矢弾依存'];
 function elementSelectOptions(selected='') {
   const current = String(selected || '').trim();
   return ELEMENT_TYPES.map(v => `<option value="${esc(v)}" ${current === v ? 'selected' : ''}>${esc(v || '未選択')}</option>`).join('');
@@ -3267,6 +3268,7 @@ function normalizeInventoryItem(item={}) {
     bagCapacity: kind === 'バッグ' ? parseBagCapacity(item) : '',
     quiverCapacity: kind === '矢筒' ? parseQuiverCapacity(item) : '',
     ammoKind: String(item.ammoKind || item.ammoType || '').trim(),
+    compatibleWeaponTypes: String(item.compatibleWeaponTypes || item.compatibleWeapons || '').trim(),
     location: '倉庫',
     rank: String(item.rank || '').trim(),
     price: String(item.price || '').trim(),
@@ -3421,11 +3423,11 @@ function renderInventory() {
     const equipMeta = [item.equipSlot ? '装備/使用枠：' + item.equipSlot : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : '', item.hit ? '命中補正：' + item.hit : '', item.defense ? '防御値：' + item.defense : '', item.guard ? '防御行動値：' + item.guard : '', item.evade ? '回避補正：' + item.evade : '', item.offhand ? '副手追撃値：' + item.offhand : '', inventoryKindSupportsUpgradeLimit(item.kind) && item.upgradeLimit ? '強化枠上限：' + item.upgradeLimit : '', inventoryKindSupportsUpgradeLimit(item.kind) && item.upgradeMaterialMinRank ? '強化素材最低ランク：' + characterPlayerRankLabel(item.upgradeMaterialMinRank) : ''].filter(Boolean).join(' / ') || '—';
     const spellMeta = item.kind === '術式' ? [item.category ? '種別：' + item.category : '', item.element ? '属性：' + item.element : '', item.cost ? 'コスト：' + item.cost : '', item.target ? '対象：' + item.target : '', item.power ? 'ダメージ/威力：' + item.power : '', item.checkType ? '判定：' + checkExpressionDisplay(item.checkType) : '', item.role ? '役割：' + item.role : ''].filter(Boolean).join(' / ') : '';
     const recipeMeta = item.kind === 'レシピ' ? [item.recipeResult ? '完成品：' + item.recipeResult : '', item.materials ? '必要素材：' + item.materials : ''].filter(Boolean).join('\n') : '';
-    const itemUseMeta = ['アイテム','素材','矢筒','バッグ'].includes(item.kind) ? [item.target ? '対象：' + item.target : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : '', item.cost ? 'コスト：' + item.cost : '', item.checkType ? '判定：' + checkExpressionDisplay(item.checkType) : '', item.ammoKind ? '矢弾種別：' + item.ammoKind : '', item.spellSlots ? '最大スタック数：' + item.spellSlots : '', item.quiverCapacity ? '矢筒収納種類数：' + item.quiverCapacity : '', item.bagCapacity ? 'バッグ容量：' + item.bagCapacity : '', item.source ? '入手先：' + item.source : '', item.tags ? 'タグ：' + item.tags : ''].filter(Boolean).join(' / ') : '';
+    const itemUseMeta = ['アイテム','素材','矢筒','バッグ'].includes(item.kind) ? [item.target ? '対象：' + item.target : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : '', item.cost ? 'コスト：' + item.cost : '', item.checkType ? '判定：' + checkExpressionDisplay(item.checkType) : '', item.ammoKind ? '矢弾種別：' + item.ammoKind : '', item.compatibleWeaponTypes ? '対応武器種：' + item.compatibleWeaponTypes : '', item.spellSlots ? '最大スタック数：' + item.spellSlots : '', item.quiverCapacity ? '矢筒収納種類数：' + item.quiverCapacity : '', item.bagCapacity ? 'バッグ容量：' + item.bagCapacity : '', item.source ? '入手先：' + item.source : '', item.tags ? 'タグ：' + item.tags : ''].filter(Boolean).join(' / ') : '';
     const spellSlotMeta = item.spellSlots && ['武器','防具','装飾品','術式'].includes(item.kind) ? `術式登録枠：${item.spellSlots}` : '';
     const savedUpgradeMeta = serializeUpgradeEntries(item.upgradeEntries || parseUpgradeLines(item.upgradeLines || ''));
     const bagMeta = item.kind === 'バッグ' ? `バッグ容量：${clampInt(item.capacity || 0, 0, 99)}` : '';
-    const searchText = [title, item.kind, item.category, item.rank, item.price, item.equipSlot, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.upgradeLimit, item.upgradeMaterialMinRank, item.spellSlots, item.capacity, item.bagCapacity, item.quiverCapacity, item.ammoKind, item.target, item.element, item.cost, item.power, item.description, item.effect, item.checkType, item.role, item.source, item.tags, item.recipeResult, item.materials, item.upgradeLines].filter(Boolean).join(' ');
+    const searchText = [title, item.kind, item.category, item.rank, item.price, item.equipSlot, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.upgradeLimit, item.upgradeMaterialMinRank, item.spellSlots, item.capacity, item.bagCapacity, item.quiverCapacity, item.ammoKind, item.compatibleWeaponTypes, item.target, item.element, item.cost, item.power, item.description, item.effect, item.checkType, item.role, item.source, item.tags, item.recipeResult, item.materials, item.upgradeLines].filter(Boolean).join(' ');
     return `
     <details class="inventory-card" open data-inventory-row="${index}" data-inventory-id="${esc(item.id || '')}" data-inventory-location="倉庫" data-inventory-kind="${esc(item.kind || 'アイテム')}" data-inventory-search="${esc(searchText)}">
       <summary class="inventory-card-head">
@@ -3486,6 +3488,7 @@ function openInventoryDialog(index=-1) {
   if ($('inventoryFormCapacity')) $('inventoryFormCapacity').value = item.capacity || 8;
   if ($('inventoryFormQuiverCapacity')) $('inventoryFormQuiverCapacity').value = item.quiverCapacity || 1;
   if ($('inventoryFormAmmoKind')) $('inventoryFormAmmoKind').value = item.ammoKind || '';
+  if ($('inventoryFormCompatibleWeaponTypes')) $('inventoryFormCompatibleWeaponTypes').value = item.compatibleWeaponTypes || '';
   if ($('inventoryFormRank')) $('inventoryFormRank').value = item.rank || '';
   if ($('inventoryFormPrice')) $('inventoryFormPrice').value = item.price || '';
   if ($('inventoryFormCategory')) $('inventoryFormCategory').value = item.category || '';
@@ -3520,6 +3523,7 @@ function collectInventoryDialogItem() {
     bagCapacity: $('inventoryFormCapacity')?.value || '',
     quiverCapacity: $('inventoryFormQuiverCapacity')?.value || '',
     ammoKind: $('inventoryFormAmmoKind')?.value || '',
+    compatibleWeaponTypes: $('inventoryFormCompatibleWeaponTypes')?.value || '',
     location: '倉庫',
     rank: $('inventoryFormRank')?.value || '',
     price: $('inventoryFormPrice')?.value || '',
@@ -3619,6 +3623,7 @@ function dbItemToInventoryItem(row) {
     bagCapacity: row.bagCapacity || '',
     quiverCapacity: row.quiverCapacity || '',
     ammoKind: row.ammoKind || '',
+    compatibleWeaponTypes: row.compatibleWeaponTypes || '',
     rank: row.rank || '',
     price: row.price || '',
     equipSlot: row.equipSlot || '',
@@ -4266,6 +4271,7 @@ function defaultElementForEquipmentRow(row={}) {
   ].map(v => String(v || '').trim()).filter(Boolean).join(' / ');
   if (!text) return '';
   if (/魔導書|祈祷書|魔印|聖印/.test(text)) return '';
+  if (/弓|弩|クロスボウ|バリスタ/.test(text)) return '矢弾依存';
   if (/盾|大盾/.test(text) && !/剣|斧|槌|杖|槍|弓|弩|短剣/.test(text)) return '';
   const slotKind = (typeof equipmentSlotKind === 'function') ? equipmentSlotKind(row) : '';
   if (slotKind === 'hand' && /武器|近接|射撃|短剣|剣|斧|槌|杖|槍|鞭|弓|弩/.test(text)) return '物';
