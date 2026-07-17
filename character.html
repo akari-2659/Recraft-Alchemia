@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.207</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.211</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -282,6 +282,7 @@
   .quiver-ammo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
   .quiver-slot-card { border: 1px dashed rgba(101, 139, 121, .42); border-radius: 12px; padding: 8px; background: rgba(255,255,255,.52); }
   .quiver-slot-card label { font-size: .82rem; font-weight: 900; color: var(--muted); display:block; margin-bottom:4px; }
+  .quiver-slot-fields { display:grid; grid-template-columns:minmax(0,1fr) 86px; gap:8px; align-items:end; }
 
   .bag-control-panel { border: 1px solid rgba(152, 103, 52, .28); background: rgba(255, 250, 240, .78); border-radius: 14px; padding: 12px; margin: 10px 0 14px; }
   .bag-control-grid { display: grid; grid-template-columns: 1fr; gap: 10px; align-items: end; }
@@ -745,12 +746,12 @@ button,.tab,.subtab,.editor-tab{
 
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.207 / 最終更新日：2026年7月17日</div>
+<div class="ra-build-info">Version：v90.8.211 / 最終更新日：2026年7月17日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.207 / 最終更新日：2026年7月17日</div>
+  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.211 / 最終更新日：2026年7月17日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -997,7 +998,7 @@ button,.tab,.subtab,.editor-tab{
               <div class="field">
                 <label for="quiverSelect">矢筒装備</label>
                 <select id="quiverSelect" data-inventory-input="1"><option value="">矢筒未装備</option></select>
-                <p class="hint">矢筒は初期支給されません。倉庫に登録した矢筒を装備すると、収納できる矢弾枠を入力できます。矢筒は所持品枠を消費しません。</p>
+                <p class="hint">矢筒は初期支給されません。倉庫に登録した矢筒を装備すると、矢弾をスタック単位で収納できます。同じ矢弾を複数枠へ分けて入れることもできます。矢筒は所持品枠を消費しません。</p>
               </div>
               <div>
                 <div id="quiverCapacityStatus" class="bag-status">倉庫にある矢筒を装備してください。</div>
@@ -1037,7 +1038,7 @@ button,.tab,.subtab,.editor-tab{
           </details>
           <div class="mini-card">
             <h3>公開ID登録</h3>
-            <p class="hint">GMや進行管理HTMLから受け取った登録IDと個数だけを入力して、DB照合で倉庫へ追加します。アイテム一覧検索は行いません。</p>
+            <p class="hint">GMや進行管理HTMLから受け取った登録IDと個数だけを入力して、DB照合で倉庫へ追加します。個数0でも登録・保存できます。アイテム一覧検索は行いません。</p>
             <div class="inventory-form-grid">
               <div class="field">
                 <label for="publicIdInput">登録ID</label>
@@ -1045,7 +1046,7 @@ button,.tab,.subtab,.editor-tab{
               </div>
               <div class="field">
                 <label for="publicIdCountInput">個数</label>
-                <input id="publicIdCountInput" data-inventory-input="1" type="number" min="1" max="9999" value="1" />
+                <input id="publicIdCountInput" data-inventory-input="1" type="number" min="0" max="9999" value="1" />
               </div>
             </div>
             <div class="button-row">
@@ -1780,7 +1781,7 @@ function pushInventorySummaryLines(lines, inventory={}) {
   lines.push('■ 倉庫');
   for (const item of items) {
     if (!(item.name || item.category || item.note)) continue;
-    lines.push(`${item.name || '未設定'}${item.count ? ' ×' + item.count : ''}${item.location ? ' / ' + item.location : ''}${item.kind ? ' / ' + item.kind : ''}${item.rank ? ' / ' + inventoryRankLabel(item) : ''}${item.element ? ' / 属性:' + item.element : ''}${item.cost ? ' / コスト:' + item.cost : ''}`);
+    lines.push(`${item.name || '未設定'}${item.count !== undefined && item.count !== null ? ' ×' + item.count : ''}${item.location ? ' / ' + item.location : ''}${item.kind ? ' / ' + item.kind : ''}${item.rank ? ' / ' + inventoryRankLabel(item) : ''}${item.element ? ' / 属性:' + item.element : ''}${item.cost ? ' / コスト:' + item.cost : ''}`);
     if (item.category || item.price) lines.push(`  ${[item.category ? 'カテゴリ:' + item.category : '', item.price ? '価格/売価:' + item.price : ''].filter(Boolean).join(' / ')}`);
     if (item.description) lines.push(`  ${String(item.description).replace(/\n/g, ' ')}`);
     if (item.note) lines.push(`  ${String(item.note).replace(/\n/g, ' ')}`);
@@ -2792,7 +2793,7 @@ function defaultEquipment() {
   const equipment = {};
   for (const slot of EQUIPMENT_SLOTS) {
     equipment[slot.key] = slot.kind === 'carry'
-      ? { itemId:'', name:'', type:'なし', count:1, element:'', description:'', note:'' }
+      ? { itemId:'', name:'', type:'なし', count:1, element:'', description:'', note:'', warehouseAllocated:false, warehouseItemId:'' }
       : { itemId:'', name:'', type:'なし', element:'', power:'', offhand:'', reloadTurns:'', modifiers:'', upgradeLimit:'', upgradeMaterialMinRank:'', upgradeLines:'', upgradeEntries:[], knownSpells:'', setSpells:'', description:'', target:'', checkType:'', role:'', source:'', tags:'', setItem:'', note:'' };
   }
   equipment.memo = '';
@@ -2814,6 +2815,9 @@ function getEquipmentState() {
         continue;
       }
       base.count = clampInt($('equip_' + slot.key + '_count')?.value || 1, 0, 99);
+      const allocation = carryWarehouseAllocationState[slot.key] || {};
+      base.warehouseAllocated = !!allocation.warehouseAllocated;
+      base.warehouseItemId = allocation.warehouseItemId || (base.warehouseAllocated ? base.itemId : '');
     } else {
       const isBook = isSpellBookType(base.type);
       base.power = isBook ? '' : ($('equip_' + slot.key + '_power')?.value?.trim() || '');
@@ -2840,6 +2844,7 @@ function getEquipmentState() {
 function setEquipmentState(equipment={}) {
   refreshEquipmentTypeSelects();
   refreshEquipmentItemSelects();
+  carryWarehouseAllocationState = {};
   const defaults = defaultEquipment();
   const eq = { ...defaults, ...(equipment || {}) };
   for (const slot of EQUIPMENT_SLOTS) {
@@ -2861,6 +2866,14 @@ function setEquipmentState(equipment={}) {
     if ($('equip_' + slot.key + '_note')) $('equip_' + slot.key + '_note').value = item.note || '';
     if (slot.kind === 'carry') {
       if ($('equip_' + slot.key + '_count')) $('equip_' + slot.key + '_count').value = item.count ?? 1;
+      carryWarehouseAllocationState[slot.key] = {
+        warehouseAllocated:!!item.warehouseAllocated,
+        warehouseItemId:String(item.warehouseItemId || (item.warehouseAllocated ? item.itemId : '') || '').trim(),
+        count:clampInt(item.count || 1, 0, 9999),
+        maxStack:selectedRow ? inventoryStackLimit(selectedRow) : 99
+      };
+      const countInput = $('equip_' + slot.key + '_count');
+      if (countInput) countInput.max = String(carryWarehouseAllocationState[slot.key].maxStack || 99);
     } else {
       if ($('equip_' + slot.key + '_power')) $('equip_' + slot.key + '_power').value = item.power || '';
       if ($('equip_' + slot.key + '_offhand')) $('equip_' + slot.key + '_offhand').value = item.offhand || '';
@@ -3001,6 +3014,7 @@ let inventoryItemsState = [];
 let selectedBagId = '';
 let selectedQuiverId = '';
 let quiverAmmoSlotsState = {};
+let carryWarehouseAllocationState = {};
 
 function defaultInventory() {
   const basicBag = { id:'bag_simple', masterId:'', masterSheet:'', masterSync:'', name:'簡素なバッグ', kind:'バッグ', itemType:'バッグ', category:'バッグ', itemCategory:'バッグ', count:1, capacity:8, bagCapacity:8, location:'倉庫', rank:1, price:'', equipSlot:'', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', spellSlots:'', target:'', element:'', cost:'', checkType:'', role:'', source:'初期支給 / 鍛冶屋', tags:'バッグ,初期倉庫', setItem:'', description:'冒険に必要な最低限の荷物を入れられる簡素なバッグ。', effect:'所持品枠8。', recipeResult:'', materials:'', note:'' };
@@ -3069,7 +3083,9 @@ function normalizeInventoryState(inventory) {
         : (Array.isArray(inventory?.storage) ? inventory.storage : [])));
   return {
     items: src.filter(Boolean).map(item => normalizeInventoryItem({ ...item, location:'倉庫' })),
-    bagId:String(inventory && !Array.isArray(inventory) ? (inventory.bagId || inventory.selectedBagId || inventory.selectedBag || '') : '').trim()
+    bagId:String(inventory && !Array.isArray(inventory) ? (inventory.bagId || inventory.selectedBagId || inventory.selectedBag || '') : '').trim(),
+    quiverId:String(inventory && !Array.isArray(inventory) ? (inventory.quiverId || inventory.selectedQuiverId || inventory.selectedQuiver || '') : '').trim(),
+    quiverAmmoSlots:inventory && !Array.isArray(inventory) ? (inventory.quiverAmmoSlots || inventory.ammoSlots || {}) : {}
   };
 }
 function defaultInventoryLocation() { return '倉庫'; }
@@ -3156,6 +3172,63 @@ function parseQuiverCapacity(itemOrValue) {
 function inventoryAmmoRows() {
   return (inventoryItemsState || []).map(item => normalizeInventoryItem(item)).filter(item => /矢弾|矢|ボルト|弾/.test([item.kind,item.itemType,item.category,item.name,item.tags].join(' ')));
 }
+function inventoryStackLimit(item={}) {
+  const value = Number(item.maxStack || item.spellSlots || item.stackLimit || 0);
+  return value > 0 ? clampInt(value, 1, 9999) : 99;
+}
+function warehouseItemIndex(itemId='', itemName='') {
+  const id = String(itemId || '').trim();
+  const name = String(itemName || '').trim();
+  return (inventoryItemsState || []).findIndex(raw => {
+    const row = normalizeInventoryItem(raw);
+    return (id && (inventoryItemKey(row) === id || row.id === id || row.masterId === id)) || (!id && name && row.name === name);
+  });
+}
+function warehouseItemByKey(itemId='', itemName='') {
+  const index = warehouseItemIndex(itemId, itemName);
+  return index >= 0 ? normalizeInventoryItem(inventoryItemsState[index]) : null;
+}
+function adjustWarehouseItemCount(itemId='', delta=0, itemName='') {
+  const index = warehouseItemIndex(itemId, itemName);
+  if (index < 0) return false;
+  const row = normalizeInventoryItem(inventoryItemsState[index]);
+  const next = Number(row.count || 0) + Number(delta || 0);
+  if (next < 0) return false;
+  inventoryItemsState[index] = normalizeInventoryItem({ ...row, count:clampInt(next, 0, 9999) });
+  return true;
+}
+function refreshWarehouseQuantityViews({quiver=true}={}) {
+  renderInventory();
+  refreshEquipmentItemSelects();
+  if (quiver) renderQuiverControls();
+  updateSummary();
+}
+function normalizeQuiverAmmoSlotState(value) {
+  if (!value) return null;
+  if (typeof value === 'string') {
+    const row = warehouseItemByKey('', value);
+    return { itemId:row ? inventoryItemKey(row) : '', name:value, count:0, maxStack:row ? inventoryStackLimit(row) : 99, warehouseAllocated:false };
+  }
+  const itemId = String(value.itemId || value.id || value.masterId || '').trim();
+  const name = String(value.name || '').trim();
+  if (!itemId && !name) return null;
+  const row = warehouseItemByKey(itemId, name);
+  return {
+    itemId:itemId || (row ? inventoryItemKey(row) : ''),
+    name:name || row?.name || '',
+    count:clampInt(value.count || value.quantity || 0, 0, 9999),
+    maxStack:clampInt(value.maxStack || (row ? inventoryStackLimit(row) : 99), 1, 9999),
+    warehouseAllocated:!!value.warehouseAllocated
+  };
+}
+function normalizeQuiverAmmoSlotsState(slots={}) {
+  const result = {};
+  for (const [key, value] of Object.entries(slots || {})) {
+    const normalized = normalizeQuiverAmmoSlotState(value);
+    if (normalized) result[key] = normalized;
+  }
+  return result;
+}
 function selectedQuiverItem() {
   const key = String(selectedQuiverId || '').trim();
   if (!key) return null;
@@ -3183,6 +3256,54 @@ function carrySlotHasContent(slotKey) {
   return !!(name || desc || note || (type && type !== 'なし') || count > 1);
 }
 
+function releaseQuiverAmmoSlot(slotKey, {refresh=false}={}) {
+  const state = normalizeQuiverAmmoSlotState(quiverAmmoSlotsState[slotKey]);
+  if (state?.warehouseAllocated && state.count > 0) adjustWarehouseItemCount(state.itemId, state.count, state.name);
+  delete quiverAmmoSlotsState[slotKey];
+  if (refresh) refreshWarehouseQuantityViews();
+}
+function releaseAllQuiverAmmoSlots({refresh=false}={}) {
+  for (const key of Object.keys(quiverAmmoSlotsState || {})) releaseQuiverAmmoSlot(key);
+  quiverAmmoSlotsState = {};
+  if (refresh) refreshWarehouseQuantityViews();
+}
+function selectQuiverAmmoForSlot(slotKey, itemId='') {
+  const oldState = normalizeQuiverAmmoSlotState(quiverAmmoSlotsState[slotKey]);
+  const nextId = String(itemId || '').trim();
+  if (oldState?.warehouseAllocated && oldState.itemId === nextId) return;
+  releaseQuiverAmmoSlot(slotKey);
+  if (!nextId) {
+    refreshWarehouseQuantityViews();
+    return;
+  }
+  const row = warehouseItemByKey(nextId);
+  const available = Number(row?.count || 0);
+  if (!row || available <= 0) {
+    showToast('倉庫に残っている矢弾がありません。', 'warn');
+    refreshWarehouseQuantityViews();
+    return;
+  }
+  const maxStack = inventoryStackLimit(row);
+  const count = Math.min(maxStack, available);
+  if (!adjustWarehouseItemCount(nextId, -count, row.name)) return;
+  quiverAmmoSlotsState[slotKey] = { itemId:nextId, name:row.name, count, maxStack, warehouseAllocated:true };
+  refreshWarehouseQuantityViews();
+}
+function updateQuiverAmmoSlotCount(slotKey, rawValue) {
+  const state = normalizeQuiverAmmoSlotState(quiverAmmoSlotsState[slotKey]);
+  if (!state?.warehouseAllocated) return;
+  const warehouse = warehouseItemByKey(state.itemId, state.name);
+  const available = Number(warehouse?.count || 0);
+  const desired = clampInt(rawValue || 1, 1, state.maxStack || 99);
+  const allowed = Math.min(desired, state.count + available);
+  const delta = allowed - state.count;
+  if (delta > 0) adjustWarehouseItemCount(state.itemId, -delta, state.name);
+  if (delta < 0) adjustWarehouseItemCount(state.itemId, -delta, state.name);
+  quiverAmmoSlotsState[slotKey] = { ...state, count:allowed };
+  if (allowed !== desired) showToast(`倉庫在庫の範囲で${allowed}個に調整しました。`, 'warn');
+  refreshWarehouseQuantityViews();
+}
+
 function renderQuiverControls() {
   const select = $('quiverSelect');
   const status = $('quiverCapacityStatus');
@@ -3202,12 +3323,19 @@ function renderQuiverControls() {
     area.innerHTML = '';
     return;
   }
-  status.textContent = `${q.name}：矢弾${cap}種類まで収納できます。矢筒は装備枠「矢筒」に装備し、所持品枠を消費しません。`;
+  status.textContent = `${q.name}：矢弾スタック${cap}枠。同じ矢弾を複数枠へ分けて収納できます。矢筒は所持品枠を消費しません。`;
   const ammo = inventoryAmmoRows();
   area.innerHTML = Array.from({length:cap}, (_,idx) => {
     const key = `slot${idx+1}`;
-    const val = quiverAmmoSlotsState[key] || '';
-    return `<div class="quiver-slot-card"><label>矢弾枠${idx+1}</label><select data-quiver-ammo-slot="${key}"><option value="">未設定</option>${ammo.map(a => `<option value="${esc(a.name)}" ${a.name === val ? 'selected' : ''}>${esc(a.name)}${a.count ? ` ×${esc(a.count)}` : ''}</option>`).join('')}</select></div>`;
+    const state = normalizeQuiverAmmoSlotState(quiverAmmoSlotsState[key]);
+    const selectedId = state?.itemId || '';
+    const options = ammo.map(a => {
+      const id = inventoryItemKey(a);
+      return `<option value="${esc(id)}" ${id === selectedId ? 'selected' : ''}>${esc(a.name)} / 倉庫${esc(a.count)}</option>`;
+    }).join('');
+    const count = state?.count || 1;
+    const maxStack = state?.maxStack || 99;
+    return `<div class="quiver-slot-card"><label>矢弾枠${idx+1}</label><div class="quiver-slot-fields"><select data-inventory-input="1" data-quiver-ammo-slot="${key}"><option value="">未設定（倉庫へ戻す）</option>${options}</select><div><label>個数</label><input data-inventory-input="1" type="number" min="1" max="${esc(maxStack)}" value="${esc(count)}" data-quiver-ammo-count="${key}" ${state?.warehouseAllocated ? '' : 'disabled'} /></div></div></div>`;
   }).join('');
 }
 
@@ -3349,7 +3477,7 @@ function carryEquipmentLooksLikeSpell(item={}) {
   return !!findSpellInventoryItemByIdOrName(item);
 }
 function resetCarryEquipmentItem(base) {
-  Object.assign(base, { itemId:'', name:'', type:'なし', count:1, element:'', description:'', note:'' });
+  Object.assign(base, { itemId:'', name:'', type:'なし', count:1, element:'', description:'', note:'', warehouseAllocated:false, warehouseItemId:'' });
 }
 
 function isCarrySlotKey(slotKey) {
@@ -3359,14 +3487,14 @@ function isCarrySlotKey(slotKey) {
 function getInventoryState() {
   syncAllEquipmentUpgradesToInventory();
   const items = inventoryItemsState.map(item => normalizeInventoryItem(item)).filter(item => item.name || item.category || item.power || item.description || item.effect || item.capacity || item.count > 0);
-  return { items, bagId:selectedBagId || '' };
+  return { items, bagId:selectedBagId || '', quiverId:selectedQuiverId || '', quiverAmmoSlots:normalizeQuiverAmmoSlotsState(quiverAmmoSlotsState) };
 }
 function setInventoryState(inventory=defaultInventory()) {
   const normalized = normalizeInventoryState(inventory);
   inventoryItemsState = normalized.items;
   selectedBagId = normalized.bagId || '';
   selectedQuiverId = normalized.quiverId || '';
-  quiverAmmoSlotsState = normalized.quiverAmmoSlots || {};
+  quiverAmmoSlotsState = normalizeQuiverAmmoSlotsState(normalized.quiverAmmoSlots || {});
   ensureDefaultBagItem();
   if (!selectedBagId) {
     const defaultBag = inventoryItemsState.find(item => isBagInventoryItem(item) && (inventoryItemKey(item) === 'bag_simple' || item.id === 'bag_simple' || item.name === '簡素なバッグ'));
@@ -3527,12 +3655,13 @@ function openInventoryDialog(index=-1) {
   $('inventoryDialog')?.showModal();
 }
 function collectInventoryDialogItem() {
+  const countValue = $('inventoryFormCount')?.value;
   return normalizeInventoryItem({
     id: '',
     name: $('inventoryFormName')?.value || '',
     kind: $('inventoryFormKind')?.value || defaultInventoryKind(),
     category: $('inventoryFormCategory')?.value || '',
-    count: $('inventoryFormCount')?.value || 1,
+    count: countValue === '' || countValue == null ? 1 : countValue,
     capacity: $('inventoryFormCapacity')?.value || '',
     bagCapacity: $('inventoryFormCapacity')?.value || '',
     quiverCapacity: $('inventoryFormQuiverCapacity')?.value || '',
@@ -3620,6 +3749,12 @@ function dbItemTypeToInventoryKind(row) {
   if (type === '素材') return '素材';
   return 'アイテム';
 }
+const INITIAL_FULL_STACK_ITEM_IDS = new Set(['ammo_arrow_normal', 'ammo_bolt_normal']);
+function initialInventoryCountForMasterRow(row={}) {
+  const id = String(row.id || '').trim();
+  if (!hasInitialMasterToken(row) || !INITIAL_FULL_STACK_ITEM_IDS.has(id)) return 1;
+  return Math.max(1, Math.floor(Number(row.maxStack) || 1));
+}
 function dbItemToInventoryItem(row) {
   const kind = dbItemTypeToInventoryKind(row);
   const mappedCategory = row.itemCategory || row.materialCategory || row.itemType || '';
@@ -3632,7 +3767,7 @@ function dbItemToInventoryItem(row) {
     name: row.name || '',
     kind,
     category: mappedCategory,
-    count: 1,
+    count: initialInventoryCountForMasterRow(row),
     capacity: isBagLikeFields(row) ? parseBagCapacity(row.bagCapacity || row.capacity || row.effect || row.description || '') : 0,
     bagCapacity: row.bagCapacity || '',
     quiverCapacity: row.quiverCapacity || '',
@@ -3772,7 +3907,7 @@ function mergeInitialPresetIntoInventoryItem(existing={}, preset={}) {
     masterId: base.masterId || base.id || oldItem.masterId || '',
     masterSheet: base.masterSheet || oldItem.masterSheet || '',
     masterSync: INITIAL_MASTER_TOKEN,
-    count: oldItem.count || base.count || 1,
+    count: oldItem.count !== undefined && oldItem.count !== null ? oldItem.count : (base.count || 1),
     upgradeEntries: oldItem.upgradeEntries || [],
     upgradeLines: oldItem.upgradeLines || serializeUpgradeEntries(oldItem.upgradeEntries || []),
     location: '倉庫',
@@ -3790,7 +3925,7 @@ function mergeMasterPresetIntoInventoryItem(existing={}, preset={}) {
     masterId: base.masterId || base.id || oldItem.masterId || '',
     masterSheet: base.masterSheet || oldItem.masterSheet || '',
     masterSync: isInitial ? INITIAL_MASTER_TOKEN : (oldItem.masterSync || base.masterSync || ''),
-    count: oldItem.count || base.count || 1,
+    count: oldItem.count !== undefined && oldItem.count !== null ? oldItem.count : (base.count || 1),
     upgradeEntries: oldItem.upgradeEntries || [],
     upgradeLines: oldItem.upgradeLines || serializeUpgradeEntries(oldItem.upgradeEntries || []),
     location: '倉庫',
@@ -3830,7 +3965,10 @@ function parsePublicIdPasteEntries(text=''){
     const block = raw.slice(start, end).trim();
     let count = 1;
     const countMatch = block.match(/(?:個数|数量|count|x|×)\s*[：:=]?\s*(\d+)/i) || block.match(new RegExp(entry.id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[^\\d\\n]*(\\d+)', 'i'));
-    if(countMatch) count = Math.max(1, Number(countMatch[1]) || 1);
+    if(countMatch){
+      const parsedCount = Number(countMatch[1]);
+      count = Number.isFinite(parsedCount) ? clampInt(parsedCount, 0, 9999) : 1;
+    }
     return { publicId:entry.id, count, raw:block || entry.id };
   });
 }
@@ -3859,7 +3997,7 @@ function mergePublicIdInventoryItem(existing={}, preset={}, addCount=1){
     publicId: base.publicId || oldItem.publicId || '',
     masterId: base.masterId || base.id || oldItem.masterId || '',
     masterSheet: base.masterSheet || oldItem.masterSheet || '',
-    count: total || addCount || oldItem.count || base.count || 1,
+    count: total,
     upgradeEntries: oldItem.upgradeEntries || [],
     upgradeLines: oldItem.upgradeLines || serializeUpgradeEntries(oldItem.upgradeEntries || []),
     location: '倉庫'
@@ -3873,7 +4011,8 @@ async function addInventoryByPublicIdPaste(){
   const rawId = String(idInput?.value || '').trim().toUpperCase();
   const idMatch = rawId.match(/RCA-[A-Z0-9]{4}-[A-Z0-9]{3,4}/i);
   const publicId = canonicalRegistrationId(idMatch ? idMatch[0] : rawId);
-  const count = clampInt(countInput?.value || 1, 1, 9999);
+  const rawCount = countInput?.value;
+  const count = clampInt(rawCount === '' || rawCount == null ? 1 : rawCount, 0, 9999);
   if(!publicId || !/^RCA-[A-Z0-9]{4}-[A-Z0-9]{4}$/i.test(publicId)){
     if(status){ status.className='status-box warn'; status.textContent='登録IDを RCA-XXXX-XXXX 形式で入力してください。'; }
     return;
@@ -4016,6 +4155,16 @@ function duplicateInventoryItem(index) {
 }
 function deleteInventoryItem(index) {
   const deleting = inventoryItemsState[index] ? normalizeInventoryItem(inventoryItemsState[index]) : null;
+  const deletingId = deleting ? inventoryItemKey(deleting) : '';
+  const usedInCarry = deletingId && Object.values(carryWarehouseAllocationState || {}).some(v => v?.warehouseAllocated && v.warehouseItemId === deletingId);
+  const usedInQuiver = deletingId && Object.values(quiverAmmoSlotsState || {}).some(v => {
+    const state = normalizeQuiverAmmoSlotState(v);
+    return state?.warehouseAllocated && state.itemId === deletingId;
+  });
+  if (usedInCarry || usedInQuiver) {
+    showToast('所持品または矢筒へ移している分を倉庫へ戻してから削除してください。', 'warn');
+    return;
+  }
   if (deleting && selectedBagId && (inventoryItemKey(deleting) === selectedBagId || String(deleting.id || '').trim() === selectedBagId || String(deleting.masterId || '').trim() === selectedBagId)) selectedBagId = '';
   inventoryItemsState.splice(index, 1);
   renderInventory();
@@ -4086,7 +4235,11 @@ function setReadOnly(readOnly) {
     if ($('skill_other_' + key)) $('skill_other_' + key).disabled = readOnly;
   }
   for (const el of document.querySelectorAll('[data-equipment-input]')) el.disabled = readOnly;
-  for (const el of document.querySelectorAll('[data-inventory-input]')) el.disabled = readOnly;
+  for (const el of document.querySelectorAll('[data-inventory-input]')) {
+    const quiverSlot = el.dataset?.quiverAmmoCount || '';
+    const quiverState = quiverSlot ? normalizeQuiverAmmoSlotState(quiverAmmoSlotsState[quiverSlot]) : null;
+    el.disabled = readOnly || (!!quiverSlot && !quiverState?.warehouseAllocated);
+  }
   for (const btn of document.querySelectorAll('[data-inventory-action]')) btn.disabled = readOnly;
   if ($('addInventoryItemBtn')) $('addInventoryItemBtn').disabled = readOnly;
   if ($('sortInventoryItemBtn')) $('sortInventoryItemBtn').disabled = readOnly;
@@ -4390,9 +4543,9 @@ function refreshEquipmentItemSelects() {
     if (!select) continue;
     const current = select.value || '';
     const items = equipmentCandidateRows().filter(row => itemMatchesEquipmentSlot(row, slot));
-    const options = ['<option value="">手入力</option>'].concat(items.map(row => {
+    const options = [`<option value="">${slot.kind === 'carry' ? '未選択（倉庫へ戻す）' : '手入力'}</option>`].concat(items.map(row => {
       const key = inventoryItemKey(row);
-      const label = [row.name, row.kind, row.category, row.element ? '属性:' + row.element : ''].filter(Boolean).join(' / ');
+      const label = [row.name, row.kind, row.category, slot.kind === 'carry' ? '倉庫:' + row.count : '', row.element ? '属性:' + row.element : ''].filter(Boolean).join(' / ');
       return `<option value="${esc(key)}">${esc(label)}</option>`;
     }));
     select.innerHTML = options.join('');
@@ -4410,17 +4563,93 @@ function setTypeSelectValue(slotKey, value) {
   }
   select.value = v;
 }
+function releaseCarryWarehouseAllocation(slotKey, {refresh=false}={}) {
+  const allocation = carryWarehouseAllocationState[slotKey] || {};
+  if (allocation.warehouseAllocated && allocation.count > 0) {
+    adjustWarehouseItemCount(allocation.warehouseItemId, allocation.count);
+  }
+  carryWarehouseAllocationState[slotKey] = { warehouseAllocated:false, warehouseItemId:'', count:0, maxStack:99 };
+  if (refresh) refreshWarehouseQuantityViews({quiver:false});
+}
+function clearCarrySlotFields(slotKey) {
+  const select = $('equip_' + slotKey + '_itemSelect');
+  if (select) select.value = '';
+  if ($('equip_' + slotKey + '_name')) $('equip_' + slotKey + '_name').value = '';
+  setTypeSelectValue(slotKey, 'なし');
+  if ($('equip_' + slotKey + '_count')) {
+    $('equip_' + slotKey + '_count').value = '1';
+    $('equip_' + slotKey + '_count').max = '99';
+  }
+  if ($('equip_' + slotKey + '_description')) $('equip_' + slotKey + '_description').value = '';
+  if ($('equip_' + slotKey + '_note')) $('equip_' + slotKey + '_note').value = '';
+}
+function applyWarehouseItemToCarrySlot(slotKey, row=null) {
+  const nextId = row ? inventoryItemKey(row) : '';
+  const old = carryWarehouseAllocationState[slotKey] || {};
+  if (row && old.warehouseAllocated && old.warehouseItemId === nextId) return;
+  releaseCarryWarehouseAllocation(slotKey);
+  if (!row) {
+    clearCarrySlotFields(slotKey);
+    refreshWarehouseQuantityViews({quiver:false});
+    updateEquipmentSummaries();
+    applyBagCapacityToEquipmentSlots();
+    return;
+  }
+  const available = Number(row.count || 0);
+  if (available <= 0) {
+    clearCarrySlotFields(slotKey);
+    refreshWarehouseQuantityViews({quiver:false});
+    showToast('倉庫に残っている個数がありません。', 'warn');
+    return;
+  }
+  const maxStack = inventoryStackLimit(row);
+  const count = Math.min(maxStack, available, 99);
+  if (!adjustWarehouseItemCount(nextId, -count, row.name)) return;
+  carryWarehouseAllocationState[slotKey] = { warehouseAllocated:true, warehouseItemId:nextId, count, maxStack };
+  if ($('equip_' + slotKey + '_name')) $('equip_' + slotKey + '_name').value = row.name || '';
+  setTypeSelectValue(slotKey, row.category || row.kind || 'なし');
+  if ($('equip_' + slotKey + '_count')) {
+    $('equip_' + slotKey + '_count').value = String(count);
+    $('equip_' + slotKey + '_count').max = String(Math.min(maxStack, 99));
+  }
+  if ($('equip_' + slotKey + '_description')) $('equip_' + slotKey + '_description').value = row.description || '';
+  if ($('equip_' + slotKey + '_note')) $('equip_' + slotKey + '_note').value = row.effect || '';
+  refreshWarehouseQuantityViews({quiver:false});
+  updateEquipmentSummaries();
+  applyBagCapacityToEquipmentSlots();
+}
+function updateCarryWarehouseAllocationCount(slotKey, rawValue) {
+  const allocation = carryWarehouseAllocationState[slotKey] || {};
+  if (!allocation.warehouseAllocated) return;
+  const warehouse = warehouseItemByKey(allocation.warehouseItemId);
+  const available = Number(warehouse?.count || 0);
+  const desired = clampInt(rawValue || 1, 1, Math.min(allocation.maxStack || 99, 99));
+  const allowed = Math.min(desired, Number(allocation.count || 0) + available);
+  const delta = allowed - Number(allocation.count || 0);
+  if (delta > 0) adjustWarehouseItemCount(allocation.warehouseItemId, -delta);
+  if (delta < 0) adjustWarehouseItemCount(allocation.warehouseItemId, -delta);
+  carryWarehouseAllocationState[slotKey] = { ...allocation, count:allowed };
+  const input = $('equip_' + slotKey + '_count');
+  if (input) input.value = String(allowed);
+  if (allowed !== desired) showToast(`倉庫在庫の範囲で${allowed}個に調整しました。`, 'warn');
+  refreshWarehouseQuantityViews({quiver:false});
+  updateEquipmentSummaries();
+  applyBagCapacityToEquipmentSlots();
+}
 function applyCsItemToEquipmentSlot(slotKey) {
   const select = $('equip_' + slotKey + '_itemSelect');
   const row = findCsItemById(select?.value || '');
-  if (!row) return;
-  if (isCarrySlotKey(slotKey) && isSpellInventoryItem(row)) {
-    if (select) select.value = '';
-    showToast('所持品には術式を直接選択できません。魔導書/祈祷書などの術式枠から選択してください。', 'warn');
-    updateEquipmentSummaries();
+  if (isCarrySlotKey(slotKey)) {
+    if (row && isSpellInventoryItem(row)) {
+      if (select) select.value = '';
+      showToast('所持品には術式を直接選択できません。魔導書/祈祷書などの術式枠から選択してください。', 'warn');
+      return;
+    }
+    applyWarehouseItemToCarrySlot(slotKey, row);
     updateSummary();
     return;
   }
+  if (!row) return;
   const typeValue = row.category || row.kind || 'なし';
   if ($('equip_' + slotKey + '_name')) $('equip_' + slotKey + '_name').value = row.name || '';
   setTypeSelectValue(slotKey, typeValue);
@@ -5441,8 +5670,16 @@ function bindEvents() {
       applyCsItemToEquipmentSlot(slotKey);
       return;
     }
+    if (e.target.id?.startsWith('equip_') && e.target.id.endsWith('_count')) {
+      const slotKey = e.target.id.replace(/^equip_/, '').replace(/_count$/, '');
+      if (isCarrySlotKey(slotKey)) {
+        updateCarryWarehouseAllocationCount(slotKey, e.target.value);
+        return;
+      }
+    }
     if (e.target.id?.startsWith('equip_') && e.target.id.endsWith('_type')) {
       const slotKey = e.target.id.replace(/^equip_/, '').replace(/_type$/, '');
+      if (isCarrySlotKey(slotKey)) releaseCarryWarehouseAllocation(slotKey, {refresh:true});
       const itemSelect = $('equip_' + slotKey + '_itemSelect');
       if (itemSelect) itemSelect.value = '';
       applyEquipmentPreset(slotKey);
@@ -5504,13 +5741,17 @@ init();
 document.addEventListener('change', (ev) => {
   const target = ev.target;
   if (target && target.id === 'quiverSelect') {
+    releaseAllQuiverAmmoSlots();
     selectedQuiverId = target.value || '';
-    quiverAmmoSlotsState = {};
-    renderQuiverControls();
+    refreshWarehouseQuantityViews();
     if (typeof autoSaveDraftSoon === 'function') autoSaveDraftSoon();
   }
   if (target && target.dataset && target.dataset.quiverAmmoSlot) {
-    quiverAmmoSlotsState[target.dataset.quiverAmmoSlot] = target.value || '';
+    selectQuiverAmmoForSlot(target.dataset.quiverAmmoSlot, target.value || '');
+    if (typeof autoSaveDraftSoon === 'function') autoSaveDraftSoon();
+  }
+  if (target && target.dataset && target.dataset.quiverAmmoCount) {
+    updateQuiverAmmoSlotCount(target.dataset.quiverAmmoCount, target.value);
     if (typeof autoSaveDraftSoon === 'function') autoSaveDraftSoon();
   }
 });
