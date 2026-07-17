@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.202</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.207</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -714,6 +714,11 @@ button,.tab,.subtab,.editor-tab{
 }
 </style>
 
+<style id="raActionBarCollapseV203">
+#editorActionBar.collapsed .editor-action-inner{display:none!important}
+#editorActionBar:not(.collapsed) .editor-action-inner{display:flex!important}
+#actionBarToggleBtn{white-space:nowrap!important}
+</style>
 
 <style id="raCharacterLayoutAuditV167">
 /* v90.8.175: キャラシのページ切替と主要操作を、巨大化させず用途別に整理 */
@@ -740,12 +745,12 @@ button,.tab,.subtab,.editor-tab{
 
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.202 / 最終更新日：2026年7月16日</div>
+<div class="ra-build-info">Version：v90.8.207 / 最終更新日：2026年7月17日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.202 / 最終更新日：2026年7月16日</div>
+  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.207 / 最終更新日：2026年7月17日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -1062,7 +1067,7 @@ button,.tab,.subtab,.editor-tab{
 </main>
 
 <div id="editorActionBar" class="editor-action-bar collapsed" aria-label="編集操作">
-  <button id="actionBarToggleBtn" type="button" class="editor-action-toggle">操作</button>
+  <button id="actionBarToggleBtn" type="button" class="editor-action-toggle" aria-expanded="false">操作を開く</button>
   <div class="editor-action-inner">
     <button id="saveBtn" type="button">保存</button>
     <button id="outputBtn" type="button" class="secondary">出力</button>
@@ -1111,7 +1116,7 @@ button,.tab,.subtab,.editor-tab{
         <button type="button" class="ghost" data-modifier-add="inventoryFormModifierRows">補正値を追加</button>
         <div class="small">装備に付く補正を登録します。</div>
       </div>
-      <div class="field" data-inventory-kind-field="accessory"><label for="inventoryFormSpellSlots">術式登録枠</label><input id="inventoryFormSpellSlots" type="number" min="0" max="99" value="" placeholder="魔印/聖印用" /></div>
+      <div class="field" data-inventory-kind-field="accessory"><label for="inventoryFormSpellSlots">術式／祈祷枠</label><input id="inventoryFormSpellSlots" type="number" min="0" max="99" value="" placeholder="魔印/聖印用" /></div>
       <div class="field" data-inventory-kind-field="weapon item spell"><label for="inventoryFormTarget">対象</label><input id="inventoryFormTarget" type="text" placeholder="例：味方1体 / 敵1体" /></div>
       <div class="field" data-inventory-kind-field="weapon item spell"><label for="inventoryFormCheckType">判定</label><input id="inventoryFormCheckType" type="text" placeholder="例：回避値 / 防御値 / 抵抗値" /></div>
       <div class="field" data-inventory-kind-field="weapon item spell"><label for="inventoryFormElement">属性</label><select id="inventoryFormElement"><option value="">未選択</option><option>物</option><option>火</option><option>水</option><option>風</option><option>雷</option><option>光</option><option>闇</option><option>無</option><option>可変</option><option>矢弾依存</option></select></div>
@@ -1195,7 +1200,7 @@ const SKILL_CATEGORIES = [
     { key:'design', name:'設計', desc:'仕組みを考える', detail:'装備、道具、設備、罠、構造物などの仕組みを考える判定に使用します。レシピの改良、装備の設計、工房設備の調整、構造の解析などに関わります。' },
   ]},
   { key:'will', name:'意志系', ability:'will', skills:[
-    { key:'resist', name:'抵抗', desc:'状態異常や精神干渉に耐える', detail:'毒、呪い、恐怖、麻痺、精神干渉、弱体化などに耐える判定に使用します。術式や魔物の特殊効果のうち、身体や精神に作用する効果へ抗う場面で使います。' },
+    { key:'resist', name:'抵抗', desc:'状態異常や精神干渉に耐える', detail:'毒、呪い、恐怖、麻痺、精神干渉、弱体化などに耐える基準です。身体・精神・状態に作用する効果へ使用します。抵抗値 = 5 + 抵抗技能値 + 装備などの抵抗補正。' },
     { key:'focus', name:'集中', desc:'行動を維持する', detail:'長時間の作業、高難度の調合、儀式、継続的な魔力操作など、精神を乱さずに行動を続ける判定に使用します。戦闘中は、妨害を受けながら術式や特殊な行動を維持する場面でも使います。' },
     { key:'magic', name:'魔法', desc:'魔法術式', detail:'魔法術式を使用する時の判定に使用します。魔法術式でダメージを与える場合、術式ダメージに魔法へ振り分けたポイント分のダメージを追加します。' },
     { key:'prayer', name:'祈祷', desc:'祈祷術式', detail:'祈祷術式を使用する時の判定に使用します。祈祷術式でダメージや回復を行う場合、術式の効果量に祈祷へ振り分けたポイント分を追加します。浄化、加護、回復、精神支援にも関わります。' },
@@ -1721,7 +1726,7 @@ function makeSummary() {
   lines.push(`HP:${res.currentHp}/${res.maxHp}（HPボーナス${res.hpBonus}点） / MP:${res.currentMp}/${res.maxMp}（MPボーナス${res.mpBonus}点）`);
   lines.push(`疲労度:${res.fatigue} / すべての判定:${res.fatiguePenalty||'補正なし'}`);
   const combat = computeCombatStats(abilities, data.skills || defaultSkillAlloc(), data.equipment || {});
-  lines.push(`防御値:${combat.defenseValue} / 防御技能軽減:${combat.defenseSkillPoints} / 常時軽減:${combat.constantDamageReduction} / 防御行動値:${combat.guardActionValue} / 回避:${combat.evasionTotal}`);
+  lines.push(`防御値:${combat.defenseValue} / 防御技能軽減:${combat.defenseSkillPoints} / 常時軽減:${combat.constantDamageReduction} / 防御行動値:${combat.guardActionValue} / 回避:${combat.evasionTotal} / 抵抗:${combat.resistanceTotal}`);
   if (combat.dualWield?.available) lines.push(`二刀攻撃:${combat.dualWield.rightMain} / ${combat.dualWield.leftMain}`);
   lines.push('');
   lines.push('■ 装備');
@@ -1796,7 +1801,7 @@ function modifierTargetOptionsHtml(selected='') {
     ]],
     ['技能', SKILL_CATEGORIES.flatMap(cat => cat.skills.map(sk => ['skill:' + sk.key, sk.name]))],
     ['戦闘', [
-      ['hit','命中'], ['combat:defense','防御値'], ['combat:guardAction','防御行動値'], ['combat:evasion','回避値'], ['combat:initiative','先制値']
+      ['hit','命中'], ['combat:defense','防御値'], ['combat:guardAction','防御行動値'], ['combat:evasion','回避値'], ['combat:resistance','抵抗値']
     ]],
     ['リソース', [
       ['resource:maxHp','最大HP'], ['resource:maxMp','最大MP']
@@ -1818,7 +1823,8 @@ function modifierTargetDisplayName(target='') {
   if(key === 'combat:defense') return '防御値';
   if(key === 'combat:guardAction') return '防御行動値';
   if(key === 'combat:evasion') return '回避値';
-  if(key === 'combat:initiative') return '先制値';
+  if(key === 'combat:resistance') return '抵抗値';
+  if(key === 'combat:initiative') return '感知';
   if(key === 'resource:maxHp') return '最大HP';
   if(key === 'resource:maxMp') return '最大MP';
   if(['skill:monsterKnowledge','skill:materialKnowledge','skill:elementKnowledge'].includes(key)) return '知識';
@@ -1839,14 +1845,14 @@ function normalizeModifierRow(row={}) {
   const aliases = {
     '命中':'hit', '命中補正':'hit', 'hitMod':'hit', 'hit':'hit',
     '防御':'combat:defense', '防御値':'combat:defense', '常時防御':'combat:defense', '常時防御値':'combat:defense', 'alwaysDefense':'combat:defense', 'defense':'combat:defense',
-    '回避値':'combat:evasion',
+    '回避値':'combat:evasion', '抵抗値':'combat:resistance', '抵抗補正':'combat:resistance',
     '回避':'skill:evade', '回避補正':'skill:evade', 'evasionMod':'skill:evade', 'evade':'skill:evade',
     '防御行動':'combat:guardAction', '防御行動値':'combat:guardAction', 'guardValue':'combat:guardAction', 'guard':'combat:guardAction',
     '知識':'skill:knowledge',
     'monsterKnowledge':'skill:knowledge', 'materialKnowledge':'skill:knowledge', 'elementKnowledge':'skill:knowledge',
     'skill:monsterKnowledge':'skill:knowledge', 'skill:materialKnowledge':'skill:knowledge', 'skill:elementKnowledge':'skill:knowledge',
     '体力':'ability:body', '器用':'ability:dexterity', '感覚':'ability:sense', '知性':'ability:intellect', '意志':'ability:will', '魅力':'ability:charm',
-    '最大HP':'resource:maxHp', 'HP':'resource:maxHp', '最大MP':'resource:maxMp', 'MP':'resource:maxMp', '先制':'combat:initiative', '先制値':'combat:initiative'
+    '最大HP':'resource:maxHp', 'HP':'resource:maxHp', '最大MP':'resource:maxMp', 'MP':'resource:maxMp', '先制':'skill:detect', '先制値':'skill:detect', 'combat:initiative':'skill:detect'
   };
   const target = /^知識[:：]/.test(rawTarget) ? 'skill:knowledge' : (aliases[rawTarget] || rawTarget);
   return target || value ? { target, value } : null;
@@ -1977,7 +1983,7 @@ function upgradeEntryModifierRow(entry={}) {
   const aliases = {
     '命中':'hit', '命中補正':'hit',
     '防御':'combat:defense', '防御値':'combat:defense', '常時防御':'combat:defense', '常時防御値':'combat:defense',
-    '回避値':'combat:evasion',
+    '回避値':'combat:evasion', '抵抗値':'combat:resistance', '抵抗補正':'combat:resistance',
     '回避':'skill:evade', '回避補正':'skill:evade',
     '防御行動':'combat:guardAction', '防御行動値':'combat:guardAction',
     'HP':'resource:maxHp', '最大HP':'resource:maxHp',
@@ -2097,14 +2103,15 @@ function combineGuardActionValues(values=[]) {
 }
 
 function computeEquipmentCombatModifiers(equipment=getEquipmentState()) {
-  const mods = { defense:0, evasion:0, initiative:0, maxHp:0, maxMp:0, guardActionValue:'0', guardActionTerms:[] };
+  const mods = { defense:0, evasion:0, resistance:0, maxHp:0, maxMp:0, guardActionValue:'0', guardActionTerms:[] };
   const dualHandSums = {};
   const guardActionTerms = [];
   const add = (key, value) => { if(key in mods && key !== 'guardActionValue' && key !== 'guardActionTerms') mods[key] += value; };
   const targetToKey = target => {
     if (target === 'combat:defense') return 'defense';
     if (target === 'combat:evasion') return 'evasion';
-    if (target === 'combat:initiative') return 'initiative';
+    if (target === 'combat:resistance') return 'resistance';
+    if (target === 'combat:initiative') return ''; // 旧データはnormalizeModifierRowで感知へ移行
     if (target === 'resource:maxHp') return 'maxHp';
     if (target === 'resource:maxMp') return 'maxMp';
     return '';
@@ -2251,7 +2258,10 @@ function computeCombatStats(abilities=computeAbilities(), alloc=getSkillAlloc(),
   const evadeSkill = totals.evade?.total || 0;
   const evadeModifier = (totals.evade?.equipmentOther || 0) + combatMods.evasion;
   const evasionTotal = 5 + evadeSkill + combatMods.evasion;
-  return { defenseTotal:defenseValue, defenseValue, defenseSkillPoints, constantDamageReduction, guardActionValue, evasionTotal, evadeSkill, evadeModifier, combatMods, hitMods: equipmentHitModifierStats(equipment), dualWield: computeDualWieldStats(equipment) };
+  const resistSkill = totals.resist?.total || 0;
+  const resistModifier = (totals.resist?.equipmentOther || 0) + combatMods.resistance;
+  const resistanceTotal = 5 + resistSkill + combatMods.resistance;
+  return { defenseTotal:defenseValue, defenseValue, defenseSkillPoints, constantDamageReduction, guardActionValue, evasionTotal, evadeSkill, evadeModifier, resistanceTotal, resistSkill, resistModifier, combatMods, hitMods: equipmentHitModifierStats(equipment), dualWield: computeDualWieldStats(equipment) };
 }
 function updateCombatStats() {
   const combat = computeCombatStats(computeAbilities(), getSkillAlloc(), getEquipmentState());
@@ -2281,6 +2291,10 @@ function updateCombatStats() {
       <div class="ability-card computed-card">
         <div class="ability-name">回避値</div>
         <div class="computed-value big">${combat.evasionTotal}</div>
+      </div>
+      <div class="ability-card computed-card">
+        <div class="ability-name">抵抗値</div>
+        <div class="computed-value big">${combat.resistanceTotal}</div>
       </div>
       ${hitCards}
       ${combat.dualWield?.available ? `
@@ -2337,17 +2351,17 @@ function getSkillPointTotal(skillKey, alloc=getSkillAlloc()) {
   const row = alloc?.[skillKey] || {};
   return (Number(row.cat) || 0) + (Number(row.free) || 0) + (Number(row.other) || 0);
 }
-function selectedSpellSlotBase(slotKey, info) {
+function selectedSpellSlotBonus(slotKey='') {
+  if (!slotKey) return 0;
   const row = findCsItemById($('equip_' + slotKey + '_itemSelect')?.value || '');
   const n = Number(row && row.spellSlots);
-  if (Number.isFinite(n) && n > 0) return Math.floor(n);
-  return info?.baseSlots || 0;
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
 }
 function spellSlotUpgradeBonus(slotKey='') {
   if (!slotKey) return 0;
   return collectUpgradeEntries(slotKey).reduce((sum, entry) => {
     const content = String(entry?.content || '').trim();
-    if (!/術式登録枠|術式枠増加/.test(content)) return sum;
+    if (!/術式登録枠|術式枠増加|術式枠|祈祷枠/.test(content)) return sum;
     const parsed = Number(String(entry?.value || '').replace(/[^0-9+.-]/g,''));
     return sum + (Number.isFinite(parsed) && parsed !== 0 ? Math.max(0, Math.floor(parsed)) : 1);
   }, 0);
@@ -2355,13 +2369,12 @@ function spellSlotUpgradeBonus(slotKey='') {
 function spellSlotLimitForType(type, alloc=getSkillAlloc(), slotKey='') {
   const info = spellContainerKind(type);
   if (!info) return 0;
-  // 魔導書・祈祷書は「1 + 対応技能ポイント + 強化による術式枠追加」。
-  // 魔印・聖印は装備固有の固定枠 + 強化分として扱う。
-  const base = info.growsWithPoint
-    ? info.baseSlots
-    : (slotKey ? selectedSpellSlotBase(slotKey, info) : info.baseSlots);
+  // 魔導書・祈祷書：基本1 + 対応技能P + 装備固有枠補正 + 強化枠補正。
+  // 魔印・聖印：基本1 + 装備固有枠補正 + 強化枠補正。
+  const base = info.baseSlots || 0;
   const skillPoint = info.growsWithPoint ? getSkillPointTotal(info.pointKey, alloc) : 0;
-  return Math.max(0, base + skillPoint + spellSlotUpgradeBonus(slotKey));
+  const equipmentBonus = selectedSpellSlotBonus(slotKey);
+  return Math.max(0, base + skillPoint + equipmentBonus + spellSlotUpgradeBonus(slotKey));
 }
 function splitFormulaList(text) {
   return String(text || '').split(/[\n,、，\/]+/).map(v => v.trim()).filter(Boolean);
@@ -2485,7 +2498,7 @@ function syncSpellSetHidden(slotKey) {
   hidden.value = names.join('\n');
   hidden.dataset.pendingSpells = hidden.value;
 }
-const EQUIPMENT_UPGRADE_OPTIONS = ['','威力','命中補正','防御値','防御行動値','回避補正','副手追撃値','術式登録枠','消費コスト軽減','回復量','最大スタック数','HP','MP','属性効果','特殊効果','その他'];
+const EQUIPMENT_UPGRADE_OPTIONS = ['','威力','命中補正','防御貫通','防御値','防御行動値','回避補正','副手追撃値','術式枠','消費コスト軽減','回復量','最大スタック数','HP','MP','属性効果','特殊効果','その他'];
 
 function normalizeUpgradeEntry(entry={}){
   let content = String(entry.content || entry.type || entry.name || entry.label || '').trim();
@@ -2734,12 +2747,13 @@ function updateSpellSlotHints() {
     if (info && label) {
       const limit = spellSlotLimitForType(type, alloc, slot.key);
       const used = selectedSpellNames(slot.key).length;
-      const skillPoint = getSkillPointTotal(info.pointKey, alloc);
-      const base = info.growsWithPoint ? info.baseSlots : selectedSpellSlotBase(slot.key, info);
+      const skillPoint = info.growsWithPoint ? getSkillPointTotal(info.pointKey, alloc) : 0;
+      const base = info.baseSlots || 0;
+      const equipmentBonus = selectedSpellSlotBonus(slot.key);
       const upgrade = spellSlotUpgradeBonus(slot.key);
       const formula = info.growsWithPoint
-        ? `基本${base}+${info.label}P${skillPoint}+強化${upgrade}`
-        : `固定${base}+強化${upgrade}`;
+        ? `基本${base}+${info.label}P${skillPoint}+装備${equipmentBonus}+強化${upgrade}`
+        : `基本${base}+装備${equipmentBonus}+強化${upgrade}`;
       label.textContent = `${info.label}枠 ${limit}（${formula}） / セット${used}件`;
       label.classList.toggle('warning', used > limit);
       if (help) help.textContent = ownedSpellRowsForInfo(info).length ? `倉庫の${info.label}術式から選択してください。` : `倉庫に${info.label}術式がありません。倉庫タブで術式を登録してください。`;
@@ -3424,7 +3438,7 @@ function renderInventory() {
     const spellMeta = item.kind === '術式' ? [item.category ? '種別：' + item.category : '', item.element ? '属性：' + item.element : '', item.cost ? 'コスト：' + item.cost : '', item.target ? '対象：' + item.target : '', item.power ? 'ダメージ/威力：' + item.power : '', item.checkType ? '判定：' + checkExpressionDisplay(item.checkType) : '', item.role ? '役割：' + item.role : ''].filter(Boolean).join(' / ') : '';
     const recipeMeta = item.kind === 'レシピ' ? [item.recipeResult ? '完成品：' + item.recipeResult : '', item.materials ? '必要素材：' + item.materials : ''].filter(Boolean).join('\n') : '';
     const itemUseMeta = ['アイテム','素材','矢筒','バッグ'].includes(item.kind) ? [item.target ? '対象：' + item.target : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : '', item.cost ? 'コスト：' + item.cost : '', item.checkType ? '判定：' + checkExpressionDisplay(item.checkType) : '', item.ammoKind ? '矢弾種別：' + item.ammoKind : '', item.compatibleWeaponTypes ? '対応武器種：' + item.compatibleWeaponTypes : '', item.spellSlots ? '最大スタック数：' + item.spellSlots : '', item.quiverCapacity ? '矢筒収納種類数：' + item.quiverCapacity : '', item.bagCapacity ? 'バッグ容量：' + item.bagCapacity : '', item.source ? '入手先：' + item.source : '', item.tags ? 'タグ：' + item.tags : ''].filter(Boolean).join(' / ') : '';
-    const spellSlotMeta = item.spellSlots && ['武器','防具','装飾品','術式'].includes(item.kind) ? `術式登録枠：${item.spellSlots}` : '';
+    const spellSlotMeta = item.spellSlots && ['武器','防具','装飾品','術式'].includes(item.kind) ? `術式枠補正：+${item.spellSlots}` : '';
     const savedUpgradeMeta = serializeUpgradeEntries(item.upgradeEntries || parseUpgradeLines(item.upgradeLines || ''));
     const bagMeta = item.kind === 'バッグ' ? `バッグ容量：${clampInt(item.capacity || 0, 0, 99)}` : '';
     const searchText = [title, item.kind, item.category, item.rank, item.price, item.equipSlot, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.upgradeLimit, item.upgradeMaterialMinRank, item.spellSlots, item.capacity, item.bagCapacity, item.quiverCapacity, item.ammoKind, item.compatibleWeaponTypes, item.target, item.element, item.cost, item.power, item.description, item.effect, item.checkType, item.role, item.source, item.tags, item.recipeResult, item.materials, item.upgradeLines].filter(Boolean).join(' ');
@@ -3631,7 +3645,7 @@ function dbItemToInventoryItem(row) {
     offhand: row.offhandBonus || '',
     upgradeLimit: row.upgradeLimit || '',
     upgradeMaterialMinRank: row.upgradeMaterialMinRank || row.rank || '',
-    spellSlots: row.maxStack || row.spellSlots || '',
+    spellSlots: ['武器', '防具', '装飾品'].includes(kind) ? (row.spellSlots || '') : (row.maxStack || row.spellSlots || ''),
     target: row.target || '',
     element: row.element || row.attribute || row.attributeType || row.elementName || row['属性'] || row['属性種別'] || row['攻撃属性'] || row['ダメージ属性'] || '',
     cost: formatMpCost(row.mpCost || row.cost || ''),
@@ -4146,13 +4160,24 @@ function openEditor(mode, data=null) {
   setReadOnly(mode === 'view');
   $('editorStatus').className = 'status-box';
   $('editorStatus').textContent = mode === 'view' ? '閲覧モードです。編集する場合は「編集に切替」を押してください。' : '編集中です。クラウドへ保存できます。';
-  if ($('editorActionBar')) $('editorActionBar').classList.add('collapsed');
+  setActionBarCollapsed(true);
   showEditorTab('ability');
   setView('editor');
   scheduleInitialInventorySyncForEditor(mode);
 }
 
 
+
+function setActionBarCollapsed(collapsed=true) {
+  const bar = $('editorActionBar');
+  const btn = $('actionBarToggleBtn');
+  if (!bar) return;
+  bar.classList.toggle('collapsed', !!collapsed);
+  if (btn) {
+    btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    btn.textContent = collapsed ? '操作を開く' : '操作を閉じる';
+  }
+}
 
 function stripRuntimeOnlyData(data) {
   const clone = JSON.parse(JSON.stringify(data || {}));
@@ -4710,8 +4735,8 @@ function generateTokenExport(data=collectData(false)) {
   const totals = skillTotals(abilities, skills, equipment);
   const defense = Number(combat.constantDamageReduction) || 0;
   const evasion = Number(combat.evasionTotal) || 0;
-  const resistance = Number(totals.resist?.total) || 0;
-  const initiative = (Number(abilities.sense) || 0) + (Number(combat.combatMods?.initiative) || 0);
+  const resistance = Number(combat.resistanceTotal) || 0;
+  const initiative = 0; // PCには先制値が存在しないため、ココフォリア互換欄は0固定。
   const params = ABILITIES.map(a => ({ label:a.name, value:String(abilities[a.key] ?? 0) }));
   params.push({label:'疲労度',value:String(res.fatigue||0)},{label:'疲労判定補正',value:String(res.fatiguePenalty||0)});
 
@@ -4761,7 +4786,7 @@ function makeSummaryFromData(data) {
   lines.push(`HP:${res.currentHp}/${res.maxHp}（HPボーナス${res.hpBonus}点） / MP:${res.currentMp}/${res.maxMp}（MPボーナス${res.mpBonus}点）`);
   lines.push(`疲労度:${res.fatigue} / すべての判定:${res.fatiguePenalty||'補正なし'}`);
   const combat = computeCombatStats(abilities, data.skills || defaultSkillAlloc(), data.equipment || {});
-  lines.push(`防御値:${combat.defenseValue} / 防御技能軽減:${combat.defenseSkillPoints} / 常時軽減:${combat.constantDamageReduction} / 防御行動値:${combat.guardActionValue} / 回避:${combat.evasionTotal}`);
+  lines.push(`防御値:${combat.defenseValue} / 防御技能軽減:${combat.defenseSkillPoints} / 常時軽減:${combat.constantDamageReduction} / 防御行動値:${combat.guardActionValue} / 回避:${combat.evasionTotal} / 抵抗:${combat.resistanceTotal}`);
   if (combat.dualWield?.available) lines.push(`二刀攻撃:${combat.dualWield.rightMain} / ${combat.dualWield.leftMain}`);
   lines.push('');
   lines.push('■ 装備');
@@ -4953,7 +4978,8 @@ function collectWeaponDamagePaletteLines(data={}, totals={}) {
         offhandBonus = paletteOffhandBonusForItem(otherMerged, otherSource);
       }
     }
-    const formula = paletteDamageFormulaWithBonus(power, skillBonus, offhandBonus);
+    const powerBonus = equipmentUpgradeNumericBonus(merged,[/^威力$/, /^威力\+1$/, /^武器威力$/]);
+    const formula = paletteDamageFormulaWithBonus(power, skillBonus + powerBonus, offhandBonus);
     if (!formula) continue;
     const skillLabel = skillKey === 'shoot' ? '射撃' : (skillKey === 'melee' ? '近接' : '');
     const label = twoHand ? `両手武器ダメージ${skillLabel ? '(' + skillLabel + ')' : ''}` : `${spec.label}武器ダメージ${skillLabel ? '(' + skillLabel + ')' : ''}`;
@@ -4975,7 +5001,7 @@ function findPaletteSpellByName(items=[], name='') {
   return dbSpell || null;
 }
 function equipmentUpgradeNumericBonus(item={}, patterns=[]){return parseUpgradeLines(item.upgradeLines||item.upgradeEntries||'').reduce((sum,e)=>patterns.some(p=>p.test(String(e.content||'')))?sum+parseFlatBonus(e.value||1):sum,0);}
-function spellBookPowerBonus(item={}){return equipmentUpgradeNumericBonus(item,[/^威力$/, /術式威力/, /祈祷威力/]);}
+function spellBookPowerBonus(item={}){return equipmentUpgradeNumericBonus(item,[/^威力$/, /^威力\+1$/, /術式威力/, /祈祷威力/]);}
 function spellBookHitBonus(item={}){return equipmentUpgradeNumericBonus(item,[/^命中$/, /^命中補正$/]);}
 function spellBookCostReduction(item={}){return equipmentUpgradeNumericBonus(item,[/消費コスト/, /コスト軽減/]);}
 function spellBookHealBonus(item={}){return equipmentUpgradeNumericBonus(item,[/回復量/]);}
@@ -5287,7 +5313,7 @@ function bindEvents() {
   });
   $('outputBtn').addEventListener('click', () => openOutputDialog(collectData(false)));
   $('shareBtn').addEventListener('click', copyShareData);
-  $('actionBarToggleBtn').addEventListener('click', () => $('editorActionBar').classList.toggle('collapsed'));
+  $('actionBarToggleBtn').addEventListener('click', () => setActionBarCollapsed(!$('editorActionBar').classList.contains('collapsed')));
 
   document.addEventListener('click', e => {
     const add = e.target.closest('[data-modifier-add]');
