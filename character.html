@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.211</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.218</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -746,12 +746,12 @@ button,.tab,.subtab,.editor-tab{
 
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.211 / 最終更新日：2026年7月17日</div>
+<div class="ra-build-info">Version：v90.8.218 / 最終更新日：2026年7月19日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.211 / 最終更新日：2026年7月17日</div>
+  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.218 / 最終更新日：2026年7月19日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -1102,7 +1102,7 @@ button,.tab,.subtab,.editor-tab{
       <div class="field" data-inventory-kind-field="quiver"><label for="inventoryFormQuiverCapacity">矢筒収納種類数</label><input id="inventoryFormQuiverCapacity" type="number" min="0" max="9" value="1" placeholder="例：1 / 2 / 3" /></div>
       <div class="field" data-inventory-kind-field="item"><label for="inventoryFormAmmoKind">矢弾種別</label><input id="inventoryFormAmmoKind" type="text" placeholder="例：矢 / ボルト / 大型ボルト / 汎用矢弾" /></div>
       <div class="field" data-inventory-kind-field="item"><label for="inventoryFormCompatibleWeaponTypes">対応武器種</label><input id="inventoryFormCompatibleWeaponTypes" type="text" placeholder="例：弓 / 弩 / 大型弩" /></div>
-      <div class="field"><label for="inventoryFormRank">ランク</label><input id="inventoryFormRank" type="text" placeholder="例：★1" /></div>
+      <div class="field"><label for="inventoryFormRank">ランク</label><input id="inventoryFormRank" type="number" min="1" step="1" inputmode="numeric" placeholder="例：1（表示は★1）" /></div>
       <div class="field"><label for="inventoryFormPrice">価格/売価</label><input id="inventoryFormPrice" type="text" placeholder="例：30G" /></div>
       <div class="field inventory-wide"><label for="inventoryFormCategory">カテゴリ</label><input id="inventoryFormCategory" type="text" placeholder="例：短剣 / 回復薬 / 草花 / 調合レシピ" /></div>
       <div class="field" data-inventory-kind-field="weapon armor accessory item material important other"><label for="inventoryFormEquipSlot">装備/所持品枠</label><select id="inventoryFormEquipSlot"><option value="">なし</option><option>右手/左手</option><option>両手</option><option>鎧</option><option>装飾品</option><option>所持品</option><option>矢筒</option></select></div>
@@ -2541,12 +2541,12 @@ function parseUpgradeLines(value=''){
 }
 function serializeUpgradeEntries(entries=[]){
   return (entries || []).map(normalizeUpgradeEntry).filter(e=>e.content || e.value || e.rank).map(e=>{
-    const rankPart = e.rank ? ` / ランク：${e.rank}` : '';
+    const rankPart = e.rank ? ` / ランク：${characterPlayerRankLabel(e.rank)}` : '';
     const slotPart = ` / 消費枠：${e.slotCost||1}`;
     if(e.content && e.value) return `${e.content}：${e.value}${rankPart}${slotPart}`;
     if(e.content) return `${e.content}${rankPart}${slotPart}`;
     if(e.value) return `その他：${e.value}${rankPart}${slotPart}`;
-    return `ランク：${e.rank}`;
+    return `ランク：${characterPlayerRankLabel(e.rank)}`;
   }).join('\n');
 }
 function collectUpgradeEntries(slotKey){
