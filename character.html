@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.229</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.231</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -242,6 +242,11 @@
   .field-disabled-by-type { opacity: .55; }
   .spell-slot-badge { display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(184,119,56,.26); background: rgba(184,119,56,.08); color: var(--accent2); border-radius: 999px; padding: 4px 10px; font-size: .82rem; font-weight: 900; }
   .inventory-toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 12px; }
+  .inventory-registration-card { margin-bottom: 18px; }
+  .inventory-list-heading { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px; margin: 20px 0 4px; padding-top: 14px; border-top: 1px solid rgba(221, 203, 176, .9); }
+  .inventory-list-heading h3 { margin: 0 0 3px; }
+  .inventory-list-heading .hint { margin: 0; }
+  .inventory-list-heading > button { flex: 0 1 auto; }
   .inventory-search-panel { border: 1px solid rgba(221, 203, 176, .9); background: rgba(255, 253, 248, .72); border-radius: 14px; padding: 12px; margin: 10px 0 12px; }
   .inventory-filter-panel { border: 1px solid rgba(221, 203, 176, .9); background: rgba(255, 253, 248, .72); border-radius: 14px; padding: 12px; margin: 10px 0 12px; }
   .inventory-filter-panel > summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 10px; align-items: center; font-weight: 900; color: var(--accent2); }
@@ -742,16 +747,17 @@ button,.tab,.subtab,.editor-tab{
   #listView .topbar .button-row>button,.inventory-toolbar>button,.editor-action-inner>button{width:100%!important}
 }
 @media(max-width:380px){.editor-tabs,#listView .topbar .button-row,.inventory-toolbar,.editor-action-inner{grid-template-columns:1fr!important}}
+@media(max-width:520px){.inventory-list-heading{display:grid;grid-template-columns:1fr}.inventory-list-heading>button{width:100%}}
 </style>
 
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.229 / 最終更新日：2026年7月21日</div>
+<div class="ra-build-info">Version：v90.8.231 / 最終更新日：2026年7月21日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.229 / 最終更新日：2026年7月21日</div>
+  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.231 / 最終更新日：2026年7月21日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -1015,7 +1021,35 @@ button,.tab,.subtab,.editor-tab{
       <details class="big-section" open>
         <summary>倉庫</summary>
         <div class="section-body">
-          <p class="hint">旧「所持品」はこの「倉庫」です。拠点に保管しているアイテムを登録します。倉庫には保管上限はありません。装備欄・所持品欄・バッグ選択の候補は、この倉庫一覧から生成されます。名前検索は常時表示し、詳細フィルターは折り畳み式で使用します。</p>
+          <p class="hint">旧「所持品」はこの「倉庫」です。拠点に保管しているアイテムを登録します。倉庫には保管上限はありません。装備欄・所持品欄・バッグ選択の候補は、この倉庫一覧から生成されます。</p>
+          <div class="mini-card inventory-registration-card">
+            <h3>倉庫へ登録</h3>
+            <p class="hint">GMや進行管理HTMLから受け取った登録IDと個数だけを入力して、DB照合で倉庫へ追加します。個数0でも登録・保存できます。</p>
+            <div class="inventory-form-grid">
+              <div class="field">
+                <label for="publicIdInput">登録ID</label>
+                <input id="publicIdInput" data-inventory-input="1" type="text" inputmode="latin" autocomplete="off" />
+              </div>
+              <div class="field">
+                <label for="publicIdCountInput">個数</label>
+                <input id="publicIdCountInput" data-inventory-input="1" type="number" min="0" max="9999" value="1" />
+              </div>
+            </div>
+            <div class="button-row">
+              <button id="addByPublicIdPasteBtn" type="button" class="secondary">登録IDで倉庫へ追加</button>
+              <button id="clearPublicIdPasteBtn" type="button" class="ghost">入力欄をクリア</button>
+              <button id="addInitialWeaponSetBtn" type="button" class="secondary">初期倉庫アイテムをDB同期</button>
+            </div>
+            <div id="publicIdPasteStatus" class="status-box">登録IDと個数を入力してください。</div>
+          </div>
+
+          <div class="inventory-list-heading">
+            <div>
+              <h3>倉庫一覧</h3>
+              <p class="hint">検索・絞り込みの結果を、この直下の一覧へ反映します。</p>
+            </div>
+            <button id="sortInventoryItemBtn" type="button" class="ghost">名称順に整理</button>
+          </div>
           <div class="inventory-search-panel" aria-label="倉庫アイテムの名前検索">
             <div class="inventory-filter-row">
               <div class="inventory-filter-label">名前検索</div>
@@ -1040,29 +1074,6 @@ button,.tab,.subtab,.editor-tab{
               </div>
             </div>
           </details>
-          <div class="mini-card">
-            <h3>公開ID登録</h3>
-            <p class="hint">GMや進行管理HTMLから受け取った登録IDと個数だけを入力して、DB照合で倉庫へ追加します。個数0でも登録・保存できます。アイテム一覧検索は行いません。</p>
-            <div class="inventory-form-grid">
-              <div class="field">
-                <label for="publicIdInput">登録ID</label>
-                <input id="publicIdInput" data-inventory-input="1" type="text" inputmode="latin" autocomplete="off" />
-              </div>
-              <div class="field">
-                <label for="publicIdCountInput">個数</label>
-                <input id="publicIdCountInput" data-inventory-input="1" type="number" min="0" max="9999" value="1" />
-              </div>
-            </div>
-            <div class="button-row">
-              <button id="addByPublicIdPasteBtn" type="button" class="secondary">登録IDで倉庫へ追加</button>
-              <button id="clearPublicIdPasteBtn" type="button" class="ghost">入力欄をクリア</button>
-            </div>
-            <div id="publicIdPasteStatus" class="status-box">登録IDと個数を入力してください。</div>
-          </div>
-          <div class="inventory-toolbar">
-            <button id="addInitialWeaponSetBtn" type="button" class="secondary">初期倉庫アイテムをDB同期</button>
-            <button id="sortInventoryItemBtn" type="button" class="ghost">名称順に整理</button>
-          </div>
           <div id="inventoryArea" class="inventory-list"></div>
           <div id="inventoryEmptyStatus" class="status-box">まだアイテムが登録されていません。</div>
         </div>
