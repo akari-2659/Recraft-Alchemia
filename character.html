@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.231</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.233</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -752,12 +752,12 @@ button,.tab,.subtab,.editor-tab{
 
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.231 / 最終更新日：2026年7月21日</div>
+<div class="ra-build-info">Version：v90.8.233 / 最終更新日：2026年7月21日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.231 / 最終更新日：2026年7月21日</div>
+  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.233 / 最終更新日：2026年7月21日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -3399,6 +3399,10 @@ function inferInventoryItemType(item={}, kind='') {
   if (explicit) return explicit;
   const functionalKind = String(kind || item.kind || '').trim();
   const cat = String(item.itemCategory || item.category || item.type || '').trim();
+  const materialType = String(item.materialType || '').trim();
+  const materialCategory = String(item.materialCategory || '').trim();
+  const tagText = [item.tags,item.usageTags,item.description].map(v => String(v || '')).join(' ');
+  if (materialType || materialCategory || /(?:^|[,、\s])素材(?:$|[,、\s])/.test(tagText)) return '素材';
   if (functionalKind === '術式' && ['魔導書','祈祷書'].includes(cat)) return '武器';
   if (functionalKind === '術式' && (/スクロール/.test(cat) || /スクロール/.test(String(item.name || '')))) return 'スクロール';
   if (cat === '盾') return '盾';
@@ -3406,7 +3410,7 @@ function inferInventoryItemType(item={}, kind='') {
   if (['回復','解除','補助','攻撃','妨害'].includes(cat)) return '調合品';
   if (['戦闘','調合','鍛冶','罠','細工','その他'].includes(cat)) return '道具';
   if (cat === '矢弾' || String(item.ammoKind || '').trim()) return '特殊矢弾';
-  if (/食材|料理専用/.test([item.tags,item.usageTags,item.description].join(' '))) return '食材';
+  if (/食材|料理専用/.test(tagText)) return '食材';
   if (/スクロール/.test(cat) || /スクロール/.test(String(item.name || ''))) return 'スクロール';
   if (functionalKind && functionalKind !== 'アイテム') return functionalKind;
   return 'その他';
@@ -3415,7 +3419,7 @@ function inventorySmallCategory(item={}) {
   const kind = normalizeInventoryKind(item.kind || item.itemType || 'アイテム');
   const type = inferInventoryItemType(item, kind);
   if (kind === 'バッグ' || kind === '矢筒' || type === 'バッグ' || type === '矢筒') return '収納具';
-  if (kind === '素材' || type === '食材') return '素材';
+  if (kind === '素材' || type === '素材' || type === '食材' || String(item.materialType || '').trim() || String(item.materialCategory || '').trim()) return '素材';
   if (kind === 'レシピ') return 'レシピ';
   if (kind === '重要品') return '重要品';
   if (type === '術式装備') return ['魔導書','祈祷書'].includes(String(item.itemCategory || item.category || '').trim()) ? '武器' : 'スクロール';
@@ -3452,6 +3456,7 @@ function normalizeInventoryItem(item={}) {
   if (kind === 'アイテム' && categoryLooksSpell) kind = '術式';
   if (isBagLikeFields({ ...item, kind, category:rawCategory })) kind = 'バッグ';
   if (isQuiverLikeFields({ ...item, kind, category:rawCategory })) kind = '矢筒';
+  if (kind === 'アイテム' && (String(item.materialType || '').trim() || String(item.materialCategory || '').trim() || /(?:^|[,、\s])素材(?:$|[,、\s])/.test(String(item.tags || item.usageTags || '')))) kind = '素材';
   const oldDescription = item['fla' + 'vor' + 'Text'];
   const normalizedUpgradeEntries = parseUpgradeLines(item.upgradeEntries || item.upgradeLines || '');
   const normalizedModifierRows = migrateLegacyDefenseActionRows(parseModifierRows(migratedModifierTextForItem(item)), item);
