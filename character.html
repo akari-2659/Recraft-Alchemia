@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.222</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.225</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -746,12 +746,12 @@ button,.tab,.subtab,.editor-tab{
 
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.222 / 最終更新日：2026年7月19日</div>
+<div class="ra-build-info">Version：v90.8.225 / 最終更新日：2026年7月21日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.222 / 最終更新日：2026年7月19日</div>
+  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.225 / 最終更新日：2026年7月21日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -1178,7 +1178,7 @@ const STAT_CATEGORY_BONUS_LABEL = {
 const SKILL_CATEGORIES = [
   { key:'body', name:'体力系', ability:'body', skills:[
     { key:'athletics', name:'運動', desc:'身体行動', detail:'走る、登る、泳ぐ、跳ぶなど、身体を大きく動かす判定に使用します。足場の悪い場所の移動、障害物の突破、落下や転倒を避ける場面でも使います。' },
-    { key:'force', name:'力業', desc:'力任せの作業・大振り攻撃', detail:'重い物を動かす、押す、引く、壊す、こじ開けるなど、純粋な力で状況を動かす判定に使用します。戦闘中は近接の代わりに力業で武器攻撃を行えます。命中時、通常の武器ダメージに加えて、武器ダメージのダイスを+1個します。ただし追加ダメージに使う技能ポイントは近接を参照します。成否に関わらず、次の自分のターンは行動できず、次の自分のターン開始時まで防御-2を受けます。' },
+    { key:'force', name:'力業', desc:'力任せの作業・大振り攻撃', detail:'重い物を動かす、押す、引く、壊す、こじ開けるなど、純粋な力で状況を動かす判定に使用します。戦闘中は近接の代わりに力業で武器攻撃を行えます。命中時、通常の武器ダメージに加えて武器ダメージのダイスを+1個し、対象の防御値の半分（切り捨て）を無視します。無視するのは防御値のみで、防御技能ポイント、防御行動値、追加軽減、耐性は無視しません。ただし追加ダメージに使う技能ポイントは近接を参照します。成否に関わらず、次の自分のターンは行動できず、次の自分のターン開始時まで防御-2を受けます。' },
     { key:'melee', name:'近接', desc:'近接攻撃', detail:'素手や近接武器で攻撃する時の命中判定に使用します。命中した場合、装備している武器ダメージに、近接へ振り分けたポイント分のダメージを追加します。' },
     { key:'guard', name:'防御', desc:'常時軽減・防御行動・かばう', detail:'防御技能に振り分けたポイントは、防御行動の有無にかかわらず受けるダメージを減らします。防御行動時は、装備の防御行動値も追加で適用します。かばう判定にも使用します。' },
   ]},
