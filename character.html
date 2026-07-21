@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.233</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.234</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -752,12 +752,12 @@ button,.tab,.subtab,.editor-tab{
 
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.233 / 最終更新日：2026年7月21日</div>
+<div class="ra-build-info">Version：v90.8.234 / 最終更新日：2026年7月21日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.233 / 最終更新日：2026年7月21日</div>
+  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.234 / 最終更新日：2026年7月21日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -3415,11 +3415,23 @@ function inferInventoryItemType(item={}, kind='') {
   if (functionalKind && functionalKind !== 'アイテム') return functionalKind;
   return 'その他';
 }
+function isInventoryMaterialLike(item={}, kind='', type='') {
+  const normalizedKind = normalizeInventoryKind(kind || item.kind || item.itemType || 'アイテム');
+  const inferredType = String(type || inferInventoryItemType(item, normalizedKind) || '').trim();
+  const explicitType = String(item.itemType || '').trim();
+  const materialType = String(item.materialType || '').trim();
+  const materialCategory = String(item.materialCategory || '').trim();
+  const tagText = [item.tags,item.usageTags,item.description,item.effect].map(v => String(v || '')).join(' ');
+  if (normalizedKind === '素材' || ['素材','食材'].includes(inferredType) || ['素材','食材'].includes(explicitType)) return true;
+  if (materialType) return true;
+  if (materialCategory && !explicitType && normalizedKind === 'アイテム') return true;
+  return !explicitType && normalizedKind === 'アイテム' && /(?:^|[,、\s])素材(?:$|[,、\s])|食材|料理専用/.test(tagText);
+}
 function inventorySmallCategory(item={}) {
   const kind = normalizeInventoryKind(item.kind || item.itemType || 'アイテム');
   const type = inferInventoryItemType(item, kind);
   if (kind === 'バッグ' || kind === '矢筒' || type === 'バッグ' || type === '矢筒') return '収納具';
-  if (kind === '素材' || type === '素材' || type === '食材' || String(item.materialType || '').trim() || String(item.materialCategory || '').trim()) return '素材';
+  if (isInventoryMaterialLike(item, kind, type)) return '素材';
   if (kind === 'レシピ') return 'レシピ';
   if (kind === '重要品') return '重要品';
   if (type === '術式装備') return ['魔導書','祈祷書'].includes(String(item.itemCategory || item.category || '').trim()) ? '武器' : 'スクロール';
@@ -3473,7 +3485,7 @@ function normalizeInventoryItem(item={}) {
     itemType: inferInventoryItemType(item, kind),
     itemCategory: String(item.itemCategory || item.category || item.type || '').trim(),
     materialType: String(item.materialType || '').trim(),
-    materialCategory: String(item.materialCategory || item.category || item.type || '').trim(),
+    materialCategory: String(item.materialCategory || ((kind === '素材' || ['素材','食材'].includes(String(item.itemType || '').trim()) || String(item.materialType || '').trim()) ? (item.category || item.type || '') : '')).trim(),
     category: String(item.category || item.type || item.itemCategory || item.materialCategory || '').trim(),
     count: clampInt(item.count ?? item.quantity ?? 1, 0, 9999),
     capacity: kind === 'バッグ' ? parseBagCapacity(item) : 0,
