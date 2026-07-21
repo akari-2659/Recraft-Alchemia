@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.225</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.229</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -746,12 +746,12 @@ button,.tab,.subtab,.editor-tab{
 
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.225 / 最終更新日：2026年7月21日</div>
+<div class="ra-build-info">Version：v90.8.229 / 最終更新日：2026年7月21日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.225 / 最終更新日：2026年7月21日</div>
+  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.229 / 最終更新日：2026年7月21日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -1031,8 +1031,12 @@ button,.tab,.subtab,.editor-tab{
                 <div id="inventoryLocationTabs" class="inventory-chip-row"></div>
               </div>
               <div class="inventory-filter-row">
-                <div class="inventory-filter-label">中身の区分</div>
+                <div class="inventory-filter-label">小カテゴリ</div>
                 <div id="inventoryKindTabs" class="inventory-chip-row"></div>
+              </div>
+              <div id="inventoryCategoryFilterRow" class="inventory-filter-row" hidden>
+                <div class="inventory-filter-label">内部カテゴリ</div>
+                <div id="inventoryCategoryTabs" class="inventory-chip-row"></div>
               </div>
             </div>
           </details>
@@ -3006,10 +3010,10 @@ function showEditorTab(tab) {
 
 const INVENTORY_LOCATION_FILTERS = ['全て'];
 const INVENTORY_LOCATION_OPTIONS = ['倉庫'];
-const INVENTORY_KIND_FILTERS = ['全て','武器/防具/装飾品','所持品候補','バッグ','矢筒','素材','レシピ','術式','重要品','その他'];
 const INVENTORY_KIND_OPTIONS = ['アイテム','素材','武器','防具','装飾品','バッグ','矢筒','術式','レシピ','重要品','その他'];
 const INVENTORY_KIND_TOKEN = { '武器':'weapon', '防具':'armor', '装飾品':'accessory', 'アイテム':'item', '素材':'material', 'バッグ':'bag', '矢筒':'quiver', '術式':'spell', 'レシピ':'recipe', '重要品':'important', 'その他':'other' };
-let inventoryViewFilter = { location:'全て', kind:'全て', search:'' };
+const INVENTORY_SMALL_CATEGORY_ORDER = ['武器','防具','盾','装飾品','調合品','道具','特殊矢弾','収納具','素材','スクロール','換金品','レシピ','術式','重要品','その他'];
+let inventoryViewFilter = { location:'全て', itemType:'全て', category:'全て', search:'' };
 let inventoryItemsState = [];
 let selectedBagId = '';
 let selectedQuiverId = '';
@@ -3090,13 +3094,9 @@ function normalizeInventoryState(inventory) {
 }
 function defaultInventoryLocation() { return '倉庫'; }
 function defaultInventoryKind() {
-  if (inventoryViewFilter.kind === '素材') return '素材';
-  if (inventoryViewFilter.kind === '武器/防具/装飾品') return '武器';
-  if (inventoryViewFilter.kind === '術式') return '術式';
-  if (inventoryViewFilter.kind === 'レシピ') return 'レシピ';
-  if (inventoryViewFilter.kind === 'バッグ') return 'バッグ';
-  if (inventoryViewFilter.kind === '重要品') return '重要品';
-  if (inventoryViewFilter.kind === 'その他') return 'その他';
+  const selected = String(inventoryViewFilter.itemType || '').trim();
+  if (selected === '収納具') return 'バッグ';
+  if (['素材','武器','防具','装飾品','バッグ','矢筒','術式','レシピ','重要品','その他'].includes(selected)) return selected;
   return 'アイテム';
 }
 function normalizeInventoryLocation(location) { return '倉庫'; }
@@ -3380,7 +3380,57 @@ function renderBagSelect() {
   applyBagCapacityToEquipmentSlots();
 }
 function emptyInventoryItem() {
-  return { id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), masterId:'', masterSheet:'', masterSync:'', name:'', kind:defaultInventoryKind(), category:'', count:1, capacity:'', location:'倉庫', rank:'', price:'', equipSlot:'', power:'', offhand:'', reloadTurns:'', modifiers:'', upgradeLimit:'', upgradeMaterialMinRank:'', upgradeLines:'', upgradeEntries:[], spellSlots:'', target:'', element:'', cost:'', checkType:'', role:'', source:'', tags:'', setItem:'', description:'', effect:'', recipeResult:'', materials:'', note:'' };
+  const selectedType = String(inventoryViewFilter.itemType || '').trim();
+  return { id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), masterId:'', masterSheet:'', masterSync:'', name:'', kind:defaultInventoryKind(), itemType:selectedType && selectedType !== '全て' ? selectedType : '', itemCategory:'', materialType:'', materialCategory:'', category:'', count:1, capacity:'', location:'倉庫', rank:'', price:'', equipSlot:'', power:'', offhand:'', reloadTurns:'', modifiers:'', upgradeLimit:'', upgradeMaterialMinRank:'', upgradeLines:'', upgradeEntries:[], spellSlots:'', target:'', element:'', cost:'', checkType:'', role:'', source:'', tags:'', setItem:'', description:'', effect:'', recipeResult:'', materials:'', note:'' };
+}
+function inferInventoryItemType(item={}, kind='') {
+  const explicit = String(item.itemType || '').trim();
+  if (explicit) return explicit;
+  const functionalKind = String(kind || item.kind || '').trim();
+  const cat = String(item.itemCategory || item.category || item.type || '').trim();
+  if (functionalKind === '術式' && ['魔導書','祈祷書'].includes(cat)) return '武器';
+  if (functionalKind === '術式' && (/スクロール/.test(cat) || /スクロール/.test(String(item.name || '')))) return 'スクロール';
+  if (cat === '盾') return '盾';
+  if (cat === '換金品') return '換金品';
+  if (['回復','解除','補助','攻撃','妨害'].includes(cat)) return '調合品';
+  if (['戦闘','調合','鍛冶','罠','細工','その他'].includes(cat)) return '道具';
+  if (cat === '矢弾' || String(item.ammoKind || '').trim()) return '特殊矢弾';
+  if (/食材|料理専用/.test([item.tags,item.usageTags,item.description].join(' '))) return '食材';
+  if (/スクロール/.test(cat) || /スクロール/.test(String(item.name || ''))) return 'スクロール';
+  if (functionalKind && functionalKind !== 'アイテム') return functionalKind;
+  return 'その他';
+}
+function inventorySmallCategory(item={}) {
+  const kind = normalizeInventoryKind(item.kind || item.itemType || 'アイテム');
+  const type = inferInventoryItemType(item, kind);
+  if (kind === 'バッグ' || kind === '矢筒' || type === 'バッグ' || type === '矢筒') return '収納具';
+  if (kind === '素材' || type === '食材') return '素材';
+  if (kind === 'レシピ') return 'レシピ';
+  if (kind === '重要品') return '重要品';
+  if (type === '術式装備') return ['魔導書','祈祷書'].includes(String(item.itemCategory || item.category || '').trim()) ? '武器' : 'スクロール';
+  return type || (kind === 'アイテム' ? 'その他' : kind);
+}
+function inventoryInternalCategory(item={}) {
+  const top = inventorySmallCategory(item);
+  const kind = normalizeInventoryKind(item.kind || item.itemType || 'アイテム');
+  const type = inferInventoryItemType(item, kind);
+  if (top === '収納具') return (kind === '矢筒' || type === '矢筒' || isQuiverLikeFields(item)) ? '矢筒' : 'バッグ';
+  if (top === '素材') {
+    if (type === '食材') return '食材';
+    return String(item.materialType || '').trim() || '素材';
+  }
+  return String(item.itemCategory || item.materialCategory || item.category || item.type || '').trim() || '未分類';
+}
+function inventorySmallCategories() {
+  const present = new Set((inventoryItemsState || []).map(row => inventorySmallCategory(normalizeInventoryItem(row))).filter(Boolean));
+  const ordered = INVENTORY_SMALL_CATEGORY_ORDER.filter(v => present.has(v));
+  [...present].filter(v => !ordered.includes(v)).sort((a,b)=>a.localeCompare(b,'ja',{numeric:true})).forEach(v=>ordered.push(v));
+  return ['全て', ...ordered];
+}
+function inventoryInternalCategories(selectedType='') {
+  if (!selectedType || selectedType === '全て') return [];
+  const present = new Set((inventoryItemsState || []).map(row => normalizeInventoryItem(row)).filter(row => inventorySmallCategory(row) === selectedType).map(inventoryInternalCategory).filter(Boolean));
+  return ['全て', ...[...present].sort((a,b)=>a.localeCompare(b,'ja',{numeric:true}))];
 }
 function normalizeInventoryItem(item={}) {
   const rawCategory = String(item.category || item.type || item.itemCategory || item.materialCategory || '').trim();
@@ -3404,6 +3454,10 @@ function normalizeInventoryItem(item={}) {
     masterSync: String(item.masterSync || item.syncRole || '').trim(),
     name: String(item.name || '').trim(),
     kind,
+    itemType: inferInventoryItemType(item, kind),
+    itemCategory: String(item.itemCategory || item.category || item.type || '').trim(),
+    materialType: String(item.materialType || '').trim(),
+    materialCategory: String(item.materialCategory || item.category || item.type || '').trim(),
     category: String(item.category || item.type || item.itemCategory || item.materialCategory || '').trim(),
     count: clampInt(item.count ?? item.quantity ?? 1, 0, 9999),
     capacity: kind === 'バッグ' ? parseBagCapacity(item) : 0,
@@ -3507,18 +3561,25 @@ function setInventoryState(inventory=defaultInventory()) {
 function renderInventoryTabs() {
   const locationArea = $('inventoryLocationTabs');
   const kindArea = $('inventoryKindTabs');
+  const categoryArea = $('inventoryCategoryTabs');
+  const categoryRow = $('inventoryCategoryFilterRow');
   if (locationArea) {
     locationArea.innerHTML = INVENTORY_LOCATION_FILTERS.map(v => `<button type="button" class="ghost ${inventoryViewFilter.location === v ? 'active' : ''}" data-inventory-filter="location" data-value="${esc(v)}">${esc(v)}</button>`).join('');
   }
-  if (kindArea) {
-    kindArea.innerHTML = INVENTORY_KIND_FILTERS.map(v => `<button type="button" class="ghost ${inventoryViewFilter.kind === v ? 'active' : ''}" data-inventory-filter="kind" data-value="${esc(v)}">${esc(v)}</button>`).join('');
+  const smallCategories = inventorySmallCategories();
+  if (!smallCategories.includes(inventoryViewFilter.itemType)) {
+    inventoryViewFilter.itemType = '全て';
+    inventoryViewFilter.category = '全て';
   }
-}
-function itemMatchesInventoryKindFilter(kind, filter) {
-  if (!filter || filter === '全て') return true;
-  if (filter === '武器/防具/装飾品') return kind === '武器' || kind === '防具' || kind === '装飾品';
-  if (filter === '所持品候補') return ['アイテム','素材','重要品','その他'].includes(kind);
-  return kind === filter;
+  if (kindArea) {
+    kindArea.innerHTML = smallCategories.map(v => `<button type="button" class="ghost ${inventoryViewFilter.itemType === v ? 'active' : ''}" data-inventory-filter="itemType" data-value="${esc(v)}">${esc(v)}</button>`).join('');
+  }
+  const internal = inventoryInternalCategories(inventoryViewFilter.itemType);
+  if (!internal.includes(inventoryViewFilter.category)) inventoryViewFilter.category = '全て';
+  if (categoryRow) categoryRow.hidden = internal.length <= 1;
+  if (categoryArea) {
+    categoryArea.innerHTML = internal.map(v => `<button type="button" class="ghost ${inventoryViewFilter.category === v ? 'active' : ''}" data-inventory-filter="category" data-value="${esc(v)}">${esc(v)}</button>`).join('');
+  }
 }
 function applyInventoryFilters() {
   const rows = Array.from(document.querySelectorAll('[data-inventory-row]'));
@@ -3526,27 +3587,33 @@ function applyInventoryFilters() {
   let visible = 0;
   for (const card of rows) {
     const loc = normalizeInventoryLocation(card.dataset.inventoryLocation || '倉庫');
-    const kind = normalizeInventoryKind(card.dataset.inventoryKind || 'アイテム');
+    const itemType = String(card.dataset.inventoryItemType || 'その他').trim() || 'その他';
+    const category = String(card.dataset.inventoryCategory || '未分類').trim() || '未分類';
     const haystack = String(card.dataset.inventorySearch || '').toLowerCase();
     const locationOk = inventoryViewFilter.location === '全て' || loc === inventoryViewFilter.location;
-    const kindOk = itemMatchesInventoryKindFilter(kind, inventoryViewFilter.kind);
+    const itemTypeOk = inventoryViewFilter.itemType === '全て' || itemType === inventoryViewFilter.itemType;
+    const categoryOk = inventoryViewFilter.category === '全て' || category === inventoryViewFilter.category;
     const searchOk = !search || haystack.includes(search);
-    const show = locationOk && kindOk && searchOk;
+    const show = locationOk && itemTypeOk && categoryOk && searchOk;
     card.classList.toggle('inventory-hidden', !show);
     if (show) visible++;
   }
   const filterStatus = $('inventoryFilterStatus');
   if (filterStatus) {
-    const loc = '倉庫';
-    const kind = inventoryViewFilter.kind === '全て' ? '全区分' : inventoryViewFilter.kind;
+    const type = inventoryViewFilter.itemType === '全て' ? '全小カテゴリ' : inventoryViewFilter.itemType;
+    const category = inventoryViewFilter.category === '全て' ? '' : ` / ${inventoryViewFilter.category}`;
     const searchText = search ? ` / 検索「${search}」` : '';
-    filterStatus.textContent = `${loc} / ${kind}${searchText}：${visible}件表示（全${rows.length}件）`;
+    filterStatus.textContent = `倉庫 / ${type}${category}${searchText}：${visible}件表示（全${rows.length}件）`;
   }
   if ($('inventoryEmptyStatus')) $('inventoryEmptyStatus').style.display = rows.length ? 'none' : '';
 }
 function setInventoryFilter(type, value) {
   if (type === 'location') inventoryViewFilter.location = value || '全て';
-  if (type === 'kind') inventoryViewFilter.kind = value || '全て';
+  if (type === 'itemType') {
+    inventoryViewFilter.itemType = value || '全て';
+    inventoryViewFilter.category = '全て';
+  }
+  if (type === 'category') inventoryViewFilter.category = value || '全て';
   if (type === 'search') inventoryViewFilter.search = value || '';
   renderInventoryTabs();
   applyInventoryFilters();
@@ -3569,11 +3636,13 @@ function renderInventory() {
     const spellSlotMeta = item.spellSlots && ['武器','防具','装飾品','術式'].includes(item.kind) ? `術式枠補正：+${item.spellSlots}` : '';
     const savedUpgradeMeta = serializeUpgradeEntries(item.upgradeEntries || parseUpgradeLines(item.upgradeLines || ''));
     const bagMeta = item.kind === 'バッグ' ? `バッグ容量：${clampInt(item.capacity || 0, 0, 99)}` : '';
-    const searchText = [title, item.kind, item.category, item.rank, item.price, item.equipSlot, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.upgradeLimit, item.upgradeMaterialMinRank, item.spellSlots, item.capacity, item.bagCapacity, item.quiverCapacity, item.ammoKind, item.compatibleWeaponTypes, item.target, item.element, item.cost, item.power, item.description, item.effect, item.checkType, item.role, item.source, item.tags, item.recipeResult, item.materials, item.upgradeLines].filter(Boolean).join(' ');
+    const displayType = inventorySmallCategory(item);
+    const displayCategory = inventoryInternalCategory(item);
+    const searchText = [title, displayType, displayCategory, item.itemType, item.itemCategory, item.materialType, item.materialCategory, item.kind, item.category, item.rank, item.price, item.equipSlot, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.upgradeLimit, item.upgradeMaterialMinRank, item.spellSlots, item.capacity, item.bagCapacity, item.quiverCapacity, item.ammoKind, item.compatibleWeaponTypes, item.target, item.element, item.cost, item.power, item.description, item.effect, item.checkType, item.role, item.source, item.tags, item.recipeResult, item.materials, item.upgradeLines].filter(Boolean).join(' ');
     return `
-    <details class="inventory-card" open data-inventory-row="${index}" data-inventory-id="${esc(item.id || '')}" data-inventory-location="倉庫" data-inventory-kind="${esc(item.kind || 'アイテム')}" data-inventory-search="${esc(searchText)}">
+    <details class="inventory-card" open data-inventory-row="${index}" data-inventory-id="${esc(item.id || '')}" data-inventory-location="倉庫" data-inventory-kind="${esc(item.kind || 'アイテム')}" data-inventory-item-type="${esc(displayType)}" data-inventory-category="${esc(displayCategory)}" data-inventory-search="${esc(searchText)}">
       <summary class="inventory-card-head">
-        <div><div class="inventory-title">${esc(title)}</div><div class="small">倉庫 / ${esc(item.kind || 'アイテム')}</div></div>
+        <div><div class="inventory-title">${esc(title)}</div><div class="small">倉庫 / ${esc(displayType)} / ${esc(displayCategory)}</div></div>
         <div class="button-row" style="margin:0;">
           <button type="button" class="ghost" data-inventory-action="edit" data-index="${index}">編集</button>
           <button type="button" class="ghost" data-inventory-action="duplicate" data-index="${index}">複製</button>
@@ -3660,6 +3729,9 @@ function collectInventoryDialogItem() {
     id: '',
     name: $('inventoryFormName')?.value || '',
     kind: $('inventoryFormKind')?.value || defaultInventoryKind(),
+    itemType: String(inventoryViewFilter.itemType || '').trim() !== '全て' ? String(inventoryViewFilter.itemType || '').trim() : ($('inventoryFormKind')?.value || ''),
+    itemCategory: $('inventoryFormCategory')?.value || '',
+    materialCategory: $('inventoryFormKind')?.value === '素材' ? ($('inventoryFormCategory')?.value || '') : '',
     category: $('inventoryFormCategory')?.value || '',
     count: countValue === '' || countValue == null ? 1 : countValue,
     capacity: $('inventoryFormCapacity')?.value || '',
@@ -3742,7 +3814,7 @@ function dbItemTypeToInventoryKind(row) {
   const cat = String(row && row.itemCategory || '').trim();
   if (type === 'バッグ' || cat === 'バッグ' || isBagLikeFields({ ...row, category:cat, kind:type })) return 'バッグ';
   if (['魔導書','祈祷書'].includes(cat)) return '武器';
-  if (type === '術式装備') return '武器';
+  if (type === '術式装備') return cat === 'スクロール' ? 'スクロール' : '武器';
   if (type === '武器') return '武器';
   if (type === '防具' || type === '盾') return '防具';
   if (type === '装飾品') return '装飾品';
@@ -3766,6 +3838,10 @@ function dbItemToInventoryItem(row) {
     masterSync: hasInitialMasterToken(row) ? INITIAL_MASTER_TOKEN : '',
     name: row.name || '',
     kind,
+    itemType: row.itemType || '',
+    itemCategory: row.itemCategory || '',
+    materialType: row.materialType || '',
+    materialCategory: row.materialCategory || '',
     category: mappedCategory,
     count: initialInventoryCountForMasterRow(row),
     capacity: isBagLikeFields(row) ? parseBagCapacity(row.bagCapacity || row.capacity || row.effect || row.description || '') : 0,
@@ -5598,8 +5674,12 @@ function bindEvents() {
     setInventoryFilter('location', btn.dataset.value || '全て');
   });
   if ($('inventoryKindTabs')) $('inventoryKindTabs').addEventListener('click', e => {
-    const btn = e.target.closest('[data-inventory-filter="kind"]'); if (!btn) return;
-    setInventoryFilter('kind', btn.dataset.value || '全て');
+    const btn = e.target.closest('[data-inventory-filter="itemType"]'); if (!btn) return;
+    setInventoryFilter('itemType', btn.dataset.value || '全て');
+  });
+  if ($('inventoryCategoryTabs')) $('inventoryCategoryTabs').addEventListener('click', e => {
+    const btn = e.target.closest('[data-inventory-filter="category"]'); if (!btn) return;
+    setInventoryFilter('category', btn.dataset.value || '全て');
   });
   $('characterList').addEventListener('click', async e => {
     const btn = e.target.closest('button[data-action]'); if (!btn) return;
