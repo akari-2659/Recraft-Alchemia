@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.234</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.238</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -752,12 +752,12 @@ button,.tab,.subtab,.editor-tab{
 
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.234 / 最終更新日：2026年7月21日</div>
+<div class="ra-build-info">Version：v90.8.238 / 最終更新日：2026年7月22日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.234 / 最終更新日：2026年7月21日</div>
+  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.238 / 最終更新日：2026年7月22日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -3024,6 +3024,12 @@ const INVENTORY_LOCATION_OPTIONS = ['倉庫'];
 const INVENTORY_KIND_OPTIONS = ['アイテム','素材','武器','防具','装飾品','バッグ','矢筒','術式','レシピ','重要品','その他'];
 const INVENTORY_KIND_TOKEN = { '武器':'weapon', '防具':'armor', '装飾品':'accessory', 'アイテム':'item', '素材':'material', 'バッグ':'bag', '矢筒':'quiver', '術式':'spell', 'レシピ':'recipe', '重要品':'important', 'その他':'other' };
 const INVENTORY_SMALL_CATEGORY_ORDER = ['武器','防具','盾','装飾品','調合品','道具','特殊矢弾','収納具','素材','スクロール','換金品','レシピ','術式','重要品','その他'];
+const INVENTORY_MATERIAL_TYPE_ORDER = ['食材','魔物素材','採取素材','加工素材','特殊素材'];
+const LEGACY_WEAPON_NAME_ALIASES = Object.freeze({"魔導書":"グリモア","アルカナ・コーデックス":"アルカナコーデックス","祈祷書":"ミサル","ウィンドラス・クロスボウ":"ウィンドラスクロスボウ","バグ・ナク":"バグナク","グラスホーン・アンカー":"グラスホーンアンカー","サルヴェ・ミサル":"サルヴェミサル","イージス・リタニー":"イージスリタニー","アクア・リフレイン":"アクアリフレイン","ヴォイド・レクイエム":"ヴォイドレクイエム","ミラー・グリモア":"ミラーグリモア","アストラル・コーデックス":"アストラルコーデックス","リフレクト・ミサル":"リフレクトミサル","アビサル・リタニー":"アビサルリタニー","ミラージュ・ボルター":"ミラージュボルター","ファントム・ピアサー":"ファントムピアサー","リフト・デストロイヤー":"リフトデストロイヤー","アビス・スコーピオン":"アビススコーピオン","アビス・リーパー":"アビスリーパー","シルフィード・アーチ":"シルフィードアーチ","フェザー・ハント":"フェザーハント","シェル・ブレイカー":"シェルブレイカー","ゼファー・ボルター":"ゼファーボルター","フォートレス・アーバレスト":"フォートレスアーバレスト","マイア・カノン":"マイアカノン","マイセリア・グリモア":"マイセリアグリモア","シルヴァン・ミサル":"シルヴァンミサル","ヴェルデ・スティング":"ヴェルデスティング","シルヴァ・エッジ":"シルヴァエッジ","マイア・スティング":"マイアスティング","ホーン・レガリア":"ホーンレガリア","シルヴァン・ガード":"シルヴァンガード","マイア・セイバー":"マイアセイバー","グラス・クリーヴァ":"グラスクリーヴァ","エルダー・ハチェット":"エルダーハチェット","ボグ・クリーヴァ":"ボグクリーヴァ","ホーン・クラッシャー":"ホーンクラッシャー","ウッドランド・メイス":"ウッドランドメイス","マイア・クラッシャー":"マイアクラッシャー","ヴェルデ・ランサー":"ヴェルデランサー","マイア・スピア":"マイアスピア","ホーン・セプター":"ホーンセプター","シルヴァン・ロッド":"シルヴァンロッド","ミアズマ・ロッド":"ミアズマロッド","ヴェルデ・ストライド":"ヴェルデストライド","エルダー・リーフ":"エルダーリーフ","マレア・リフレイン":"マレアリフレイン","ヴェルデ・ボルター":"ヴェルデボルター","グリーン・ワーデン":"グリーンワーデン","マレア・ボルター":"マレアボルター","グランド・ホーン":"グランドホーン","フォレスト・バスティオン":"フォレストバスティオン","マイア・バリスタ":"マイアバリスタ","マイア・ランサー":"マイアランサー","グラス・テンペスト":"グラステンペスト","エルダー・ガード":"エルダーガード","ボグ・クレイモア":"ボグクレイモア","ハートウッド・モール":"ハートウッドモール","マイア・モール":"マイアモール","アイヴィ・サイス":"アイヴィサイス","ミアズマ・サイス":"ミアズマサイス","ホーン・ブレイサー":"ホーンブレイサー","シルヴァン・グリーヴ":"シルヴァングリーヴ","ボグ・ブレイサー":"ボグブレイサー","アイヴィ・ウィップ":"アイヴィウィップ","ミアズマ・ウィップ":"ミアズマウィップ","ヴェルダント・グリモア":"ヴェルダントグリモア","シルヴァン・コーデックス":"シルヴァンコーデックス","マイア・グリモア":"マイアグリモア","ヴェルダント・ミサル":"ヴェルダントミサル","マイア・リタニー":"マイアリタニー","クリスタル・リタニー":"クリスタルリタニー","黒鉄の短剣":"クロガネスティレット","黒鉄の剣":"クロガネセイバー","岩割りの斧":"ロックハチェット","山鳴りの槌":"ロアメイス","岩貫きの槍":"ロックピアサー","燐晶の杖":"リンショウスタッフ","鉄弦の弓":"アイアンストリング","岩穿ちの弩":"ロックボーラー","坑道破りの大弩":"トンネルブレイカー","地脈の長槍":"レイラインパイク","黒鉄の大剣":"クロガネクレイモア","断岩の大槌":"ロックブレイカーモール","鉱脈の大鎌":"ヴェインサイズ","黒鉄の拳甲":"クロガネナックル","鋼線の鞭":"スチールワイヤー","燐晶の魔導書":"リンショウグリモア","地脈の祈祷書":"レイラインミサル","苔守りの長槍":"モスガードパイク","水走りの拳甲":"アクアランナーナックル","穿王の牙":"グランドファング","地脈の剣":"レイラインセイバー","穿岩の斧":"ロックリーヴァ","地鳴りの槌":"クエイクメイス","穿王の短槍":"グランドピアサー","地脈晶の杖":"ジオクリスタルロッド","山鳴りの弓":"エコーストリング","穿岩の弩":"ロックドリラー","穿王の大弩":"グランドバリスタ","穿王の長槍":"グランドランサー","地割れの大剣":"リフトクレイモア","穿王の大槌":"グランドモール","地層断ちの大鎌":"ストラタサイズ","穿王の拳甲":"グランドナックル","地脈の鋼鞭":"レイラインチェイン","地脈晶の魔導書":"ジオクリスタルグリモア","山守りの祈祷書":"ガーディアンミサル"});
+function canonicalInventoryItemName(name){
+  const raw = String(name || '').trim();
+  return LEGACY_WEAPON_NAME_ALIASES[raw] || raw;
+}
 let inventoryViewFilter = { location:'全て', itemType:'全て', category:'全て', search:'' };
 let inventoryItemsState = [];
 let selectedBagId = '';
@@ -3106,8 +3112,10 @@ function normalizeInventoryState(inventory) {
 function defaultInventoryLocation() { return '倉庫'; }
 function defaultInventoryKind() {
   const selected = String(inventoryViewFilter.itemType || '').trim();
-  if (selected === '収納具') return 'バッグ';
-  if (['素材','武器','防具','装飾品','バッグ','矢筒','術式','レシピ','重要品','その他'].includes(selected)) return selected;
+  const internal = String(inventoryViewFilter.category || '').trim();
+  if (selected === '収納具') return internal === '矢筒' ? '矢筒' : 'バッグ';
+  if (selected === '素材') return internal === '食材' ? 'アイテム' : '素材';
+  if (['武器','防具','装飾品','術式','レシピ','重要品','その他'].includes(selected)) return selected;
   return 'アイテム';
 }
 function normalizeInventoryLocation(location) { return '倉庫'; }
@@ -3390,9 +3398,26 @@ function renderBagSelect() {
   select.value = selectedBagId;
   applyBagCapacityToEquipmentSlots();
 }
+function inventoryManualClassification(kind='', category='') {
+  const top = String(inventoryViewFilter.itemType || '全て').trim();
+  const internal = String(inventoryViewFilter.category || '全て').trim();
+  if (top === '素材') {
+    if (internal === '食材') return { kind:'アイテム', itemType:'食材', itemCategory:category, materialType:'', materialCategory:'' };
+    const materialType = INVENTORY_MATERIAL_TYPE_ORDER.includes(internal) ? internal : '';
+    return { kind:'素材', itemType:'', itemCategory:'', materialType, materialCategory:category };
+  }
+  if (top === '収納具') {
+    const itemType = internal === '矢筒' ? '矢筒' : 'バッグ';
+    return { kind:itemType, itemType, itemCategory:itemType, materialType:'', materialCategory:'' };
+  }
+  const normalizedKind = normalizeInventoryKind(kind || defaultInventoryKind());
+  if (top && top !== '全て') return { kind:normalizedKind, itemType:top, itemCategory:category, materialType:'', materialCategory:'' };
+  const inferred = inferInventoryItemType({ kind:normalizedKind, category }, normalizedKind);
+  return { kind:normalizedKind, itemType:inferred === 'その他' ? '' : inferred, itemCategory:category, materialType:'', materialCategory:'' };
+}
 function emptyInventoryItem() {
-  const selectedType = String(inventoryViewFilter.itemType || '').trim();
-  return { id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), masterId:'', masterSheet:'', masterSync:'', name:'', kind:defaultInventoryKind(), itemType:selectedType && selectedType !== '全て' ? selectedType : '', itemCategory:'', materialType:'', materialCategory:'', category:'', count:1, capacity:'', location:'倉庫', rank:'', price:'', equipSlot:'', power:'', offhand:'', reloadTurns:'', modifiers:'', upgradeLimit:'', upgradeMaterialMinRank:'', upgradeLines:'', upgradeEntries:[], spellSlots:'', target:'', element:'', cost:'', checkType:'', role:'', source:'', tags:'', setItem:'', description:'', effect:'', recipeResult:'', materials:'', note:'' };
+  const cls = inventoryManualClassification(defaultInventoryKind(), '');
+  return { id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), masterId:'', masterSheet:'', masterSync:'', name:'', kind:cls.kind, itemType:cls.itemType, itemCategory:cls.itemCategory, materialType:cls.materialType, materialCategory:cls.materialCategory, category:'', count:1, capacity:'', location:'倉庫', rank:'', price:'', equipSlot:'', power:'', offhand:'', reloadTurns:'', modifiers:'', upgradeLimit:'', upgradeMaterialMinRank:'', upgradeLines:'', upgradeEntries:[], spellSlots:'', target:'', element:'', cost:'', checkType:'', role:'', source:'', tags:'', setItem:'', description:'', effect:'', recipeResult:'', materials:'', note:'' };
 }
 function inferInventoryItemType(item={}, kind='') {
   const explicit = String(item.itemType || '').trim();
@@ -3457,6 +3482,8 @@ function inventorySmallCategories() {
 function inventoryInternalCategories(selectedType='') {
   if (!selectedType || selectedType === '全て') return [];
   const present = new Set((inventoryItemsState || []).map(row => normalizeInventoryItem(row)).filter(row => inventorySmallCategory(row) === selectedType).map(inventoryInternalCategory).filter(Boolean));
+  if (selectedType === '素材') return ['全て', ...INVENTORY_MATERIAL_TYPE_ORDER.filter(v => present.has(v))];
+  if (selectedType === '収納具') return ['全て', ...['バッグ','矢筒'].filter(v => present.has(v))];
   return ['全て', ...[...present].sort((a,b)=>a.localeCompare(b,'ja',{numeric:true}))];
 }
 function normalizeInventoryItem(item={}) {
@@ -3480,7 +3507,7 @@ function normalizeInventoryItem(item={}) {
     masterId: String(item.masterId || item.masterID || item.sourceId || item.sourceID || '').trim(),
     masterSheet: String(item.masterSheet || item.sourceSheet || '').trim(),
     masterSync: String(item.masterSync || item.syncRole || '').trim(),
-    name: String(item.name || '').trim(),
+    name: canonicalInventoryItemName(item.name || ''),
     kind,
     itemType: inferInventoryItemType(item, kind),
     itemCategory: String(item.itemCategory || item.category || item.type || '').trim(),
@@ -3753,14 +3780,17 @@ function openInventoryDialog(index=-1) {
 }
 function collectInventoryDialogItem() {
   const countValue = $('inventoryFormCount')?.value;
+  const categoryValue = $('inventoryFormCategory')?.value || '';
+  const cls = inventoryManualClassification($('inventoryFormKind')?.value || defaultInventoryKind(), categoryValue);
   return normalizeInventoryItem({
     id: '',
     name: $('inventoryFormName')?.value || '',
-    kind: $('inventoryFormKind')?.value || defaultInventoryKind(),
-    itemType: String(inventoryViewFilter.itemType || '').trim() !== '全て' ? String(inventoryViewFilter.itemType || '').trim() : ($('inventoryFormKind')?.value || ''),
-    itemCategory: $('inventoryFormCategory')?.value || '',
-    materialCategory: $('inventoryFormKind')?.value === '素材' ? ($('inventoryFormCategory')?.value || '') : '',
-    category: $('inventoryFormCategory')?.value || '',
+    kind: cls.kind,
+    itemType: cls.itemType,
+    itemCategory: cls.itemCategory,
+    materialType: cls.materialType,
+    materialCategory: cls.materialCategory,
+    category: categoryValue,
     count: countValue === '' || countValue == null ? 1 : countValue,
     capacity: $('inventoryFormCapacity')?.value || '',
     bagCapacity: $('inventoryFormCapacity')?.value || '',
@@ -4044,14 +4074,91 @@ function isSameInventoryCore(a={}, b={}) {
 
 const LEGACY_PUBLIC_ID_ALIASES = Object.freeze({
   'RCA-CARA-001':'RCA-KEDC-9UQU',
-  'RCA-WING-001':'RCA-3YDC-2RAS',
-  'RCA-SPOR-001':'RCA-V9H2-9GQK',
-  'RCA-ROOT-001':'RCA-6V5N-TT45',
-  'RCA-MUDH-001':'RCA-Q73F-Z3F3',
-  'RCA-MUCU-001':'RCA-YEQU-W88X',
-  'RCA-LORD-001':'RCA-UHV9-XQEE',
+  'RCA-FLHW-001':'RCA-2K6U-TN73',
+  'RCA-FOOD-0FBBB094':'RCA-0FBB-B094',
+  'RCA-FOOD-1CD40241':'RCA-1CD4-0241',
+  'RCA-FOOD-2A108DF0':'RCA-2A10-8DF0',
+  'RCA-FOOD-5B3B3389':'RCA-5B3B-3389',
+  'RCA-FOOD-63E63F24':'RCA-63E6-3F24',
+  'RCA-FOOD-65BD1F90':'RCA-65BD-1F90',
+  'RCA-FOOD-69ECDFC8':'RCA-69EC-DFC8',
+  'RCA-FOOD-7894EA4D':'RCA-7894-EA4D',
+  'RCA-FOOD-A3310FAD':'RCA-A331-0FAD',
+  'RCA-FOOD-AC2DB957':'RCA-AC2D-B957',
+  'RCA-FOOD-AC37C227':'RCA-AC37-C227',
+  'RCA-FOOD-AE861876':'RCA-AE86-1876',
+  'RCA-FOOD-B78AE54A':'RCA-B78A-E54A',
+  'RCA-FOOD-C52976FD':'RCA-C529-76FD',
+  'RCA-FOOD-CA6AFA19':'RCA-CA6A-FA19',
+  'RCA-FOOD-CB760E46':'RCA-CB76-0E46',
+  'RCA-FOOD-E5E1FA98':'RCA-E5E1-FA98',
+  'RCA-FOOD-E7DCC431':'RCA-E7DC-C431',
+  'RCA-FOOD-F0212364':'RCA-F021-2364',
+  'RCA-FOOD-FD96B18B':'RCA-FD96-B18B',
   'RCA-GKHO-001':'RCA-5Q8D-S9QU',
-  'RCA-FLHW-001':'RCA-2K6U-TN73'
+  'RCA-LORD-001':'RCA-UHV9-XQEE',
+  'RCA-MEAL-10654498':'RCA-1065-4498',
+  'RCA-MEAL-2160E8D3':'RCA-2160-E8D3',
+  'RCA-MEAL-2B4AEFF1':'RCA-2B4A-EFF1',
+  'RCA-MEAL-562CE0EE':'RCA-562C-E0EE',
+  'RCA-MEAL-5928B126':'RCA-5928-B126',
+  'RCA-MEAL-5B9E886C':'RCA-5B9E-886C',
+  'RCA-MEAL-5E727F33':'RCA-5E72-7F33',
+  'RCA-MEAL-62669DA9':'RCA-6266-9DA9',
+  'RCA-MEAL-68731442':'RCA-6873-1442',
+  'RCA-MEAL-6FBBDEDA':'RCA-6FBB-DEDA',
+  'RCA-MEAL-6FDAEC49':'RCA-6FDA-EC49',
+  'RCA-MEAL-ADEED2BF':'RCA-ADEE-D2BF',
+  'RCA-MEAL-B61EB61E':'RCA-B61E-B61E',
+  'RCA-MEAL-CD92E5D4':'RCA-CD92-E5D4',
+  'RCA-MEAL-D9DE999A':'RCA-D9DE-999A',
+  'RCA-MEAL-DE349D79':'RCA-DE34-9D79',
+  'RCA-MEAL-F1C7EC6F':'RCA-F1C7-EC6F',
+  'RCA-MEAL-FBCC1D6D':'RCA-FBCC-1D6D',
+  'RCA-MEAL-FCFB6515':'RCA-FCFB-6515',
+  'RCA-MEAL-FE1F7E7A':'RCA-FE1F-7E7A',
+  'RCA-MUCU-001':'RCA-YEQU-W88X',
+  'RCA-MUDH-001':'RCA-Q73F-Z3F3',
+  'RCA-RCP-ACID':'RCA-RCPX-ACID',
+  'RCA-RCP-ANTI':'RCA-RCPX-ANTI',
+  'RCA-RCP-ARRW':'RCA-RCPX-ARRW',
+  'RCA-RCP-BAGS':'RCA-RCPX-BAGS',
+  'RCA-RCP-BOLT':'RCA-RCPX-BOLT',
+  'RCA-RCP-CBOW':'RCA-RCPX-CBOW',
+  'RCA-RCP-DAGG':'RCA-RCPX-DAGG',
+  'RCA-RCP-FLAM':'RCA-RCPX-FLAM',
+  'RCA-RCP-FLSH':'RCA-RCPX-FLSH',
+  'RCA-RCP-FOCI':'RCA-RCPX-FOCI',
+  'RCA-RCP-GAUN':'RCA-RCPX-GAUN',
+  'RCA-RCP-GHAM':'RCA-RCPX-GHAM',
+  'RCA-RCP-GSWD':'RCA-RCPX-GSWD',
+  'RCA-RCP-HARD':'RCA-RCPX-HARD',
+  'RCA-RCP-HAXE':'RCA-RCPX-HAXE',
+  'RCA-RCP-HBLT':'RCA-RCPX-HBLT',
+  'RCA-RCP-HCBW':'RCA-RCPX-HCBW',
+  'RCA-RCP-HMNP':'RCA-RCPX-HMNP',
+  'RCA-RCP-ICEB':'RCA-RCPX-ICEB',
+  'RCA-RCP-LSPR':'RCA-RCPX-LSPR',
+  'RCA-RCP-MANP':'RCA-RCPX-MANP',
+  'RCA-RCP-MBAG':'RCA-RCPX-MBAG',
+  'RCA-RCP-MGBK':'RCA-RCPX-MGBK',
+  'RCA-RCP-PRBK':'RCA-RCPX-PRBK',
+  'RCA-RCP-QHNT':'RCA-RCPX-QHNT',
+  'RCA-RCP-QSIM':'RCA-RCPX-QSIM',
+  'RCA-RCP-QTRV':'RCA-RCPX-QTRV',
+  'RCA-RCP-SBOW':'RCA-RCPX-SBOW',
+  'RCA-RCP-SCYT':'RCA-RCPX-SCYT',
+  'RCA-RCP-SMOK':'RCA-RCPX-SMOK',
+  'RCA-RCP-SSPR':'RCA-RCPX-SSPR',
+  'RCA-RCP-STAF':'RCA-RCPX-STAF',
+  'RCA-RCP-SWIF':'RCA-RCPX-SWIF',
+  'RCA-RCP-SWRD':'RCA-RCPX-SWRD',
+  'RCA-RCP-THNB':'RCA-RCPX-THNB',
+  'RCA-RCP-WHAM':'RCA-RCPX-WHAM',
+  'RCA-RCP-WHIP':'RCA-RCPX-WHIP',
+  'RCA-ROOT-001':'RCA-6V5N-TT45',
+  'RCA-SPOR-001':'RCA-V9H2-9GQK',
+  'RCA-WING-001':'RCA-3YDC-2RAS'
 });
 function canonicalRegistrationId(value=''){
   const id=String(value||'').trim().toUpperCase();
@@ -4061,7 +4168,7 @@ function canonicalRegistrationId(value=''){
 function parsePublicIdPasteEntries(text=''){
   const raw = String(text || '').trim();
   if(!raw) return [];
-  const ids = [...raw.matchAll(/RCA-[A-Z0-9]{4}-[A-Z0-9]{3,4}/gi)].map(m=>({id:canonicalRegistrationId(m[0]), index:m.index}));
+  const ids = [...raw.matchAll(/RCA-[A-Z0-9]{3,4}-[A-Z0-9]{3,8}/gi)].map(m=>({id:canonicalRegistrationId(m[0]), index:m.index}));
   if(!ids.length) return [];
   return ids.map((entry, i)=>{
     const start = Math.max(0, raw.lastIndexOf('\n\n', entry.index));
@@ -4082,11 +4189,11 @@ function findPresetByPublicId(master={}, publicId=''){
   const itemRows = Array.isArray(master.cs_items) ? master.cs_items : [];
   const spellRows = Array.isArray(master.spells) ? master.spells : [];
   const recipeRows = Array.isArray(master.recipes) ? master.recipes : [];
-  const row = itemRows.find(r=>String(r.publicId || '').trim().toUpperCase() === id);
+  const row = itemRows.find(r=>canonicalRegistrationId(r.publicId || '') === id);
   if(row) return dbItemToInventoryItem(row);
-  const spell = spellRows.find(r=>String(r.publicId || '').trim().toUpperCase() === id);
+  const spell = spellRows.find(r=>canonicalRegistrationId(r.publicId || '') === id);
   if(spell) return dbSpellToInventoryItem(spell);
-  const recipe = recipeRows.find(r=>String(r.publicId || '').trim().toUpperCase() === id);
+  const recipe = recipeRows.find(r=>canonicalRegistrationId(r.publicId || '') === id);
   if(recipe) return dbRecipeToInventoryItem(recipe);
   return null;
 }
@@ -4113,7 +4220,7 @@ async function addInventoryByPublicIdPaste(){
   const countInput = $('publicIdCountInput');
   const status = $('publicIdPasteStatus');
   const rawId = String(idInput?.value || '').trim().toUpperCase();
-  const idMatch = rawId.match(/RCA-[A-Z0-9]{4}-[A-Z0-9]{3,4}/i);
+  const idMatch = rawId.match(/RCA-[A-Z0-9]{3,4}-[A-Z0-9]{3,8}/i);
   const publicId = canonicalRegistrationId(idMatch ? idMatch[0] : rawId);
   const rawCount = countInput?.value;
   const count = clampInt(rawCount === '' || rawCount == null ? 1 : rawCount, 0, 9999);
