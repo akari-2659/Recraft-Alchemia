@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.238</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.240</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -752,12 +752,12 @@ button,.tab,.subtab,.editor-tab{
 
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.238 / 最終更新日：2026年7月22日</div>
+<div class="ra-build-info">Version：v90.8.240 / 最終更新日：2026年7月22日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.238 / 最終更新日：2026年7月22日</div>
+  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.240 / 最終更新日：2026年7月22日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -5445,8 +5445,59 @@ function spellBookPowerBonus(item={}){return equipmentUpgradeNumericBonus(item,[
 function spellBookHitBonus(item={}){return equipmentUpgradeNumericBonus(item,[/^命中$/, /^命中補正$/]);}
 function spellBookCostReduction(item={}){return equipmentUpgradeNumericBonus(item,[/消費コスト/, /コスト軽減/]);}
 function spellBookHealBonus(item={}){return equipmentUpgradeNumericBonus(item,[/回復量/]);}
+function paletteSpellPointKey(spell={}, containerType='') {
+  const text = [spell.category, spell.kind, spell.tags, spell.checkType, containerType]
+    .map(v => String(v || ''))
+    .join('/');
+  if (/祈祷|聖術|神聖|聖印|祈祷書/.test(text)) return 'prayer';
+  if (/魔法|魔術|魔導|魔印|魔導書/.test(text)) return 'magic';
+  return spellContainerKind(containerType)?.pointKey || '';
+}
+function paletteSpellHasScalablePower(spell={}, formula='') {
+  const normalized = normalizePaletteFormula(formula);
+  if (!/\d*D\d+/i.test(normalized)) return false;
+  const text = [spell.effect, spell.role, spell.tags, spell.description]
+    .map(v => String(v || ''))
+    .join('/');
+  return /ダメージ|攻撃|回復|HP/.test(text);
+}
+function paletteSpellIsHealing(spell={}) {
+  const text = [spell.effect, spell.role, spell.tags, spell.description]
+    .map(v => String(v || ''))
+    .join('/');
+  return /回復|HP/.test(text) && !/ダメージ/.test(text);
+}
+function paletteSpellFormulaWithFlatBonus(formula='', bonus=0) {
+  const base = normalizePaletteFormula(formula);
+  const n = Number(bonus) || 0;
+  if (!base || !n) return base;
+  const repeated = base.match(/^(.+?)([×xX*]\s*\d+\s*回)$/);
+  if (repeated) return `(${repeated[1]}${signedNumberText(n)})${repeated[2]}`;
+  return `${base}${signedNumberText(n)}`;
+}
+function paletteSpellCostText(spell={}, container={}) {
+  const raw = formatMpCost(spell.cost || spell.mpCost || '');
+  if (!raw) return '—';
+  const reduction = Math.max(0, Number(spellBookCostReduction(container)) || 0);
+  const m = raw.match(/^MP\s*(\d+)$/i);
+  if (!m || !reduction) return raw;
+  return `MP${Math.max(1, Number(m[1]) - reduction)}`;
+}
+function paletteSpellMetaLine(spell={}, container={}) {
+  const name = String(spell.name || '名称未設定').trim();
+  const cost = paletteSpellCostText(spell, container);
+  const element = String(spell.element || '—').trim() || '—';
+  const target = String(spell.target || '—').trim() || '—';
+  return `// 【${name}】 コスト：${cost} / 属性：${element} / 対象：${target}`;
+}
+function paletteSpellEffectLine(spell={}) {
+  const effect = String(spell.effect || spell.additionalEffect || '').trim().replace(/\s*\n+\s*/g, ' ');
+  if (!effect || effect === 'なし' || effect === '—') return '';
+  return `// 効果：${effect}`;
+}
 function collectSetSpellDamagePaletteLines(data={}) {
   const equipment = data.equipment || {};
+  const alloc = data.skills || defaultSkillAlloc();
   const items = paletteInventoryItems(data);
   const result = [];
   const used = new Set();
@@ -5460,8 +5511,13 @@ function collectSetSpellDamagePaletteLines(data={}) {
       const spell = findPaletteSpellByName(items, name) || normalizeInventoryItem({ name, kind:'術式' });
       const rawFormula = normalizePaletteFormula(spell.power || spell.damage || '');
       if (!rawFormula) continue;
-      const powerBonus=spellBookPowerBonus(item);
-      const formula=paletteDamageFormulaWithBonus(rawFormula,powerBonus,0);
+      const scalable = paletteSpellHasScalablePower(spell, rawFormula);
+      const pointKey = paletteSpellPointKey(spell, type);
+      const skillPointBonus = scalable && pointKey ? allocatedSkillPoints(pointKey, alloc) : 0;
+      const bookBonus = scalable
+        ? (paletteSpellIsHealing(spell) ? spellBookHealBonus(item) : spellBookPowerBonus(item))
+        : 0;
+      const formula = paletteSpellFormulaWithFlatBonus(rawFormula, skillPointBonus + bookBonus);
       const label = String(spell.name || name).trim();
       const key = label + '::' + formula;
       if (used.has(key)) continue;
@@ -5499,6 +5555,7 @@ function collectCheckPaletteLines(data={}, totals={}) {
   const items = paletteInventoryItems(data);
   const result = [];
   const used = new Set();
+  const usedSpellMeta = new Set();
   const pushLine = (checkType, label, extraMod='') => {
     const line = paletteCheckLineFromExpression(checkType, label, totals, extraMod, globalMod);
     if (!line || used.has(line)) return;
@@ -5537,6 +5594,13 @@ function collectCheckPaletteLines(data={}, totals={}) {
       const spell = findPaletteSpellByName(items, name) || normalizeInventoryItem({ name, kind:'術式' });
       const spellKind = String(spell.category || spell.kind || type || '').trim();
       const defaultSkill = /祈祷|聖|神/.test(spellKind) ? '祈祷' : '魔法';
+      const metaLine = paletteSpellMetaLine(spell, eq);
+      if (metaLine && !usedSpellMeta.has(metaLine)) {
+        usedSpellMeta.add(metaLine);
+        result.push(metaLine);
+        const effectLine = paletteSpellEffectLine(spell);
+        if (effectLine) result.push(effectLine);
+      }
       pushLine(checkTypeOrDefault(spell, defaultSkill, defaultSkill === '魔法' ? '回避値' : '目標値'), String(spell.name || name).trim(), signedNumberText(spellBookHitBonus(eq)));
     }
   }
