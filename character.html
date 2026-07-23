@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.242</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.251</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -995,12 +995,12 @@ details.big-section>summary{
 </style>
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.249 / 最終更新日：2026年7月23日</div>
+<div class="ra-build-info">Version：v90.8.251 / 最終更新日：2026年7月23日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.249 / 最終更新日：2026年7月23日</div>
+  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.251 / 最終更新日：2026年7月23日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -1238,8 +1238,8 @@ details.big-section>summary{
         <div class="section-body">
           <p class="hint">右手・左手・鎧・装飾品は、倉庫に登録済みの装備から選択して反映します。必要な装備は先に倉庫へ登録してください。</p>
           <div class="button-row compact-toolbar">
-            <button id="loadEquipmentCategoriesBtn" type="button" class="ghost">倉庫から選択カテゴリ読込</button>
-            <span id="equipmentCategoryStatus" class="small">未読込の場合は内蔵カテゴリを使います。</span>
+            <button id="loadEquipmentCategoriesBtn" type="button" class="ghost">共通DBを再読込</button>
+            <span id="equipmentCategoryStatus" class="small">GitHub共通DBを確認しています。取得できない場合はGASへ切り替えます。</span>
           </div>
           <div id="equipmentArea" class="equipment-grid"></div>
         </div>
@@ -4544,6 +4544,115 @@ function dbRecipeToInventoryItem(row) {
     note: row.notes || ''
   });
 }
+const GITHUB_COMMON_DB_BASE =
+  'https://akari-2659.github.io/Recraft-Alchemia-Manager/data/public/';
+const GITHUB_COMMON_DB_MANIFEST_URL = GITHUB_COMMON_DB_BASE + 'manifest.json';
+let githubCharacterSheetMasterPromise = null;
+
+function githubCommonDbEnabled(row={}) {
+  return String(row.enabled ?? 'TRUE').trim().toUpperCase() !== 'FALSE';
+}
+function githubCommonDbVisibleInCharacterSheet(row={}) {
+  const value = String(row.csVisible ?? 'TRUE').trim().toUpperCase();
+  return !['FALSE','0','NO','N','非表示'].includes(value);
+}
+function buildCharacterSheetMasterFromGithub(masterDocument={}, manifest={}) {
+  const data = masterDocument && typeof masterDocument === 'object'
+    ? (masterDocument.data && typeof masterDocument.data === 'object' ? masterDocument.data : masterDocument)
+    : {};
+  const equipmentRows = (Array.isArray(data.equipment_categories) ? data.equipment_categories : [])
+    .filter(githubCommonDbEnabled)
+    .sort((a,b) => Number(a.sortOrder || 9999) - Number(b.sortOrder || 9999));
+  const enabledRows = key => (Array.isArray(data[key]) ? data[key] : []).filter(githubCommonDbEnabled);
+  const csItems = (Array.isArray(data.items) ? data.items : [])
+    .filter(row => githubCommonDbVisibleInCharacterSheet(row) || String(row.publicId || '').trim());
+
+  if (!equipmentRows.length || !csItems.length) {
+    throw new Error('GitHub共通DBのキャラシ用マスターが空です。');
+  }
+
+  return {
+    equipment_categories: equipmentRows,
+    item_types: enabledRows('item_types'),
+    item_categories: enabledRows('item_categories'),
+    material_types: enabledRows('material_types'),
+    material_categories: enabledRows('material_categories'),
+    material_ranks: enabledRows('material_ranks'),
+    equipment_categories_meta: {
+      ...buildEquipmentCategoryLocalMeta(equipmentRows),
+      source: 'github',
+      version: String(manifest.version || masterDocument.version || ''),
+      masterFile: String(manifest.master || '')
+    },
+    cs_items: csItems,
+    recipes: enabledRows('recipes'),
+    spells: enabledRows('spells'),
+    __source: 'github',
+    __version: String(manifest.version || masterDocument.version || ''),
+    __masterFile: String(manifest.master || '')
+  };
+}
+async function fetchGithubCharacterSheetMaster({force=false}={}) {
+  if (githubCharacterSheetMasterPromise && !force) return githubCharacterSheetMasterPromise;
+
+  const task = (async () => {
+    const manifestResponse = await fetch(GITHUB_COMMON_DB_MANIFEST_URL, {
+      cache: 'no-store'
+    });
+    if (!manifestResponse.ok) {
+      throw new Error(`GitHub共通DBのmanifest取得に失敗しました（HTTP ${manifestResponse.status}）。`);
+    }
+    const manifest = await manifestResponse.json();
+    const masterFile = String(manifest.master || '').trim();
+    if (!masterFile || masterFile.includes('..') || masterFile.includes('\\')) {
+      throw new Error('GitHub共通DBのmanifestに有効なmasterファイル名がありません。');
+    }
+
+    const masterUrl = new URL(masterFile, GITHUB_COMMON_DB_BASE).toString();
+    const masterResponse = await fetch(masterUrl, {
+      cache: force ? 'reload' : 'force-cache'
+    });
+    if (!masterResponse.ok) {
+      throw new Error(`GitHub共通DB本体の取得に失敗しました（HTTP ${masterResponse.status}）。`);
+    }
+    const masterDocument = await masterResponse.json();
+
+    const manifestVersion = String(manifest.version || '').trim();
+    const masterVersion = String(masterDocument.version || '').trim();
+    if (manifestVersion && masterVersion && manifestVersion !== masterVersion) {
+      throw new Error(`GitHub共通DBのバージョンが一致しません（manifest ${manifestVersion} / master ${masterVersion}）。`);
+    }
+    return buildCharacterSheetMasterFromGithub(masterDocument, manifest);
+  })();
+
+  githubCharacterSheetMasterPromise = task;
+  try {
+    return await task;
+  } catch (error) {
+    if (githubCharacterSheetMasterPromise === task) githubCharacterSheetMasterPromise = null;
+    throw error;
+  }
+}
+async function loadCharacterSheetMasterWithFallback({force=false}={}) {
+  try {
+    return await fetchGithubCharacterSheetMaster({force});
+  } catch (githubError) {
+    console.warn('GitHub共通DBを取得できないためGASへ切り替えます。', githubError);
+    const gasResult = await cloudRequest('characterSheetMaster', {});
+    return {
+      ...(gasResult || {}),
+      __source: 'gas',
+      __version: '',
+      __githubError: githubError && githubError.message ? githubError.message : String(githubError)
+    };
+  }
+}
+function characterSheetMasterSourceLabel(res={}) {
+  if (res.__source === 'github') {
+    return `GitHub共通DB${res.__version ? ' v' + res.__version : ''}`;
+  }
+  return 'GASフォールバック';
+}
 function setDbCharacterSheetMaster(res={}) {
   DB_INITIAL_ITEM_MASTER = Array.isArray(res.cs_items) ? res.cs_items : [];
   DB_INITIAL_SPELL_MASTER = Array.isArray(res.spells) ? res.spells : [];
@@ -4555,7 +4664,7 @@ function setDbCharacterSheetMaster(res={}) {
   } catch (_) {}
 }
 async function loadCharacterSheetMasterFromDbForInitial() {
-  const res = await cloudRequest('characterSheetMaster', {});
+  const res = await loadCharacterSheetMasterWithFallback();
   setDbCharacterSheetMaster(res || {});
   return res || {};
 }
@@ -5560,29 +5669,43 @@ function loadCachedEquipmentCategories() {
   const cached = readCachedEquipmentCategoryPayload();
   if (Array.isArray(cached.rows) && cached.rows.length) applyEquipmentCategoryMaster(cached.rows, {silent:true, meta:cached.meta});
 }
-async function loadEquipmentCategoriesFromDb({silent=false, auto=false}={}) {
-  const res = await cloudRequest('characterSheetMaster', {});
+async function loadEquipmentCategoriesFromDb({silent=false, auto=false, force=false}={}) {
+  const res = await loadCharacterSheetMasterWithFallback({force});
   setDbCharacterSheetMaster(res || {});
   const rows = res.equipment_categories || [];
-  if (!rows.length) throw new Error('DBの装備カテゴリが空です。先に統合DB管理ツールで「DBシート作成」と必要な表の「この表だけDB登録」を行ってください。');
+  if (!rows.length) throw new Error('共通DBとGASの装備カテゴリが空です。');
   applyEquipmentCategoryMaster(rows, {save:true, silent:true, auto, meta:res.equipment_categories_meta || res.meta});
   applyCsItemMaster(res.cs_items || [], {save:true, silent:true});
+  const sourceLabel = characterSheetMasterSourceLabel(res);
   const status = $('equipmentCategoryStatus');
-  if (status) status.textContent = `倉庫から選択カテゴリ：${rows.length}件 / DBアイテム：${(res.cs_items || []).length}件 / DB術式：${(res.spells || []).length}件${auto ? ' / 自動更新済み' : ''}`;
-  if (!silent) showToast(auto ? '倉庫から選択カテゴリを自動更新しました。' : '倉庫から選択カテゴリを反映しました。', 'ok');
-  return { rows, items: res.cs_items || [], meta: res.equipment_categories_meta || res.meta || null };
+  if (status) {
+    status.textContent =
+      `${sourceLabel} / 装備カテゴリ：${rows.length}件 / アイテム：${(res.cs_items || []).length}件 / 術式：${(res.spells || []).length}件` +
+      `${auto ? ' / 自動更新済み' : ''}` +
+      `${res.__source === 'gas' && res.__githubError ? ' / GitHub取得失敗のため切替' : ''}`;
+  }
+  if (!silent) {
+    showToast(
+      res.__source === 'github'
+        ? 'GitHub共通DBを再読込しました。'
+        : 'GitHub共通DBを取得できなかったためGASから読み込みました。',
+      res.__source === 'github' ? 'ok' : 'warn'
+    );
+  }
+  return {
+    rows,
+    items: res.cs_items || [],
+    meta: res.equipment_categories_meta || res.meta || null,
+    source: res.__source || ''
+  };
 }
 async function autoSyncEquipmentCategoriesFromDb() {
   const status = $('equipmentCategoryStatus');
-  if (!gasUrl()) {
-    if (status) status.textContent = status.textContent || 'GAS URL設定後、倉庫から選択カテゴリを自動確認します。';
-    return;
-  }
   try {
-    if (status) status.textContent = '倉庫から選択カテゴリを確認中…';
+    if (status) status.textContent = 'GitHub共通DBを確認中…';
     await loadEquipmentCategoriesFromDb({silent:true, auto:true});
   } catch (e) {
-    if (status) status.textContent = 'DB自動確認に失敗：' + e.message;
+    if (status) status.textContent = '共通DBとGASの自動確認に失敗：' + e.message;
   }
 }
 
@@ -6376,7 +6499,7 @@ async function onSave() {
 function bindEvents() {
   try { localStorage.removeItem(APP_NAME + '.master.adminKey'); } catch(e) {}
   try { setGasUrl(gasUrl()); } catch(e) {}
-  if ($('loadEquipmentCategoriesBtn')) $('loadEquipmentCategoriesBtn').addEventListener('click', async () => { try { await loadEquipmentCategoriesFromDb(); } catch (e) { showToast(e.message, 'error'); const st=$('equipmentCategoryStatus'); if(st) st.textContent=e.message; } });
+  if ($('loadEquipmentCategoriesBtn')) $('loadEquipmentCategoriesBtn').addEventListener('click', async () => { try { await loadEquipmentCategoriesFromDb({force:true}); } catch (e) { showToast(e.message, 'error'); const st=$('equipmentCategoryStatus'); if(st) st.textContent=e.message; } });
   $('chooseCloudBtn').addEventListener('click', startCloudList);
   $('backHomeBtn').addEventListener('click', () => setView('home'));
   $('changeCloudKeyBtn').addEventListener('click', async () => {
