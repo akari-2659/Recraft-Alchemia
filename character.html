@@ -776,16 +776,135 @@ body.public-view #autoSavePanel{display:none!important}
   .autosave-status{flex-basis:100%}
 }
 
+
+/* v90.8.248: 装備・所持品レイアウト整理 */
+.editor-tab-btn{flex:1 1 108px}
+details.big-section>summary{
+  min-height:0;
+  padding:9px 12px;
+  line-height:1.25;
+}
+.section-body{padding:10px 12px 12px}
+.compact-toolbar{margin:8px 0 10px;align-items:center}
+.compact-storage-panel{margin:0;padding:9px 10px}
+.carry-big-section:not([open])>summary{border-bottom-color:transparent}
+.equipment-grid{gap:8px}
+.equipment-card{
+  padding:8px;
+  border-radius:11px;
+}
+.equipment-card>summary{
+  margin:-8px -8px 8px;
+  padding:7px 9px;
+  border-radius:11px 11px 0 0;
+}
+.equipment-card:not([open])>summary{
+  margin-bottom:-8px;
+  border-bottom:0;
+  border-radius:11px;
+}
+.equipment-card-head{
+  align-items:center;
+  min-width:0;
+  gap:8px;
+}
+.equipment-card-title{font-size:.98rem;min-width:0}
+.equipment-slot-label::after{padding:1px 5px;font-size:.68rem}
+.equipment-summary{
+  flex:1 1 auto;
+  min-width:0;
+  max-width:70%;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  line-height:1.2;
+}
+.equipment-slot-body,.equipment-fields{gap:7px}
+.bag-control-grid,.quiver-control-grid{gap:8px}
+.quiver-control-grid{grid-template-columns:1fr}
+.quiver-ammo-grid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:7px;
+  margin-top:8px;
+}
+.quiver-slot-card{
+  padding:8px 9px;
+  border-style:solid;
+}
+.quiver-slot-fields{
+  grid-template-columns:minmax(0,1fr) 88px;
+  gap:8px;
+}
+.quiver-slot-fields label{margin-bottom:3px}
+.quiver-item-effect,.carry-item-effect{
+  margin-top:6px;
+  padding:6px 8px;
+  border-radius:8px;
+  background:rgba(101,139,121,.08);
+  color:var(--muted);
+  font-size:.84rem;
+  line-height:1.45;
+  white-space:pre-wrap;
+}
+.carry-item-list{display:grid;gap:7px}
+.carry-item-row{
+  display:grid;
+  gap:6px;
+  padding:8px 9px;
+}
+.carry-item-primary{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 88px;
+  gap:8px;
+  align-items:end;
+}
+.carry-item-title{
+  font-weight:900;
+  color:var(--accent2);
+  line-height:1.25;
+}
+.carry-item-edit{
+  border-top:1px dashed rgba(221,203,176,.85);
+  padding-top:5px;
+}
+.carry-item-edit>summary{
+  cursor:pointer;
+  list-style:none;
+  color:var(--accent2);
+  font-size:.78rem;
+  font-weight:900;
+}
+.carry-item-edit>summary::-webkit-details-marker{display:none}
+.carry-item-edit>summary::before{content:"▶";margin-right:5px}
+.carry-item-edit[open]>summary::before{content:"▼"}
+.carry-item-edit .equipment-fields{margin-top:7px}
+.carry-slot-card.carry-slot-hidden{display:none}
+.carry-item-row.carry-over-capacity{
+  border-color:rgba(188,96,45,.72);
+  background:rgba(255,243,232,.86);
+}
+@media(max-width:680px){
+  details.big-section>summary{padding:8px 10px}
+  .section-body{padding:9px 10px 10px}
+  .equipment-card{padding:7px}
+  .equipment-card>summary{margin:-7px -7px 7px;padding:7px 8px}
+  .equipment-card:not([open])>summary{margin-bottom:-7px}
+  .equipment-summary{max-width:62%;font-size:.77rem}
+  .editor-tab-btn{flex:1 1 calc(33.333% - 6px)}
+  .carry-item-primary,.quiver-slot-fields{grid-template-columns:minmax(0,1fr) 76px}
+}
+
 </style>
 
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.247 / 最終更新日：2026年7月23日</div>
+<div class="ra-build-info">Version：v90.8.248 / 最終更新日：2026年7月23日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.247 / 最終更新日：2026年7月23日</div>
+  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.248 / 最終更新日：2026年7月23日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -858,7 +977,8 @@ body.public-view #autoSavePanel{display:none!important}
     <div class="editor-tabs" role="tablist" aria-label="編集ページ切替">
       <button type="button" class="editor-tab-btn active" data-editor-tab="ability">能力</button>
       <button type="button" class="editor-tab-btn" data-editor-tab="skills">技能</button>
-      <button type="button" class="editor-tab-btn" data-editor-tab="equipment">装備・所持品</button>
+      <button type="button" class="editor-tab-btn" data-editor-tab="equipment">装備</button>
+      <button type="button" class="editor-tab-btn" data-editor-tab="carry">所持品</button>
       <button type="button" class="editor-tab-btn" data-editor-tab="inventory">倉庫</button>
     </div>
 
@@ -1018,28 +1138,43 @@ body.public-view #autoSavePanel{display:none!important}
 
     <div id="tabEquipment" class="editor-tab-page">
       <details class="big-section" open>
-        <summary>装備・所持品</summary>
+        <summary>装備</summary>
         <div class="section-body">
-          <p class="hint">この「所持品」枠は、冒険に持ち出すアイテム用です。右手・左手・鎧・装飾品・所持品は、倉庫に登録済みのアイテムから選択して反映します。必要な装備や道具は先に倉庫へ登録してください。</p>
-          <div class="button-row">
+          <p class="hint">右手・左手・鎧・装飾品は、倉庫に登録済みの装備から選択して反映します。必要な装備は先に倉庫へ登録してください。</p>
+          <div class="button-row compact-toolbar">
             <button id="loadEquipmentCategoriesBtn" type="button" class="ghost">倉庫から選択カテゴリ読込</button>
             <span id="equipmentCategoryStatus" class="small">未読込の場合は内蔵カテゴリを使います。</span>
           </div>
-          <div class="bag-control-panel">
+          <div id="equipmentArea" class="equipment-grid"></div>
+        </div>
+      </details>
+    </div>
+
+    <div id="tabCarry" class="editor-tab-page">
+      <details class="big-section carry-big-section">
+        <summary>バッグ</summary>
+        <div class="section-body">
+          <div class="bag-control-panel compact-storage-panel">
             <div class="bag-control-grid">
               <div class="field">
-                <label for="bagSelect">バッグ</label>
+                <label for="bagSelect">バッグ選択</label>
                 <select id="bagSelect" data-inventory-input="1"><option value="">バッグ未選択</option></select>
               </div>
               <div id="bagCapacityStatus" class="bag-status">倉庫にあるバッグを選択してください。</div>
             </div>
           </div>
-          <div class="quiver-control-panel">
+        </div>
+      </details>
+
+      <details class="big-section carry-big-section">
+        <summary>矢筒</summary>
+        <div class="section-body">
+          <div class="quiver-control-panel compact-storage-panel">
             <div class="quiver-control-grid">
               <div class="field">
-                <label for="quiverSelect">矢筒装備</label>
+                <label for="quiverSelect">矢筒選択</label>
                 <select id="quiverSelect" data-inventory-input="1"><option value="">矢筒未装備</option></select>
-                <p class="hint">矢筒は初期支給されません。倉庫に登録した矢筒を装備すると、矢弾をスタック単位で収納できます。同じ矢弾を複数枠へ分けて入れることもできます。矢筒は所持品枠を消費しません。</p>
+                <p class="hint">倉庫に登録した矢筒を選び、矢弾をスタック単位で収納します。矢筒内の矢弾は所持品枠を消費しません。</p>
               </div>
               <div>
                 <div id="quiverCapacityStatus" class="bag-status">倉庫にある矢筒を装備してください。</div>
@@ -1047,7 +1182,14 @@ body.public-view #autoSavePanel{display:none!important}
               </div>
             </div>
           </div>
-          <div id="equipmentArea" class="equipment-grid"></div>
+        </div>
+      </details>
+
+      <details class="big-section carry-big-section">
+        <summary>所持品</summary>
+        <div class="section-body">
+          <p class="hint">冒険へ持ち出すアイテムです。バッグ容量まで、倉庫から選択して移動できます。</p>
+          <div id="carryArea" class="carry-item-list"></div>
         </div>
       </details>
     </div>
@@ -1807,35 +1949,41 @@ function renderStatic() {
     const options = slot.typeOptions.map(op => `<option value="${op}">${op}</option>`).join('');
     if (slot.kind === 'carry') {
       return `
-        <details class="equipment-card carry-slot-card" data-equipment-card="${slot.key}" data-carry-index="${slot.carryIndex || 0}" open>
-          <summary><div class="equipment-card-head"><div class="equipment-card-title"><span class="equipment-slot-label">${slot.name}</span></div><div class="equipment-summary" id="equip_${slot.key}_summary">未設定</div></div></summary>
-          <div class="equipment-slot-body"><div class="equipment-fields three">
-            <div class="field equipment-wide">
-              <label for="equip_${slot.key}_itemSelect">倉庫から選択</label>
-              <select id="equip_${slot.key}_itemSelect" data-equipment-input="1"><option value="">手入力</option></select>
+        <div class="equipment-card carry-slot-card carry-item-row" data-equipment-card="${slot.key}" data-carry-index="${slot.carryIndex || 0}">
+          <div class="carry-item-title" id="equip_${slot.key}_summary">未設定</div>
+          <div class="carry-item-primary">
+            <div class="field">
+              <label class="small" for="equip_${slot.key}_itemSelect">倉庫から選択</label>
+              <select id="equip_${slot.key}_itemSelect" data-equipment-input="1"><option value="">未選択（倉庫へ戻す）</option></select>
             </div>
             <div class="field">
-              <label for="equip_${slot.key}_name">品名</label>
-              <input id="equip_${slot.key}_name" data-equipment-input="1" type="text" placeholder="例：ポーション" />
-            </div>
-            <div class="field">
-              <label for="equip_${slot.key}_type">種類</label>
-              <select id="equip_${slot.key}_type" data-equipment-input="1">${options}</select>
-            </div>
-            <div class="field">
-              <label for="equip_${slot.key}_count">個数</label>
+              <label class="small" for="equip_${slot.key}_count">個数</label>
               <input id="equip_${slot.key}_count" data-equipment-input="1" type="number" min="0" max="99" value="1" />
             </div>
-            <div class="field equipment-wide">
-              <label for="equip_${slot.key}_description">説明</label>
-              <textarea id="equip_${slot.key}_description" data-equipment-input="1" placeholder="見た目や雰囲気など"></textarea>
+          </div>
+          <div id="equip_${slot.key}_effectPreview" class="carry-item-effect" hidden></div>
+          <details class="carry-item-edit">
+            <summary>詳細編集</summary>
+            <div class="equipment-fields three">
+              <div class="field">
+                <label for="equip_${slot.key}_name">品名</label>
+                <input id="equip_${slot.key}_name" data-equipment-input="1" type="text" placeholder="例：ポーション" />
+              </div>
+              <div class="field">
+                <label for="equip_${slot.key}_type">種類</label>
+                <select id="equip_${slot.key}_type" data-equipment-input="1">${options}</select>
+              </div>
+              <div class="field equipment-wide">
+                <label for="equip_${slot.key}_description">説明</label>
+                <textarea id="equip_${slot.key}_description" data-equipment-input="1" placeholder="見た目や雰囲気など"></textarea>
+              </div>
+              <div class="field equipment-wide">
+                <label for="equip_${slot.key}_note">効果</label>
+                <textarea id="equip_${slot.key}_note" data-equipment-input="1" placeholder="数値・ルール処理など"></textarea>
+              </div>
             </div>
-            <div class="field equipment-wide">
-              <label for="equip_${slot.key}_note">効果</label>
-              <textarea id="equip_${slot.key}_note" data-equipment-input="1" placeholder="数値・ルール処理など"></textarea>
-            </div>
-          </div></div>
-        </details>`;
+          </details>
+        </div>`;
     }
     return `
       <details class="equipment-card" data-equipment-card="${slot.key}" open>
@@ -1924,6 +2072,13 @@ function renderStatic() {
         <textarea id="equipmentMemo" data-equipment-input="1" placeholder="装備セット、魔導書/祈祷書のセット枠、所持品補足など"></textarea>
       </div>
     </details>`;
+  const carryArea = $('carryArea');
+  if (carryArea) {
+    carryArea.innerHTML = '';
+    for (const card of Array.from($('equipmentArea')?.querySelectorAll('.carry-slot-card') || [])) {
+      carryArea.appendChild(card);
+    }
+  }
 }
 function updateAbilities() {
   const base = getAbilityValues();
@@ -3035,19 +3190,28 @@ function updateEquipmentSummaries() {
     const name = $('equip_' + slot.key + '_name')?.value?.trim() || '';
     const type = $('equip_' + slot.key + '_type')?.value || 'なし';
     const count = $('equip_' + slot.key + '_count')?.value || '';
+    if (slot.kind === 'carry') {
+      el.textContent = name ? `${name}${count ? ' ×' + count : ''}` : '未設定';
+      const effectEl = $('equip_' + slot.key + '_effectPreview');
+      const effect = $('equip_' + slot.key + '_note')?.value?.trim()
+        || $('equip_' + slot.key + '_description')?.value?.trim()
+        || '';
+      if (effectEl) {
+        effectEl.textContent = effect ? `効果：${effect}` : '';
+        effectEl.hidden = !effect;
+      }
+      continue;
+    }
     const spellCount = selectedSpellNames(slot.key).length;
     const parts = [];
     if (name) parts.push(name);
     if (type && type !== 'なし') parts.push(type);
     const element = $('equip_' + slot.key + '_element')?.value || '';
     if (element) parts.push('属性:' + element);
-    if (slot.kind !== 'carry') {
-      const target = $('equip_' + slot.key + '_target')?.value?.trim() || '';
-      const checkType = checkExpressionRightDisplay($('equip_' + slot.key + '_checkType')?.value || '');
-      if (target) parts.push('対象:' + target);
-      if (checkType) parts.push('判定:' + checkType);
-    }
-    if (slot.kind === 'carry' && count) parts.push('×' + count);
+    const target = $('equip_' + slot.key + '_target')?.value?.trim() || '';
+    const checkType = checkExpressionRightDisplay($('equip_' + slot.key + '_checkType')?.value || '');
+    if (target) parts.push('対象:' + target);
+    if (checkType) parts.push('判定:' + checkType);
     if (spellCount) parts.push('術式' + spellCount + '件');
     el.textContent = parts.length ? parts.join(' / ') : '未設定';
   }
@@ -3260,7 +3424,7 @@ function updateEquipmentHandLocks(clearOpposite=true) {
   updateEquipmentFieldAvailability();
 }
 function showEditorTab(tab) {
-  const map = { ability:'tabAbility', skills:'tabSkills', equipment:'tabEquipment', inventory:'tabInventory' };
+  const map = { ability:'tabAbility', skills:'tabSkills', equipment:'tabEquipment', carry:'tabCarry', inventory:'tabInventory' };
   for (const page of document.querySelectorAll('.editor-tab-page')) page.classList.remove('active');
   for (const btn of document.querySelectorAll('.editor-tab-btn')) btn.classList.toggle('active', btn.dataset.editorTab === tab);
   const target = $(map[tab] || 'tabAbility');
@@ -3590,19 +3754,38 @@ function renderQuiverControls() {
     area.innerHTML = '';
     return;
   }
-  status.textContent = `${q.name}：矢弾スタック${cap}枠。同じ矢弾を複数枠へ分けて収納できます。矢筒は所持品枠を消費しません。`;
+  status.textContent = `${q.name}：矢弾スタック${cap}枠。同じ矢弾を複数枠へ分けて収納できます。`;
   const ammo = inventoryAmmoRows();
   area.innerHTML = Array.from({length:cap}, (_,idx) => {
     const key = `slot${idx+1}`;
     const state = normalizeQuiverAmmoSlotState(quiverAmmoSlotsState[key]);
     const selectedId = state?.itemId || '';
+    const selectedRow = ammo.find(a => {
+      const id = inventoryItemKey(a);
+      return id === selectedId || String(a.id || '').trim() === selectedId || String(a.masterId || '').trim() === selectedId;
+    }) || null;
     const options = ammo.map(a => {
       const id = inventoryItemKey(a);
       return `<option value="${esc(id)}" ${id === selectedId ? 'selected' : ''}>${esc(a.name)} / 倉庫${esc(a.count)}</option>`;
     }).join('');
     const count = state?.count || 1;
     const maxStack = state?.maxStack || 99;
-    return `<div class="quiver-slot-card"><label>矢弾枠${idx+1}</label><div class="quiver-slot-fields"><select data-inventory-input="1" data-quiver-ammo-slot="${key}"><option value="">未設定（倉庫へ戻す）</option>${options}</select><div><label>個数</label><input data-inventory-input="1" type="number" min="1" max="${esc(maxStack)}" value="${esc(count)}" data-quiver-ammo-count="${key}" ${state?.warehouseAllocated ? '' : 'disabled'} /></div></div></div>`;
+    const effectText = String(selectedRow?.effect || selectedRow?.note || '').trim();
+    return `<div class="quiver-slot-card">
+      <div class="quiver-slot-fields">
+        <div>
+          <label class="small">矢弾</label>
+          <select data-inventory-input="1" data-quiver-ammo-slot="${key}">
+            <option value="">未設定（倉庫へ戻す）</option>${options}
+          </select>
+        </div>
+        <div>
+          <label class="small">個数</label>
+          <input data-inventory-input="1" type="number" min="1" max="${esc(maxStack)}" value="${esc(count)}" data-quiver-ammo-count="${key}" ${state?.warehouseAllocated ? '' : 'disabled'} />
+        </div>
+      </div>
+      ${selectedRow ? `<div class="quiver-item-effect">効果：${esc(effectText || '特別な効果はない。')}</div>` : ''}
+    </div>`;
   }).join('');
 }
 
@@ -3618,7 +3801,7 @@ function applyBagCapacityToEquipmentSlots() {
     card.classList.toggle('carry-slot-hidden', !inRange && !used);
     card.classList.toggle('carry-over-capacity', !inRange && used);
     for (const el of card.querySelectorAll('[data-equipment-input]')) el.disabled = (currentMode === 'view') || (!inRange && !used);
-    if (!inRange && used) over.push(slot.name);
+    if (!inRange && used) over.push(slot.key);
   }
   const status = $('bagCapacityStatus');
   if (status) {
@@ -3626,7 +3809,7 @@ function applyBagCapacityToEquipmentSlots() {
     const label = bag ? `${bag.name}：所持品枠${cap}` : 'バッグ未選択：所持品枠0';
     status.classList.toggle('warning', !!over.length || !bag);
     status.textContent = over.length ? `${label}
-容量を超えた所持品があります：${over.join('、')}。倉庫へ戻すか、容量の大きいバッグを選択してください。` : `${label}
+容量を超えた所持品が${over.length}件あります。倉庫へ戻すか、容量の大きいバッグを選択してください。` : `${label}
 倉庫は保管上限なしです。冒険へ持ち出す所持品だけバッグ容量の制限を受けます。`;
   }
 }
@@ -5806,6 +5989,18 @@ function defaultSkillForEquipmentItem(item={}, slotKey='') {
   if (type && type !== 'なし' && !['盾','大盾'].includes(type)) return '近接';
   return '';
 }
+function isNonWeaponEquipmentPaletteItem(row={}) {
+  const kind = normalizeInventoryKind(row.kind || '');
+  const equipSlot = String(row.equipSlot || row.slot || '').trim();
+  return ['防具','装飾品','バッグ','矢筒'].includes(kind)
+    || /^(鎧|防具|装飾品|バッグ|矢筒|盾|大盾)$/.test(equipSlot);
+}
+function appendPaletteBlock(result=[], block=[]) {
+  const clean = (block || []).filter(line => String(line || '').trim());
+  if (!clean.length) return;
+  if (result.length && result[result.length - 1] !== '') result.push('');
+  result.push(...clean);
+}
 function collectCheckPaletteLines(data={}, totals={}) {
   const globalMod=fatiguePenaltyForData(data);
   const equipment = data.equipment || {};
@@ -5815,9 +6010,10 @@ function collectCheckPaletteLines(data={}, totals={}) {
   const usedSpellMeta = new Set();
   const pushLine = (checkType, label, extraMod='') => {
     const line = paletteCheckLineFromExpression(checkType, label, totals, extraMod, globalMod);
-    if (!line || used.has(line)) return;
+    if (!line || used.has(line)) return '';
     used.add(line);
     result.push(line);
+    return line;
   };
   const pushWeaponLine = (checkType, handLabel, hitMod=0) => {
     const line = paletteWeaponCheckLineFromExpression(checkType, handLabel, totals, hitMod, globalMod);
@@ -5825,6 +6021,7 @@ function collectCheckPaletteLines(data={}, totals={}) {
     used.add(line);
     result.push(line);
   };
+
   for (const spec of [{ key:'rightHand', label:'右手' }, { key:'leftHand', label:'左手' }]) {
     const eq = equipment[spec.key] || {};
     const source = findPaletteInventoryItem(items, eq);
@@ -5841,6 +6038,7 @@ function collectCheckPaletteLines(data={}, totals={}) {
     }
     if (isPaletteTwoHandEquipment(merged, source)) break;
   }
+
   for (const slot of EQUIPMENT_SLOTS) {
     if (slot.kind === 'carry') continue;
     const eq = equipment[slot.key] || {};
@@ -5851,25 +6049,55 @@ function collectCheckPaletteLines(data={}, totals={}) {
       const spell = findPaletteSpellByName(items, name) || normalizeInventoryItem({ name, kind:'術式' });
       const spellKind = String(spell.category || spell.kind || type || '').trim();
       const defaultSkill = /祈祷|聖|神/.test(spellKind) ? '祈祷' : '魔法';
+      const block = [];
       const metaLine = paletteSpellMetaLine(spell, eq);
       if (metaLine && !usedSpellMeta.has(metaLine)) {
         usedSpellMeta.add(metaLine);
-        result.push(metaLine);
+        block.push(metaLine);
         const effectLine = paletteSpellEffectLine(spell);
-        if (effectLine) result.push(effectLine);
+        if (effectLine) block.push(effectLine);
       }
-      pushLine(checkTypeOrDefault(spell, defaultSkill, defaultSkill === '魔法' ? '回避値' : '目標値'), String(spell.name || name).trim(), signedNumberText(spellBookHitBonus(eq)));
+      const checkLine = paletteCheckLineFromExpression(
+        checkTypeOrDefault(spell, defaultSkill, defaultSkill === '魔法' ? '回避値' : '目標値'),
+        String(spell.name || name).trim(),
+        totals,
+        signedNumberText(spellBookHitBonus(eq)),
+        globalMod
+      );
+      if (checkLine && !used.has(checkLine)) {
+        used.add(checkLine);
+        block.push(checkLine);
+      }
+      appendPaletteBlock(result, block);
     }
   }
+
+  let inventorySectionStarted = false;
   for (const item of items) {
     const row = normalizeInventoryItem(item);
     if (!row.checkType || row.checkType === 'なし') continue;
-    if (row.kind === '術式') continue; // 術式は装備にセットされたものを上で出す
-    if (row.kind === '武器') continue; // 武器攻撃判定は装備中の右手/左手/両手だけを上で出す
+    if (row.kind === '術式') continue;
+    if (row.kind === '武器') continue;
+    if (isNonWeaponEquipmentPaletteItem(row)) continue;
     const label = row.name || row.category || '判定';
-    const forcedSkill = /祈祷|聖|神/.test(String(row.category || row.kind || '')) ? '祈祷' : (/魔法|魔導/.test(String(row.category || row.kind || '')) ? '魔法' : '');
-    pushLine(checkTypeOrDefault(row, forcedSkill, '目標値'), label);
+    const forcedSkill = /祈祷|聖|神/.test(String(row.category || row.kind || ''))
+      ? '祈祷'
+      : (/魔法|魔導/.test(String(row.category || row.kind || '')) ? '魔法' : '');
+    const line = paletteCheckLineFromExpression(
+      checkTypeOrDefault(row, forcedSkill, '目標値'),
+      label,
+      totals,
+      '',
+      globalMod
+    );
+    if (!line || used.has(line)) continue;
+    if (!inventorySectionStarted && result.length && result[result.length - 1] !== '') result.push('');
+    inventorySectionStarted = true;
+    used.add(line);
+    result.push(line);
   }
+
+  while (result.length && result[result.length - 1] === '') result.pop();
   return result;
 }
 
