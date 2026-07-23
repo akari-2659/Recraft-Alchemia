@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.241</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.242</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -748,16 +748,44 @@ button,.tab,.subtab,.editor-tab{
 }
 @media(max-width:380px){.editor-tabs,#listView .topbar .button-row,.inventory-toolbar,.editor-action-inner{grid-template-columns:1fr!important}}
 @media(max-width:520px){.inventory-list-heading{display:grid;grid-template-columns:1fr}.inventory-list-heading>button{width:100%}}
+
+/* v90.8.246: キャラクター自動保存 */
+.autosave-panel{
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;
+  margin-top:10px;padding:10px 12px;border:1px solid #d9c7ae;
+  border-radius:12px;background:#fffaf3;
+}
+.autosave-switch{
+  display:inline-flex;align-items:center;gap:8px;margin:0;
+  font-weight:800;cursor:pointer;user-select:none;
+}
+.autosave-switch input{
+  width:20px;height:20px;margin:0;accent-color:#8b5f3d;
+}
+.autosave-status{
+  flex:1 1 240px;min-height:1.5em;color:#66594b;font-size:.92rem;
+  white-space:pre-wrap;
+}
+.autosave-status.is-saving{color:#416b86}
+.autosave-status.is-ok{color:#32734a}
+.autosave-status.is-warn{color:#946315}
+.autosave-status.is-error{color:#a33a32}
+body.public-view #autoSavePanel{display:none!important}
+@media(max-width:620px){
+  .autosave-panel{align-items:flex-start}
+  .autosave-status{flex-basis:100%}
+}
+
 </style>
 
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.241 / 最終更新日：2026年7月22日</div>
+<div class="ra-build-info">Version：v90.8.247 / 最終更新日：2026年7月23日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.241 / 最終更新日：2026年7月22日</div>
+  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.247 / 最終更新日：2026年7月23日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -818,6 +846,13 @@ button,.tab,.subtab,.editor-tab{
         </div>
       </div>
       <div id="editorStatus" class="status-box">編集中です。</div>
+      <div id="autoSavePanel" class="autosave-panel">
+        <label class="autosave-switch" for="autoSaveToggle">
+          <input id="autoSaveToggle" type="checkbox" checked />
+          <span>自動保存</span>
+        </label>
+        <div id="autoSaveStatus" class="autosave-status" aria-live="polite">自動保存：ON</div>
+      </div>
     </section>
 
     <div class="editor-tabs" role="tablist" aria-label="編集ページ切替">
@@ -1298,6 +1333,216 @@ let currentMode = 'edit'; // new/edit/view
 let currentCharacter = null;
 let outputTargetData = null;
 let lastRolls = [];
+
+const AUTO_SAVE_DELAY_MS = 1000;
+let autoSaveEnabled = true;
+let autoSaveReady = false;
+let autoSaveTimer = null;
+let autoSaveBusy = false;
+let autoSavePending = false;
+let autoSaveDirty = false;
+let autoSaveLastSavedHash = '';
+
+function setAutoSaveStatus(message='', state=''){
+  const el=$('autoSaveStatus');
+  if(!el)return;
+  el.className='autosave-status' + (state ? ` is-${state}` : '');
+  el.textContent=message;
+}
+function autoSaveTimeLabel(){
+  return new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+function autoSaveContentHash(data){
+  const clone=JSON.parse(JSON.stringify(stripRuntimeOnlyData(data||{})));
+  delete clone.updatedAt;
+  delete clone.effectiveAbilities;
+  delete clone.combatStats;
+  return JSON.stringify(clone);
+}
+function currentAutoSaveHash(){
+  if(!currentCharacter)return '';
+  return autoSaveContentHash(collectData(false));
+}
+function clearAutoSaveTimer(){
+  if(autoSaveTimer){
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer=null;
+  }
+}
+function syncAutoSaveToggle(){
+  const toggle=$('autoSaveToggle');
+  if(toggle){
+    toggle.checked=!!autoSaveEnabled;
+    toggle.disabled=currentMode==='view';
+  }
+}
+function initializeAutoSaveForEditor(mode=currentMode){
+  clearAutoSaveTimer();
+  autoSavePending=false;
+  autoSaveDirty=false;
+  autoSaveEnabled=currentCharacter?.autoSaveEnabled!==false;
+  autoSaveReady=mode!=='view';
+  syncAutoSaveToggle();
+  let hash='';
+  try{hash=currentAutoSaveHash();}catch(_){}
+  autoSaveLastSavedHash=hash;
+  if(mode==='view'){
+    setAutoSaveStatus('閲覧モードでは自動保存しません。','warn');
+  }else if(autoSaveEnabled){
+    setAutoSaveStatus('自動保存：ON（このキャラクターの設定）','ok');
+  }else{
+    setAutoSaveStatus('自動保存：OFF（このキャラクターの設定）','warn');
+  }
+}
+async function waitForAutoSaveIdle(){
+  while(autoSaveBusy){
+    await new Promise(resolve=>setTimeout(resolve,80));
+  }
+}
+async function setAutoSaveEnabled(enabled){
+  const previous=autoSaveEnabled;
+  autoSaveEnabled=!!enabled;
+  if(currentCharacter)currentCharacter.autoSaveEnabled=autoSaveEnabled;
+  syncAutoSaveToggle();
+  clearAutoSaveTimer();
+  autoSavePending=false;
+
+  if(currentMode==='view'){
+    setAutoSaveStatus('閲覧モードでは設定を変更できません。','warn');
+    return;
+  }
+
+  if(!currentCharacter?.name){
+    setAutoSaveStatus(
+      autoSaveEnabled
+        ? '自動保存：ON（キャラクター初回保存時に設定も保存）'
+        : '自動保存：OFF（キャラクター初回保存時に設定も保存）',
+      autoSaveEnabled?'ok':'warn'
+    );
+    return;
+  }
+
+  setAutoSaveStatus('自動保存設定をキャラクターへ保存中…','saving');
+  try{
+    await waitForAutoSaveIdle();
+    const result=await saveCharacterNow({automatic:true,force:true});
+    if(result.saved || result.unchanged){
+      setAutoSaveStatus(
+        autoSaveEnabled
+          ? '自動保存：ON（このキャラクターに保存済み）'
+          : '自動保存：OFF（このキャラクターに保存済み）',
+        autoSaveEnabled?'ok':'warn'
+      );
+      if(autoSaveEnabled)autoSaveDraftSoon();
+      return;
+    }
+    throw new Error('設定を保存できませんでした。');
+  }catch(e){
+    autoSaveEnabled=previous;
+    if(currentCharacter)currentCharacter.autoSaveEnabled=previous;
+    syncAutoSaveToggle();
+    setAutoSaveStatus(`自動保存設定の保存に失敗しました：${e.message||e}`,'error');
+  }
+}
+function autoSaveDraftSoon(){
+  if(!autoSaveEnabled || !autoSaveReady || currentMode==='view' || !currentCharacter)return;
+  let hash='';
+  try{hash=currentAutoSaveHash();}catch(_){return;}
+  if(hash===autoSaveLastSavedHash){
+    autoSaveDirty=false;
+    if(!autoSaveBusy)setAutoSaveStatus('自動保存済み','ok');
+    return;
+  }
+  autoSaveDirty=true;
+  clearAutoSaveTimer();
+  setAutoSaveStatus('変更を検出しました。自動保存を待機中…','warn');
+  autoSaveTimer=setTimeout(()=>{
+    autoSaveTimer=null;
+    saveCharacterNow({automatic:true,force:false});
+  },AUTO_SAVE_DELAY_MS);
+}
+async function saveCharacterNow({automatic=false,force=false}={}){
+  if(autoSaveBusy){
+    autoSavePending=true;
+    return {saved:false,pending:true};
+  }
+  const data=collectData(true);
+  if(!data.name){
+    if(automatic){
+      autoSaveDirty=true;
+      setAutoSaveStatus('キャラクター名の入力後に自動保存します。','warn');
+    }else{
+      $('editorStatus').className='status-box error';
+      $('editorStatus').textContent='キャラクター名を入力してください。';
+      showToast('キャラクター名を入力してください。','error');
+    }
+    return {saved:false,reason:'name'};
+  }
+  const check=validateSkills(data.skills,data.stats,data.manualCategoryBonuses||emptyCategoryBonus());
+  if(check.errors.length){
+    if(automatic){
+      autoSaveDirty=true;
+      setAutoSaveStatus('技能ポイントに問題があるため、自動保存を保留しています。','error');
+    }else{
+      $('editorStatus').className='status-box error';
+      $('editorStatus').textContent='技能ポイントに問題があるため保存前に確認してください。\n'+check.errors.join('\n');
+      showToast('技能ポイントに問題があるため保存できません。','error');
+    }
+    return {saved:false,reason:'skills',errors:check.errors};
+  }
+
+  const hash=autoSaveContentHash(data);
+  if(!force && hash===autoSaveLastSavedHash){
+    autoSaveDirty=false;
+    setAutoSaveStatus('自動保存済み','ok');
+    return {saved:false,unchanged:true};
+  }
+
+  autoSaveBusy=true;
+  autoSavePending=false;
+  if(automatic)setAutoSaveStatus('クラウドへ自動保存中…','saving');
+  try{
+    const result=await saveItem(data);
+    currentCharacter=data;
+    currentMode='edit';
+    autoSaveLastSavedHash=hash;
+    autoSaveDirty=false;
+    syncAutoSaveToggle();
+
+    if(automatic){
+      setAutoSaveStatus(`自動保存しました（${autoSaveTimeLabel()}）`,'ok');
+    }else{
+      $('editorStatus').className=result?.reason?'status-box warn':'status-box ok';
+      $('editorStatus').textContent='クラウドへ保存しました。';
+      setAutoSaveStatus(autoSaveEnabled?`保存しました（${autoSaveTimeLabel()}）`:'自動保存：OFF','ok');
+      showToast('クラウドへ保存しました。','ok');
+    }
+    return {saved:true,result};
+  }catch(e){
+    autoSaveDirty=true;
+    if(automatic){
+      setAutoSaveStatus(`自動保存に失敗しました：${e.message||e}`,'error');
+    }else{
+      $('editorStatus').className='status-box error';
+      $('editorStatus').textContent=e.message;
+      showToast(e.message,'error');
+    }
+    return {saved:false,reason:'error',error:e};
+  }finally{
+    autoSaveBusy=false;
+    if(autoSavePending){
+      autoSavePending=false;
+      autoSaveDraftSoon();
+    }
+  }
+}
+async function flushAutoSaveBeforeLeave(){
+  clearAutoSaveTimer();
+  if(!autoSaveEnabled || !autoSaveReady || currentMode==='view' || !autoSaveDirty)return true;
+  const result=await saveCharacterNow({automatic:true,force:false});
+  if(result.saved || result.unchanged)return true;
+  return confirm('自動保存できていない変更があります。このままリストへ戻りますか？');
+}
 
 function $(id) { return document.getElementById(id); }
 
@@ -2351,7 +2596,10 @@ function updateResources() {
   return res;
 }
 
-function updateSummary() { /* 出力欄はボタンから開くため常時表示しない */ }
+function updateSummary() {
+  /* 出力欄はボタンから開くため常時表示しない */
+  autoSaveDraftSoon();
+}
 function updateAll() { updateAbilities(); updateCategoryBonuses(); updateResources(); updateSkills(); updateCombatStats(); updateSpellSlotHints(); updateEquipmentSummaries(); applyBagCapacityToEquipmentSlots();
   renderQuiverControls(); updateSummary(); }
 
@@ -4389,7 +4637,7 @@ function sortInventoryItems() {
 function emptyCharacter() {
   const stats = Object.fromEntries(STAT_ORDER.map(k => [k, '']));
   const abilities = Object.fromEntries(ABILITIES.map(a => [a.key, 0]));
-  return { id: uuid(), name: '', gender: '', age: '', stats, abilities, skills: defaultSkillAlloc(), manualCategoryBonuses: emptyCategoryBonus(), resources: { hpBonus:0, mpBonus:0, currentHp:'', currentMp:'', fatigue:0 }, equipment: defaultEquipment(), inventory: defaultInventory(), memo: '', createdAt: nowIso(), updatedAt: nowIso() };
+  return { id: uuid(), name: '', gender: '', age: '', stats, abilities, skills: defaultSkillAlloc(), manualCategoryBonuses: emptyCategoryBonus(), resources: { hpBonus:0, mpBonus:0, currentHp:'', currentMp:'', fatigue:0 }, equipment: defaultEquipment(), inventory: defaultInventory(), autoSaveEnabled:true, memo: '', createdAt: nowIso(), updatedAt: nowIso() };
 }
 function collectData(updateTime=true) {
   const base = currentCharacter || emptyCharacter();
@@ -4411,12 +4659,15 @@ function collectData(updateTime=true) {
     equipment,
     inventory: getInventoryState(),
     combatStats: computeCombatStats(abilities, getSkillAlloc(), equipment),
+    autoSaveEnabled: autoSaveEnabled!==false,
     memo: $('charMemo').value,
     updatedAt: updateTime ? nowIso() : base.updatedAt,
   };
 }
 function applyData(data) {
   currentCharacter = { ...emptyCharacter(), ...(data || {}) };
+  currentCharacter.autoSaveEnabled=currentCharacter.autoSaveEnabled!==false;
+  autoSaveEnabled=currentCharacter.autoSaveEnabled;
   $('charName').value = currentCharacter.name || '';
   $('charGender').value = currentCharacter.gender || '';
   $('charAge').value = currentCharacter.age || '';
@@ -4457,6 +4708,7 @@ function setReadOnly(readOnly) {
   if ($('addInitialWeaponSetBtn')) $('addInitialWeaponSetBtn').disabled = readOnly;
   const editOnly = ['saveBtn','rollBtn','txtFileBtn'];
   for (const id of editOnly) if ($(id)) $(id).disabled = readOnly;
+  if($('autoSaveToggle')) $('autoSaveToggle').disabled=readOnly;
   for (const btn of document.querySelectorAll('[data-reroll-ability]')) btn.disabled = readOnly;
   updateEquipmentHandLocks(false);
   $('toggleViewEditBtn').style.display = readOnly ? '' : 'none';
@@ -4516,6 +4768,8 @@ async function startCloudList(event) {
   return false;
 }
 function openEditor(mode, data=null) {
+  autoSaveReady=false;
+  clearAutoSaveTimer();
   currentMode = mode;
   applyData(data || emptyCharacter());
   const title = mode === 'new' ? '新規作成' : mode === 'view' ? 'キャラクター閲覧' : 'キャラクター編集';
@@ -4523,10 +4777,13 @@ function openEditor(mode, data=null) {
   $('editorSub').textContent = `${storageLabel()} / ID: ${currentCharacter.id}`;
   setReadOnly(mode === 'view');
   $('editorStatus').className = 'status-box';
-  $('editorStatus').textContent = mode === 'view' ? '閲覧モードです。編集する場合は「編集に切替」を押してください。' : '編集中です。クラウドへ保存できます。';
+  $('editorStatus').textContent = mode === 'view'
+    ? '閲覧モードです。編集する場合は「編集に切替」を押してください。'
+    : (autoSaveEnabled ? '編集中です。変更は自動保存されます。' : '編集中です。自動保存はOFFです。');
   setActionBarCollapsed(true);
   showEditorTab('ability');
   setView('editor');
+  initializeAutoSaveForEditor(mode);
   scheduleInitialInventorySyncForEditor(mode);
 }
 
@@ -5752,32 +6009,8 @@ async function copyShareUrlForListItem(id) {
 }
 
 async function onSave() {
-  const data = collectData(true);
-  if (!data.name) {
-    $('editorStatus').className = 'status-box error';
-    $('editorStatus').textContent = 'キャラクター名を入力してください。';
-    showToast('キャラクター名を入力してください。', 'error');
-    return;
-  }
-  const check = validateSkills(data.skills, data.stats, data.manualCategoryBonuses || emptyCategoryBonus());
-  if (check.errors.length) {
-    $('editorStatus').className = 'status-box error';
-    $('editorStatus').textContent = '技能ポイントに問題があるため保存前に確認してください。\n' + check.errors.join('\n');
-    showToast('技能ポイントに問題があるため保存できません。', 'error');
-    return;
-  }
-  try {
-    const result = await saveItem(data);
-    currentCharacter = data;
-    currentMode = 'edit';
-    $('editorStatus').className = result?.reason ? 'status-box warn' : 'status-box ok';
-    $('editorStatus').textContent = 'クラウドへ保存しました。';
-    showToast('クラウドへ保存しました。', 'ok');
-  } catch (e) {
-    $('editorStatus').className = 'status-box error';
-    $('editorStatus').textContent = e.message;
-    showToast(e.message, 'error');
-  }
+  clearAutoSaveTimer();
+  await saveCharacterNow({automatic:false,force:true});
 }
 
 function bindEvents() {
@@ -5796,9 +6029,34 @@ function bindEvents() {
   });
   $('refreshListBtn').addEventListener('click', refreshList);
   $('newCharacterBtn').addEventListener('click', () => openEditor('new', emptyCharacter()));
-  $('backListBtn').addEventListener('click', () => { setView('list'); refreshList(); });
-  $('toggleViewEditBtn').addEventListener('click', () => { currentMode = 'edit'; setReadOnly(false); $('editorTitle').textContent = 'キャラクター編集'; $('editorStatus').className = 'status-box'; $('editorStatus').textContent = '編集モードに切り替えました。'; showToast('編集モードに切り替えました。', 'ok'); scheduleInitialInventorySyncForEditor('edit'); });
+  $('backListBtn').addEventListener('click', async () => {
+    const canLeave=await flushAutoSaveBeforeLeave();
+    if(!canLeave)return;
+    autoSaveReady=false;
+    clearAutoSaveTimer();
+    setView('list');
+    refreshList();
+  });
+  $('toggleViewEditBtn').addEventListener('click', () => {
+    currentMode='edit';
+    setReadOnly(false);
+    $('editorTitle').textContent='キャラクター編集';
+    $('editorStatus').className='status-box';
+    $('editorStatus').textContent=autoSaveEnabled?'編集モードに切り替えました。変更は自動保存されます。':'編集モードに切り替えました。自動保存はOFFです。';
+    initializeAutoSaveForEditor('edit');
+    showToast('編集モードに切り替えました。','ok');
+    scheduleInitialInventorySyncForEditor('edit');
+  });
   $('saveBtn').addEventListener('click', onSave);
+  if($('autoSaveToggle')) $('autoSaveToggle').addEventListener('change', async e => {
+    await setAutoSaveEnabled(!!e.target.checked);
+    if($('editorStatus') && currentMode!=='view'){
+      $('editorStatus').className='status-box';
+      $('editorStatus').textContent=autoSaveEnabled
+        ? '編集中です。このキャラクターは自動保存ONです。'
+        : '編集中です。このキャラクターは自動保存OFFです。';
+    }
+  });
   $('rollBtn').addEventListener('click', rollAllConvertedAbilities);
   $('abilityOutput').addEventListener('click', e => { const btn = e.target.closest('[data-reroll-ability]'); if (!btn) return; rerollOneAbility(btn.dataset.rerollAbility); });
   $('txtFileBtn').addEventListener('click', () => $('txtFileInput').click());
@@ -5993,6 +6251,18 @@ function bindEvents() {
     const target = e.target;
     if(target && target.tagName === 'SELECT') refreshSelectionListsForTarget(target);
   }, true);
+  document.addEventListener('visibilitychange', () => {
+    if(document.visibilityState==='hidden' && autoSaveEnabled && autoSaveReady && autoSaveDirty && currentMode!=='view'){
+      clearAutoSaveTimer();
+      saveCharacterNow({automatic:true,force:false});
+    }
+  });
+  window.addEventListener('beforeunload', e => {
+    if(autoSaveEnabled && autoSaveReady && autoSaveDirty && currentMode!=='view'){
+      e.preventDefault();
+      e.returnValue='';
+    }
+  });
 }
 
 function init() {
@@ -6003,6 +6273,9 @@ function init() {
     refreshEquipmentItemSelects();
     bindEvents();
     applyData(emptyCharacter());
+    autoSaveEnabled=true;
+    syncAutoSaveToggle();
+    setAutoSaveStatus('自動保存：ON（キャラクターごとに保存）','ok');
     setView('home');
     autoSyncEquipmentCategoriesFromDb();
   } catch (e) {
