@@ -897,14 +897,110 @@ details.big-section>summary{
 
 </style>
 
+
+<style id="raEquipmentCompactV249">
+/* v90.8.249: 装備欄を開閉どちらでもコンパクトかつ読みやすくする */
+#tabEquipment details.big-section{margin:0!important}
+#tabEquipment details.big-section>summary{
+  min-height:34px!important;padding:6px 9px!important;line-height:1.2!important;
+}
+#tabEquipment details.big-section>.section-body{padding:7px!important}
+#tabEquipment .equipment-grid{gap:6px!important}
+#tabEquipment .equipment-card{
+  padding:0!important;margin:0!important;border-radius:10px!important;overflow:hidden!important;
+  background:rgba(255,253,248,.84)!important;
+}
+#tabEquipment .equipment-card>.equipment-card-summary{
+  display:grid!important;grid-template-columns:15px max-content minmax(0,1fr)!important;
+  align-items:center!important;gap:7px!important;width:100%!important;
+  min-height:36px!important;margin:0!important;padding:6px 9px!important;
+  border:0!important;border-radius:0!important;background:rgba(184,119,56,.07)!important;
+  box-sizing:border-box!important;
+}
+#tabEquipment .equipment-card[open]>.equipment-card-summary{
+  border-bottom:1px solid rgba(221,203,176,.72)!important;
+}
+#tabEquipment .equipment-card-toggle{
+  display:block!important;width:12px;height:12px;position:relative;align-self:center!important;
+}
+#tabEquipment .equipment-card-toggle::before{
+  content:"";position:absolute;left:2px;top:2px;width:7px;height:7px;
+  border-right:2px solid var(--accent2);border-bottom:2px solid var(--accent2);
+  transform:rotate(-45deg);transform-origin:center;transition:transform .14s ease;
+}
+#tabEquipment .equipment-card[open]>.equipment-card-summary .equipment-card-toggle::before{transform:rotate(45deg)}
+#tabEquipment .equipment-card-title{
+  display:flex!important;align-items:center!important;min-width:0!important;
+  color:var(--accent2)!important;font-size:.96rem!important;font-weight:900!important;line-height:1.15!important;
+}
+#tabEquipment .equipment-slot-label{display:inline-flex!important;align-items:center!important;gap:5px!important;white-space:nowrap!important}
+#tabEquipment .equipment-slot-label::after{padding:1px 5px!important;font-size:.66rem!important;line-height:1.25!important}
+#tabEquipment .equipment-summary{
+  min-width:0!important;max-width:none!important;margin:0!important;
+  text-align:right!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+  font-size:.78rem!important;line-height:1.2!important;color:var(--muted)!important;
+}
+#tabEquipment .equipment-slot-body{
+  display:grid!important;gap:7px!important;padding:8px!important;margin:0!important;
+}
+#tabEquipment .equipment-primary-grid{
+  display:grid!important;grid-template-columns:minmax(240px,2fr) minmax(170px,1.25fr) minmax(120px,.8fr) minmax(105px,.65fr)!important;
+  gap:7px!important;align-items:end!important;
+}
+#tabEquipment .equipment-combat-grid{
+  display:grid!important;grid-template-columns:repeat(5,minmax(105px,1fr))!important;
+  gap:7px!important;align-items:end!important;
+}
+#tabEquipment .equipment-primary-grid>.field,#tabEquipment .equipment-combat-grid>.field{margin:0!important}
+#tabEquipment .field label{font-size:.76rem!important;line-height:1.15!important;margin:0 0 3px!important}
+#tabEquipment input[type="text"],#tabEquipment input[type="number"],#tabEquipment select{
+  min-height:34px!important;padding:6px 8px!important;border-radius:8px!important;line-height:1.2!important;
+}
+#tabEquipment textarea:not(.internal-raw-field){min-height:68px!important;padding:7px 8px!important;border-radius:8px!important;line-height:1.35!important}
+#tabEquipment .equipment-extra-details{
+  margin:0!important;border:1px solid rgba(221,203,176,.78)!important;border-radius:9px!important;background:rgba(255,255,255,.45)!important;
+}
+#tabEquipment .equipment-extra-details>summary,#tabEquipment .equipment-upgrade-details>summary{
+  min-height:30px!important;padding:6px 8px!important;font-size:.78rem!important;font-weight:900!important;line-height:1.2!important;cursor:pointer!important;
+}
+#tabEquipment .equipment-extra-body{
+  display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:7px!important;padding:0 8px 8px!important;
+}
+#tabEquipment .equipment-modifier-field,#tabEquipment .equipment-upgrade-details{grid-column:1/-1!important}
+#tabEquipment .equipment-upgrade-details{margin:0!important}
+#tabEquipment .equipment-upgrade-list{gap:6px!important}
+#tabEquipment .equipment-upgrade-row{padding:6px!important;border-radius:8px!important}
+#tabEquipment .equipment-spell-head{margin:0 0 6px!important;padding:0!important;border:0!important;background:transparent!important;align-items:center!important}
+#tabEquipment .spellbook-fields.active{margin:0!important;padding:7px!important;border-radius:9px!important}
+#tabEquipment .equipment-memo-card .field{padding:8px!important}
+#tabEquipment .equipment-memo-card textarea{min-height:68px!important}
+#tabEquipment [hidden]{display:none!important}
+@media(max-width:980px){
+  #tabEquipment .equipment-primary-grid{grid-template-columns:minmax(0,1.6fr) minmax(0,1.2fr)!important}
+  #tabEquipment .equipment-combat-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+@media(max-width:620px){
+  #tabEquipment .equipment-card>.equipment-card-summary{grid-template-columns:14px max-content minmax(0,1fr)!important;padding:6px 7px!important;gap:5px!important}
+  #tabEquipment .equipment-primary-grid,#tabEquipment .equipment-combat-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}
+  #tabEquipment .equipment-select-field{grid-column:1/-1!important}
+  #tabEquipment .equipment-extra-body{grid-template-columns:1fr!important}
+  #tabEquipment .equipment-description-field,#tabEquipment .equipment-effect-field{grid-column:1!important}
+  #tabEquipment .equipment-summary{font-size:.72rem!important}
+}
+@media(max-width:400px){
+  #tabEquipment .equipment-primary-grid,#tabEquipment .equipment-combat-grid{grid-template-columns:1fr!important}
+  #tabEquipment .equipment-card>.equipment-card-summary{grid-template-columns:14px minmax(0,1fr)!important}
+  #tabEquipment .equipment-summary{grid-column:2!important;text-align:left!important;margin-top:1px!important}
+}
+</style>
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.248 / 最終更新日：2026年7月23日</div>
+<div class="ra-build-info">Version：v90.8.249 / 最終更新日：2026年7月23日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.248 / 最終更新日：2026年7月23日</div>
+  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.249 / 最終更新日：2026年7月23日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -1986,71 +2082,88 @@ function renderStatic() {
         </div>`;
     }
     return `
-      <details class="equipment-card" data-equipment-card="${slot.key}" open>
-        <summary><div class="equipment-card-head"><div class="equipment-card-title"><span class="equipment-slot-label">${slot.name}</span></div><div class="equipment-summary" id="equip_${slot.key}_summary">未設定</div></div></summary>
-        <div class="equipment-slot-body"><div class="equipment-fields compact">
-          <div class="field equipment-wide">
-            <label for="equip_${slot.key}_itemSelect">倉庫から選択</label>
-            <select id="equip_${slot.key}_itemSelect" data-equipment-input="1"><option value="">手入力</option></select>
+      <details class="equipment-card equipment-kind-${slot.kind}" data-equipment-card="${slot.key}" open>
+        <summary class="equipment-card-summary">
+          <span class="equipment-card-toggle" aria-hidden="true"></span>
+          <span class="equipment-card-title"><span class="equipment-slot-label">${slot.name}</span></span>
+          <span class="equipment-summary" id="equip_${slot.key}_summary">未設定</span>
+        </summary>
+        <div class="equipment-slot-body">
+          <div class="equipment-primary-grid">
+            <div class="field equipment-select-field">
+              <label for="equip_${slot.key}_itemSelect">倉庫から選択</label>
+              <select id="equip_${slot.key}_itemSelect" data-equipment-input="1"><option value="">手入力</option></select>
+            </div>
+            <div class="field equipment-name-field">
+              <label for="equip_${slot.key}_name">装備名</label>
+              <input id="equip_${slot.key}_name" data-equipment-input="1" type="text" placeholder="例：鉄の片手剣" />
+            </div>
+            <div class="field equipment-type-field">
+              <label for="equip_${slot.key}_type">種類</label>
+              <select id="equip_${slot.key}_type" data-equipment-input="1">${options}</select>
+            </div>
+            <div class="field equipment-element-field" data-equipment-field="element">
+              <label for="equip_${slot.key}_element">属性</label>
+              <select id="equip_${slot.key}_element" data-equipment-input="1">${elementSelectOptions()}</select>
+            </div>
           </div>
-          <div class="field">
-            <label for="equip_${slot.key}_name">装備名</label>
-            <input id="equip_${slot.key}_name" data-equipment-input="1" type="text" placeholder="例：鉄の片手剣" />
+
+          <div class="equipment-combat-grid" data-equipment-combat-group="${slot.key}">
+            <div class="field" data-equipment-field="power">
+              <label for="equip_${slot.key}_power">威力</label>
+              <input id="equip_${slot.key}_power" data-equipment-input="1" type="text" placeholder="例：1D6+1" />
+            </div>
+            <div class="field" data-equipment-field="offhand">
+              <label for="equip_${slot.key}_offhand">副手追撃値</label>
+              <input id="equip_${slot.key}_offhand" data-equipment-input="1" type="text" placeholder="例：+2" />
+            </div>
+            <div class="field" data-equipment-field="reload">
+              <label for="equip_${slot.key}_reloadTurns">装填ターン</label>
+              <input id="equip_${slot.key}_reloadTurns" data-equipment-input="1" type="number" min="0" max="9" placeholder="例：1" />
+            </div>
+            <div class="field" data-equipment-field="target">
+              <label for="equip_${slot.key}_target">対象</label>
+              <input id="equip_${slot.key}_target" data-equipment-input="1" type="text" placeholder="例：敵1体" />
+            </div>
+            <div class="field" data-equipment-field="check">
+              <label for="equip_${slot.key}_checkType">判定</label>
+              <input id="equip_${slot.key}_checkType" data-equipment-input="1" type="text" placeholder="例：回避値" />
+            </div>
           </div>
-          <div class="field">
-            <label for="equip_${slot.key}_type">種類</label>
-            <select id="equip_${slot.key}_type" data-equipment-input="1">${options}</select>
-          </div>
-          <div class="field">
-            <label for="equip_${slot.key}_element">属性</label>
-            <select id="equip_${slot.key}_element" data-equipment-input="1">${elementSelectOptions()}</select>
-          </div>
-          <div class="field">
-            <label for="equip_${slot.key}_power">威力</label>
-            <input id="equip_${slot.key}_power" data-equipment-input="1" type="text" placeholder="例：1D6+1" />
-          </div>
-          <div class="field">
-            <label for="equip_${slot.key}_offhand">副手追撃値</label>
-            <input id="equip_${slot.key}_offhand" data-equipment-input="1" type="text" placeholder="例：+2" />
-          </div>
-          <div class="field">
-            <label for="equip_${slot.key}_reloadTurns">装填ターン</label>
-            <input id="equip_${slot.key}_reloadTurns" data-equipment-input="1" type="number" min="0" max="9" placeholder="例：1" />
-          </div>
-          <div class="field">
-            <label for="equip_${slot.key}_target">対象</label>
-            <input id="equip_${slot.key}_target" data-equipment-input="1" type="text" placeholder="例：敵1体" />
-          </div>
-          <div class="field">
-            <label for="equip_${slot.key}_checkType">判定</label>
-            <input id="equip_${slot.key}_checkType" data-equipment-input="1" type="text" placeholder="例：回避値" />
-          </div>
-          <div class="field equipment-wide">
-            <label>補正値</label>
-            <textarea id="equip_${slot.key}_modifiers" class="hidden internal-raw-field" data-equipment-input="1" hidden aria-hidden="true" tabindex="-1" style="display:none!important"></textarea>
-            <div id="equip_${slot.key}_modifierRows" data-char-modifier-editor data-modifier-hidden="equip_${slot.key}_modifiers" data-modifier-list="equip_${slot.key}_modifierRows"></div>
-            <button type="button" class="ghost" data-modifier-add="equip_${slot.key}_modifierRows">補正値を追加</button>
-          </div>
-          <div class="field">
-            <label for="equip_${slot.key}_upgradeLimit">強化枠上限</label>
-            <input id="equip_${slot.key}_upgradeLimit" data-equipment-input="1" type="number" min="0" max="9" value="" placeholder="例：2" />
-          </div>
-          <details id="equip_${slot.key}_upgradeDetails" class="equipment-upgrade-details equipment-wide">
-            <summary>強化内容</summary>
-            <div id="equip_${slot.key}_upgradeUsage" class="small"></div><div id="equip_${slot.key}_upgradeSlots" class="equipment-upgrade-list" data-equipment-input="1"></div>
-            <input id="equip_${slot.key}_upgradeLines" data-equipment-input="1" type="hidden" value="" />
-            <div class="small">強化枠上限に応じて入力欄を表示します。強化内容は選択した武器・防具などの装備ごとに保存され、付け替えても保持されます。</div>
+
+          <details class="equipment-extra-details">
+            <summary>補正・強化・説明</summary>
+            <div class="equipment-extra-body">
+              <div class="field equipment-wide equipment-modifier-field">
+                <label>補正値</label>
+                <textarea id="equip_${slot.key}_modifiers" class="hidden internal-raw-field" data-equipment-input="1" hidden aria-hidden="true" tabindex="-1" style="display:none!important"></textarea>
+                <div id="equip_${slot.key}_modifierRows" data-char-modifier-editor data-modifier-hidden="equip_${slot.key}_modifiers" data-modifier-list="equip_${slot.key}_modifierRows"></div>
+                <button type="button" class="ghost" data-modifier-add="equip_${slot.key}_modifierRows">補正値を追加</button>
+              </div>
+              <div class="field equipment-upgrade-limit-field">
+                <label for="equip_${slot.key}_upgradeLimit">強化枠上限</label>
+                <input id="equip_${slot.key}_upgradeLimit" data-equipment-input="1" type="number" min="0" max="9" value="" placeholder="例：2" />
+              </div>
+              <details id="equip_${slot.key}_upgradeDetails" class="equipment-upgrade-details equipment-wide">
+                <summary>強化内容</summary>
+                <div id="equip_${slot.key}_upgradeUsage" class="small"></div>
+                <div id="equip_${slot.key}_upgradeSlots" class="equipment-upgrade-list" data-equipment-input="1"></div>
+                <input id="equip_${slot.key}_upgradeLines" data-equipment-input="1" type="hidden" value="" />
+                <div class="small">強化枠上限に応じて入力欄を表示します。</div>
+              </details>
+              <div class="field equipment-description-field">
+                <label for="equip_${slot.key}_description">説明</label>
+                <textarea id="equip_${slot.key}_description" data-equipment-input="1" placeholder="見た目や雰囲気など"></textarea>
+              </div>
+              <div class="field equipment-effect-field">
+                <label for="equip_${slot.key}_note">効果</label>
+                <textarea id="equip_${slot.key}_note" data-equipment-input="1" placeholder="数値・ルール処理など"></textarea>
+              </div>
+            </div>
           </details>
-          <div class="field equipment-wide">
-            <label for="equip_${slot.key}_description">説明</label>
-            <textarea id="equip_${slot.key}_description" data-equipment-input="1" placeholder="見た目や雰囲気など"></textarea>
-          </div>
-          <div class="field equipment-wide">
-            <label for="equip_${slot.key}_note">効果</label>
-            <textarea id="equip_${slot.key}_note" data-equipment-input="1" placeholder="数値・ルール処理など"></textarea>
-          </div>
+
           <div id="equip_${slot.key}_spellFields" class="spellbook-fields equipment-wide">
-            <div class="button-row" style="margin:0 0 8px;">
+            <div class="button-row equipment-spell-head">
               <span id="equip_${slot.key}_spellLabel" class="spell-slot-badge">術式枠</span>
               <span class="small">倉庫に登録されている術式から選択してください。</span>
             </div>
@@ -2062,11 +2175,11 @@ function renderStatic() {
               <div id="equip_${slot.key}_spellHelp" class="small">倉庫に対応する術式がない場合は、倉庫タブで術式を登録してください。</div>
             </div>
           </div>
-        </div></div>
+        </div>
       </details>`;
   }).join('') + `
-    <details class="equipment-card equipment-wide" open>
-      <summary><div class="equipment-card-head"><div class="equipment-card-title">装備メモ</div><div class="equipment-summary">補足</div></div></summary>
+    <details class="equipment-card equipment-wide equipment-memo-card">
+      <summary class="equipment-card-summary"><span class="equipment-card-toggle" aria-hidden="true"></span><span class="equipment-card-title">装備メモ</span><span class="equipment-summary">補足</span></summary>
       <div class="field">
         <label for="equipmentMemo">メモ</label>
         <textarea id="equipmentMemo" data-equipment-input="1" placeholder="装備セット、魔導書/祈祷書のセット枠、所持品補足など"></textarea>
@@ -3377,6 +3490,10 @@ function isSpellBookType(type) {
   const t = normalizeEquipmentType(type || 'なし');
   return t === '魔導書' || t === '祈祷書';
 }
+function setEquipmentFieldVisible(card, fieldName, visible) {
+  const wrap=card?.querySelector(`[data-equipment-field="${fieldName}"]`);
+  if(wrap)wrap.hidden=!visible;
+}
 function updateEquipmentFieldAvailability() {
   for (const slot of EQUIPMENT_SLOTS) {
     if (slot.kind === 'carry') continue;
@@ -3384,16 +3501,31 @@ function updateEquipmentFieldAvailability() {
     const card = document.querySelector(`[data-equipment-card="${slot.key}"]`);
     const baseDisabled = currentMode === 'view' || !!card?.classList.contains('hand-disabled');
     const book = isSpellBookType(type);
+    const shield = type==='盾' || type==='大盾';
+    const weapon = slot.kind==='hand' && type!=='なし' && !book && !shield;
+    const reloadWeapon = type==='弩' || type==='大型弩';
+    const offhandWeapon = weapon && !TWO_HAND_TYPES.has(type);
+
+    setEquipmentFieldVisible(card,'element',weapon);
+    setEquipmentFieldVisible(card,'power',weapon);
+    setEquipmentFieldVisible(card,'offhand',offhandWeapon);
+    setEquipmentFieldVisible(card,'reload',reloadWeapon);
+    setEquipmentFieldVisible(card,'target',weapon);
+    setEquipmentFieldVisible(card,'check',weapon);
+    const combatGroup=card?.querySelector('[data-equipment-combat-group]');
+    if(combatGroup)combatGroup.hidden=!weapon;
+
     for (const suffix of ['itemSelect','name','type','element','upgradeLimit','description','note']) {
       const el = $('equip_' + slot.key + '_' + suffix);
       if (el) el.disabled = baseDisabled;
     }
-    for (const suffix of ['power','offhand','reloadTurns','modifiers']) {
+    for (const suffix of ['power','offhand','reloadTurns','target','checkType','modifiers']) {
       const el = $('equip_' + slot.key + '_' + suffix);
       if (!el) continue;
-      el.disabled = baseDisabled || book;
+      const hidden=!!el.closest('[hidden]');
+      el.disabled = baseDisabled || book || hidden;
       el.closest('.field')?.classList.toggle('field-disabled-by-type', book);
-      if (book && currentMode !== 'view') el.value = '';
+      if (book && currentMode !== 'view' && ['power','offhand','reloadTurns','target','checkType'].includes(suffix)) el.value = '';
     }
     const setEl = $('equip_' + slot.key + '_setSpells');
     const spellDisabled = baseDisabled || !spellContainerKind(type);
