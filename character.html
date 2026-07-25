@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.262</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.268</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -667,7 +667,7 @@ button,.tab,.subtab,.tab-btn,.quest-category-btn{white-space:normal!important;ov
   .buttons,.subtabs,.tab-nav,.quest-category-bar,.section-actions,.filter-actions,.facility-actions,.modal-foot{grid-template-columns:1fr!important}
 }
 
-/* v90.8.262 skill crystal / skill warehouse */
+/* v90.8.268 skill crystal / skill warehouse */
 .skill-crystal-overview{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-bottom:12px}
 .skill-crystal-card,.skill-warehouse-card,.skill-stage-card{border:1px solid var(--line);border-radius:12px;background:#fffdf8;padding:11px;min-width:0}
 .skill-crystal-card h3,.skill-warehouse-card h4,.skill-stage-card h4{margin:0 0 6px}
@@ -679,6 +679,12 @@ button,.tab,.subtab,.tab-btn,.quest-category-btn{white-space:normal!important;ov
 .skill-warehouse-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:9px}.skill-meta{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}.skill-badge{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:2px 7px;font-size:.75rem;background:#fff7ec}.skill-public-id{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.78rem;word-break:break-all}.skill-detail-lines{display:grid;gap:4px;font-size:.88rem;line-height:1.45}.skill-detail-lines b{color:var(--muted)}
 .skill-register-grid{display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:8px;align-items:end}.skill-register-grid textarea{min-height:72px}
 @media(max-width:700px){.skill-register-grid{grid-template-columns:1fr}.skill-slot-row{grid-template-columns:1fr}.skill-chip-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.skill-chip{width:100%}}
+/* v90.8.268: 倉庫スキル統合・セット術式折り畳み */
+details.spellbook-fields>summary{cursor:pointer;font-weight:900;padding:4px 2px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+details.spellbook-fields>summary::marker{color:var(--accent)}
+details.spellbook-fields>.spellbook-fields-body{padding-top:8px}
+.equipped-skill-view{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:9px}
+.inventory-skill-card .inventory-title{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 
 </style>
 
@@ -1028,12 +1034,12 @@ details.big-section>summary{
 </style>
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.262 / 最終更新日：2026年7月25日</div>
+<div class="ra-build-info">Version：v90.8.268 / 最終更新日：2026年7月25日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.262 / 最終更新日：2026年7月25日</div>
+  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.268 / 最終更新日：2026年7月25日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -1270,39 +1276,18 @@ details.big-section>summary{
 
     <div id="tabSkillCrystal" class="editor-tab-page">
       <details class="big-section" open>
-        <summary>スキルクリスタル</summary>
+        <summary>所持スキルの設定</summary>
         <div class="section-body">
-          <div class="skill-crystal-overview">
-            <div class="skill-crystal-card"><h3>現在の強化段階</h3><div id="skillCrystalCurrent" class="skill-crystal-current">2枠</div><div id="skillCrystalNext" class="hint">次の強化を確認中です。</div></div>
-            <div class="skill-crystal-card"><h3>共鳴片</h3><div id="skillFragmentSummary">なし</div></div>
-          </div>
-          <h3>装着スロット</h3>
-          <p class="hint">スキル倉庫に登録済みのスキルから選択します。同じスキルを複数枠へ装着することはできません。</p>
+          <p class="hint">倉庫に登録済みのスキルから、スキルクリスタルへ装着するスキルを選択します。同じスキルを複数枠へ設定することはできません。</p>
           <div id="skillCrystalSlots" class="skill-slot-list"></div>
-          <details style="margin-top:12px"><summary>強化段階と必要素材</summary><div id="skillCrystalStages" class="skill-stage-list"></div></details>
         </div>
       </details>
 
-      <details class="big-section private-view-only" open>
-        <summary>スキル倉庫</summary>
+      <details class="big-section" open>
+        <summary>設定スキル</summary>
         <div class="section-body">
-          <p class="hint">スキルガチャで習得したスキルは自動登録されます。GMから受け取った登録IDでも追加できます。</p>
-          <div class="mini-card">
-            <h3>登録IDでスキル倉庫へ追加</h3>
-            <div class="skill-register-grid">
-              <div class="field"><label for="skillPublicIdInput">登録ID</label><textarea id="skillPublicIdInput" data-skill-crystal-input="1" placeholder="1行に1件、またはカンマ区切りで入力"></textarea></div>
-              <div class="button-row"><button id="addSkillByPublicIdBtn" type="button" class="secondary">登録IDで追加</button><button id="clearSkillPublicIdBtn" type="button" class="ghost">クリア</button></div>
-            </div>
-            <div id="skillPublicIdStatus" class="status-box">登録IDを入力してください。</div>
-          </div>
-          <div class="skill-filter-panel">
-            <div class="field"><label for="skillWarehouseSearch">名前検索</label><input id="skillWarehouseSearch" type="search" data-skill-crystal-input="1" placeholder="スキル名・武器種・分類・概要から検索"></div>
-            <div><div class="inventory-filter-label">分類</div><div id="skillCategoryTabs" class="skill-chip-row"></div></div>
-            <div id="skillWeaponFilterRow"><div class="inventory-filter-label">武器種</div><div id="skillWeaponTabs" class="skill-chip-row"></div></div>
-            <div id="skillWarehouseStatus" class="inventory-filter-status">全件を表示中</div>
-          </div>
-          <div id="skillWarehouseArea" class="skill-warehouse-grid"></div>
-          <div id="skillWarehouseEmpty" class="status-box">スキル倉庫は空です。</div>
+          <p class="hint">現在スキルクリスタルへ設定しているスキルの詳細です。</p>
+          <div id="equippedSkillView" class="equipped-skill-view"></div>
         </div>
       </details>
     </div>
@@ -1372,14 +1357,14 @@ details.big-section>summary{
           <p class="hint">旧「所持品」はこの「倉庫」です。拠点に保管しているアイテムを登録します。倉庫には保管上限はありません。装備欄・所持品欄・バッグ選択の候補は、この倉庫一覧から生成されます。</p>
           <div class="mini-card inventory-registration-card">
             <h3>倉庫へ登録</h3>
-            <p class="hint">GMや進行管理HTMLから受け取った登録IDと個数だけを入力して、DB照合で倉庫へ追加します。個数0でも登録・保存できます。</p>
+            <p class="hint">GMや進行管理HTMLから受け取った登録IDを入力して、アイテム・術式・レシピ・スキルを倉庫へ追加します。個数はスキル以外に適用され、0個でも登録・保存できます。</p>
             <div class="inventory-form-grid">
               <div class="field">
                 <label for="publicIdInput">登録ID</label>
                 <input id="publicIdInput" data-inventory-input="1" type="text" inputmode="latin" autocomplete="off" />
               </div>
               <div class="field">
-                <label for="publicIdCountInput">個数</label>
+                <label for="publicIdCountInput">個数（スキルでは不使用）</label>
                 <input id="publicIdCountInput" data-inventory-input="1" type="number" min="0" max="9999" value="1" />
               </div>
             </div>
@@ -2262,19 +2247,16 @@ function renderStatic() {
             </div>
           </details>
 
-          <div id="equip_${slot.key}_spellFields" class="spellbook-fields equipment-wide">
-            <div class="button-row equipment-spell-head">
-              <span id="equip_${slot.key}_spellLabel" class="spell-slot-badge">術式枠</span>
-              <span class="small">倉庫に登録されている術式から選択してください。</span>
-            </div>
-            <div class="field equipment-wide">
-              <label>セット術式</label>
+          <details id="equip_${slot.key}_spellFields" class="spellbook-fields equipment-wide">
+            <summary><span>セット術式</span><span id="equip_${slot.key}_spellLabel" class="spell-slot-badge">術式枠</span></summary>
+            <div class="spellbook-fields-body">
+              <div class="small" style="margin-bottom:7px">倉庫に登録されている術式から選択してください。</div>
               <div id="equip_${slot.key}_spellSlotList" class="spell-slot-list" data-equipment-input="1"></div>
               <input id="equip_${slot.key}_setSpells" data-equipment-input="1" type="hidden" value="" />
               <input id="equip_${slot.key}_knownSpells" data-equipment-input="1" type="hidden" value="" />
               <div id="equip_${slot.key}_spellHelp" class="small">倉庫に対応する術式がない場合は、倉庫タブで術式を登録してください。</div>
             </div>
-          </div>
+          </details>
         </div>
       </details>`;
   }).join('') + `
@@ -3137,6 +3119,22 @@ function syncSpellSetHidden(slotKey) {
   hidden.value = names.join('\n');
   hidden.dataset.pendingSpells = hidden.value;
 }
+function syncEquippedSpellSetToInventoryItem(slotKey='', itemKey='') {
+  const key = String(itemKey || $('equip_' + slotKey + '_itemSelect')?.value || '').trim();
+  if (!key) return false;
+  const index = (inventoryItemsState || []).findIndex(raw => inventoryItemKey(normalizeInventoryItem(raw)) === key);
+  if (index < 0) return false;
+  const item = normalizeInventoryItem(inventoryItemsState[index] || {});
+  const type = normalizeEquipmentType(item.itemCategory || item.category || item.type || $('equip_' + slotKey + '_type')?.value || 'なし');
+  if (!spellContainerKind(type)) return false;
+  inventoryItemsState[index] = normalizeInventoryItem({ ...item, setSpells:selectedSpellNames(slotKey).join('\n') });
+  return true;
+}
+function syncAllEquipmentSpellSetsToInventory() {
+  for (const slot of EQUIPMENT_SLOTS) {
+    if (slot.kind !== 'carry') syncEquippedSpellSetToInventoryItem(slot.key);
+  }
+}
 const EQUIPMENT_UPGRADE_OPTIONS = ['','威力','命中補正','防御貫通','防御値','防御行動値','回避補正','副手追撃値','術式枠','消費コスト軽減','回復量','最大スタック数','HP','MP','属性効果','特殊効果','その他'];
 
 function normalizeUpgradeEntry(entry={}){
@@ -3509,6 +3507,7 @@ function setEquipmentState(equipment={}) {
       selectedRow = selectedId ? findCsItemById(selectedId) : null;
       if (slot.kind === 'carry' && selectedRow && isSpellInventoryItem(selectedRow)) selectedId = '';
       $('equip_' + slot.key + '_itemSelect').value = selectedId && Array.from($('equip_' + slot.key + '_itemSelect').options).some(o=>o.value===selectedId) ? selectedId : '';
+      $('equip_' + slot.key + '_itemSelect').dataset.previousItemKey = $('equip_' + slot.key + '_itemSelect').value || '';
     }
     if ($('equip_' + slot.key + '_name')) $('equip_' + slot.key + '_name').value = item.name || '';
     if ($('equip_' + slot.key + '_type')) $('equip_' + slot.key + '_type').value = normalizeEquipmentType(item.type || 'なし');
@@ -3546,7 +3545,9 @@ function setEquipmentState(equipment={}) {
       // 旧保存データが装備枠にだけ強化内容を持っている場合、選択中の装備個体へ移行する。
       if (selectedRow && !inventoryHasUpgradeState && parseUpgradeLines(upgradeSource).length) syncEquipmentUpgradeToInventoryItem(slot.key);
       if ($('equip_' + slot.key + '_knownSpells')) $('equip_' + slot.key + '_knownSpells').value = '';
-      setSpellSelectValues(slot.key, item.setSpells || '');
+      const savedBookSpells = selectedRow?.setSpells || item.setSpells || '';
+      setSpellSelectValues(slot.key, savedBookSpells);
+      if (selectedRow && item.setSpells && !selectedRow.setSpells) syncEquippedSpellSetToInventoryItem(slot.key, inventoryItemKey(selectedRow));
       const hasManualDetail = !!(item.element || item.power || item.offhand || item.reloadTurns || item.target || item.checkType || item.modifiers || item.upgradeLimit || item.upgradeLines || (item.upgradeEntries || []).length || item.setSpells || item.description || item.note);
       if (!hasManualDetail && normalizeEquipmentType(item.type || 'なし') !== 'なし') applyEquipmentPreset(slot.key);
     }
@@ -3726,11 +3727,16 @@ function renderSkillWarehouse(){
   area.innerHTML=rows.map(s=>`<article class="skill-warehouse-card"><h4>${esc(s.name)} <span class="skill-badge">★${esc(s.rank||1)}</span></h4><div class="skill-meta"><span class="skill-badge">${esc(s.category||'')}</span>${s.weaponType?`<span class="skill-badge">${esc(s.weaponType)}</span>`:''}</div><div class="skill-public-id">登録ID：${esc(s.publicId||'未設定')}</div><div class="skill-detail-lines">${s.timing?`<div><b>タイミング：</b>${esc(s.timing)}</div>`:''}${s.cost?`<div><b>消費：</b>${esc(s.cost)}</div>`:''}${s.ct?`<div><b>CT：</b>${esc(s.ct)}</div>`:''}${s.effect?`<div><b>効果：</b>${esc(s.effect)}</div>`:(s.description?`<div><b>概要：</b>${esc(s.description)}</div>`:'')}</div><div class="button-row" style="margin-top:8px"><button type="button" class="ghost" data-skill-remove="${esc(s.id)}" ${state.equippedSkillIds.includes(s.id)?'disabled':''}>倉庫から削除</button></div></article>`).join('');
   if(empty)empty.style.display=rows.length?'none':'';if($('skillWarehouseStatus'))$('skillWarehouseStatus').textContent=`スキル倉庫 ${state.acquiredSkillIds.length}件 / 表示 ${rows.length}件`;
 }
+function renderEquippedSkillView(state){
+  const area=$('equippedSkillView');if(!area)return;
+  const rows=state.equippedSkillIds.map((id,index)=>({index,skill:characterSkillById(id)})).filter(row=>row.skill);
+  area.innerHTML=rows.length?rows.map(({index,skill:s})=>`<article class="skill-warehouse-card"><h4>枠${index+1}：${esc(s.name)} <span class="skill-badge">★${esc(s.rank||1)}</span></h4><div class="skill-meta"><span class="skill-badge">${esc(s.category||'')}</span>${s.weaponType?`<span class="skill-badge">${esc(s.weaponType)}</span>`:''}</div><div class="skill-public-id">登録ID：${esc(s.publicId||'未設定')}</div><div class="skill-detail-lines">${s.timing?`<div><b>タイミング：</b>${esc(s.timing)}</div>`:''}${s.cost?`<div><b>消費：</b>${esc(s.cost)}</div>`:''}${s.ct?`<div><b>CT：</b>${esc(s.ct)}</div>`:''}${s.effect?`<div><b>効果：</b>${esc(s.effect)}</div>`:(s.description?`<div><b>概要：</b>${esc(s.description)}</div>`:'')}</div></article>`).join(''):'<div class="status-box">設定中のスキルはありません。</div>';
+}
 function renderSkillCrystalPanel(){
-  const state=normalizeSkillGachaState(skillGachaState||{});skillGachaState=state;if($('skillCrystalCurrent'))$('skillCrystalCurrent').textContent=`${state.crystalSlots}枠`;
-  const next=crystalUpgradeStageRows().find(r=>(Number(String(r.baseItem||'').match(/\d+/)?.[0])||2)===state.crystalSlots);if($('skillCrystalNext'))$('skillCrystalNext').textContent=next?`次：${next.name||''} / ${next.requiredMaterials||'素材未設定'} / ${next.price||0}G`:'次の強化段階は未登録';
-  const fr=Object.entries(state.resonanceFragments||{}).filter(([,v])=>Number(v)>0).map(([r,v])=>`★${r}×${v}`);if($('skillFragmentSummary'))$('skillFragmentSummary').textContent=fr.length?fr.join(' / '):'なし';
-  renderSkillSlots(state);renderSkillCrystalStages(state);renderSkillWarehouse();
+  const state=normalizeSkillGachaState(skillGachaState||{});skillGachaState=state;
+  renderSkillSlots(state);
+  renderEquippedSkillView(state);
+  renderInventory();
 }
 function addSkillByPublicIds(){
   const input=$('skillPublicIdInput'),status=$('skillPublicIdStatus');if(!input)return;const ids=String(input.value||'').split(/[\s,，、]+/).map(v=>v.trim()).filter(Boolean);if(!ids.length){if(status){status.className='status-box error';status.textContent='登録IDを入力してください。';}return;}
@@ -3746,7 +3752,7 @@ const INVENTORY_LOCATION_FILTERS = ['全て'];
 const INVENTORY_LOCATION_OPTIONS = ['倉庫'];
 const INVENTORY_KIND_OPTIONS = ['アイテム','素材','武器','防具','装飾品','バッグ','矢筒','術式','レシピ','重要品','その他'];
 const INVENTORY_KIND_TOKEN = { '武器':'weapon', '防具':'armor', '装飾品':'accessory', 'アイテム':'item', '素材':'material', 'バッグ':'bag', '矢筒':'quiver', '術式':'spell', 'レシピ':'recipe', '重要品':'important', 'その他':'other' };
-const INVENTORY_SMALL_CATEGORY_ORDER = ['武器','防具','盾','装飾品','調合品','道具','特殊矢弾','収納具','素材','スクロール','換金品','レシピ','術式','重要品','その他'];
+const INVENTORY_SMALL_CATEGORY_ORDER = ['武器','防具','盾','装飾品','調合品','道具','特殊矢弾','収納具','素材','スクロール','換金品','レシピ','術式','スキル','重要品','その他'];
 const INVENTORY_MATERIAL_TYPE_ORDER = ['食材','魔物素材','採取素材','加工素材','特殊素材'];
 const LEGACY_WEAPON_NAME_ALIASES = Object.freeze({"魔導書":"グリモア","アルカナ・コーデックス":"アルカナコーデックス","祈祷書":"ミサル","ウィンドラス・クロスボウ":"ウィンドラスクロスボウ","バグ・ナク":"バグナク","グラスホーン・アンカー":"グラスホーンアンカー","サルヴェ・ミサル":"サルヴェミサル","イージス・リタニー":"イージスリタニー","アクア・リフレイン":"アクアリフレイン","ヴォイド・レクイエム":"ヴォイドレクイエム","ミラー・グリモア":"ミラーグリモア","アストラル・コーデックス":"アストラルコーデックス","リフレクト・ミサル":"リフレクトミサル","アビサル・リタニー":"アビサルリタニー","ミラージュ・ボルター":"ミラージュボルター","ファントム・ピアサー":"ファントムピアサー","リフト・デストロイヤー":"リフトデストロイヤー","アビス・スコーピオン":"アビススコーピオン","アビス・リーパー":"アビスリーパー","シルフィード・アーチ":"シルフィードアーチ","フェザー・ハント":"フェザーハント","シェル・ブレイカー":"シェルブレイカー","ゼファー・ボルター":"ゼファーボルター","フォートレス・アーバレスト":"フォートレスアーバレスト","マイア・カノン":"マイアカノン","マイセリア・グリモア":"マイセリアグリモア","シルヴァン・ミサル":"シルヴァンミサル","ヴェルデ・スティング":"ヴェルデスティング","シルヴァ・エッジ":"シルヴァエッジ","マイア・スティング":"マイアスティング","ホーン・レガリア":"ホーンレガリア","シルヴァン・ガード":"シルヴァンガード","マイア・セイバー":"マイアセイバー","グラス・クリーヴァ":"グラスクリーヴァ","エルダー・ハチェット":"エルダーハチェット","ボグ・クリーヴァ":"ボグクリーヴァ","ホーン・クラッシャー":"ホーンクラッシャー","ウッドランド・メイス":"ウッドランドメイス","マイア・クラッシャー":"マイアクラッシャー","ヴェルデ・ランサー":"ヴェルデランサー","マイア・スピア":"マイアスピア","ホーン・セプター":"ホーンセプター","シルヴァン・ロッド":"シルヴァンロッド","ミアズマ・ロッド":"ミアズマロッド","ヴェルデ・ストライド":"ヴェルデストライド","エルダー・リーフ":"エルダーリーフ","マレア・リフレイン":"マレアリフレイン","ヴェルデ・ボルター":"ヴェルデボルター","グリーン・ワーデン":"グリーンワーデン","マレア・ボルター":"マレアボルター","グランド・ホーン":"グランドホーン","フォレスト・バスティオン":"フォレストバスティオン","マイア・バリスタ":"マイアバリスタ","マイア・ランサー":"マイアランサー","グラス・テンペスト":"グラステンペスト","エルダー・ガード":"エルダーガード","ボグ・クレイモア":"ボグクレイモア","ハートウッド・モール":"ハートウッドモール","マイア・モール":"マイアモール","アイヴィ・サイス":"アイヴィサイス","ミアズマ・サイス":"ミアズマサイス","ホーン・ブレイサー":"ホーンブレイサー","シルヴァン・グリーヴ":"シルヴァングリーヴ","ボグ・ブレイサー":"ボグブレイサー","アイヴィ・ウィップ":"アイヴィウィップ","ミアズマ・ウィップ":"ミアズマウィップ","ヴェルダント・グリモア":"ヴェルダントグリモア","シルヴァン・コーデックス":"シルヴァンコーデックス","マイア・グリモア":"マイアグリモア","ヴェルダント・ミサル":"ヴェルダントミサル","マイア・リタニー":"マイアリタニー","クリスタル・リタニー":"クリスタルリタニー","黒鉄の短剣":"クロガネスティレット","黒鉄の剣":"クロガネセイバー","岩割りの斧":"ロックハチェット","山鳴りの槌":"ロアメイス","岩貫きの槍":"ロックピアサー","燐晶の杖":"リンショウスタッフ","鉄弦の弓":"アイアンストリング","岩穿ちの弩":"ロックボーラー","坑道破りの大弩":"トンネルブレイカー","地脈の長槍":"レイラインパイク","黒鉄の大剣":"クロガネクレイモア","断岩の大槌":"ロックブレイカーモール","鉱脈の大鎌":"ヴェインサイズ","黒鉄の拳甲":"クロガネナックル","鋼線の鞭":"スチールワイヤー","燐晶の魔導書":"リンショウグリモア","地脈の祈祷書":"レイラインミサル","苔守りの長槍":"モスガードパイク","水走りの拳甲":"アクアランナーナックル","穿王の牙":"グランドファング","地脈の剣":"レイラインセイバー","穿岩の斧":"ロックリーヴァ","地鳴りの槌":"クエイクメイス","穿王の短槍":"グランドピアサー","地脈晶の杖":"ジオクリスタルロッド","山鳴りの弓":"エコーストリング","穿岩の弩":"ロックドリラー","穿王の大弩":"グランドバリスタ","穿王の長槍":"グランドランサー","地割れの大剣":"リフトクレイモア","穿王の大槌":"グランドモール","地層断ちの大鎌":"ストラタサイズ","穿王の拳甲":"グランドナックル","地脈の鋼鞭":"レイラインチェイン","地脈晶の魔導書":"ジオクリスタルグリモア","山守りの祈祷書":"ガーディアンミサル"});
 function canonicalInventoryItemName(name){
@@ -4258,7 +4264,7 @@ function inventoryManualClassification(kind='', category='') {
 }
 function emptyInventoryItem() {
   const cls = inventoryManualClassification(defaultInventoryKind(), '');
-  return { id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), masterId:'', masterSheet:'', masterSync:'', name:'', kind:cls.kind, itemType:cls.itemType, itemCategory:cls.itemCategory, materialType:cls.materialType, materialCategory:cls.materialCategory, category:'', count:1, capacity:'', location:'倉庫', rank:'', price:'', equipSlot:'', power:'', offhand:'', reloadTurns:'', modifiers:'', upgradeLimit:'', upgradeMaterialMinRank:'', upgradeLines:'', upgradeEntries:[], spellSlots:'', target:'', element:'', enchantTarget:'', enchantEffectType:'', enchantValue:'', enchantDuration:'', enchantRounds:'', enchantStackRule:'', cost:'', checkType:'', role:'', source:'', tags:'', setItem:'', description:'', effect:'', recipeResult:'', materials:'', note:'' };
+  return { id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), masterId:'', masterSheet:'', masterSync:'', name:'', kind:cls.kind, itemType:cls.itemType, itemCategory:cls.itemCategory, materialType:cls.materialType, materialCategory:cls.materialCategory, category:'', count:1, capacity:'', location:'倉庫', rank:'', price:'', equipSlot:'', power:'', offhand:'', reloadTurns:'', modifiers:'', upgradeLimit:'', upgradeMaterialMinRank:'', upgradeLines:'', upgradeEntries:[], spellSlots:'', setSpells:'', target:'', element:'', enchantTarget:'', enchantEffectType:'', enchantValue:'', enchantDuration:'', enchantRounds:'', enchantStackRule:'', cost:'', checkType:'', role:'', source:'', tags:'', setItem:'', description:'', effect:'', recipeResult:'', materials:'', note:'' };
 }
 function inferInventoryItemType(item={}, kind='') {
   const explicit = String(item.itemType || '').trim();
@@ -4314,8 +4320,13 @@ function inventoryInternalCategory(item={}) {
   }
   return String(item.itemCategory || item.materialCategory || item.category || item.type || '').trim() || '未分類';
 }
+function ownedSkillRowsForInventory(){
+  const state=normalizeSkillGachaState(skillGachaState||{});
+  return state.acquiredSkillIds.map(characterSkillById).filter(Boolean).sort((a,b)=>String(a.category||'').localeCompare(String(b.category||''),'ja')||String(a.weaponType||'').localeCompare(String(b.weaponType||''),'ja')||String(a.name||'').localeCompare(String(b.name||''),'ja'));
+}
 function inventorySmallCategories() {
   const present = new Set((inventoryItemsState || []).map(row => inventorySmallCategory(normalizeInventoryItem(row))).filter(Boolean));
+  present.add('スキル');
   const ordered = INVENTORY_SMALL_CATEGORY_ORDER.filter(v => present.has(v));
   [...present].filter(v => !ordered.includes(v)).sort((a,b)=>a.localeCompare(b,'ja',{numeric:true})).forEach(v=>ordered.push(v));
   return ['全て', ...ordered];
@@ -4323,6 +4334,10 @@ function inventorySmallCategories() {
 function inventoryInternalCategories(selectedType='') {
   if (!selectedType || selectedType === '全て') return [];
   const present = new Set((inventoryItemsState || []).map(row => normalizeInventoryItem(row)).filter(row => inventorySmallCategory(row) === selectedType).map(inventoryInternalCategory).filter(Boolean));
+  if (selectedType === 'スキル') {
+    const categories=new Set(ownedSkillRowsForInventory().map(row=>String(row.category||'未分類').trim()||'未分類'));
+    return ['全て', ...SKILL_CATEGORY_ORDER.filter(v=>v!=='全て'), ...[...categories].filter(v=>!SKILL_CATEGORY_ORDER.includes(v)).sort((a,b)=>a.localeCompare(b,'ja'))];
+  }
   if (selectedType === '素材') return ['全て', ...INVENTORY_MATERIAL_TYPE_ORDER.filter(v => present.has(v))];
   if (selectedType === '収納具') return ['全て', ...['バッグ','矢筒'].filter(v => present.has(v))];
   return ['全て', ...[...present].sort((a,b)=>a.localeCompare(b,'ja',{numeric:true}))];
@@ -4378,6 +4393,7 @@ function normalizeInventoryItem(item={}) {
     upgradeEntries: normalizedUpgradeEntries,
     upgradeLines: serializeUpgradeEntries(normalizedUpgradeEntries),
     spellSlots: kind === 'バッグ' ? '' : String(item.spellSlots || item.slotCount || item.registerSlots || item.maxStack || '').trim(),
+    setSpells: splitFormulaList(item.setSpells || item.selectedSpells || '').join('\n'),
     target: String(item.target || item['対象'] || '').trim(),
     element: String(item.element || item.attribute || item.attributeType || item.elementName || item['属性'] || item['属性種別'] || item['攻撃属性'] || item['ダメージ属性'] || defaultElementForEquipmentRow(item) || '').trim(),
     enchantTarget: String(item.enchantTarget || '').trim(),
@@ -4568,7 +4584,16 @@ function renderInventory() {
       </div>
     </details>`;
   }).join('');
-  if ($('inventoryEmptyStatus')) $('inventoryEmptyStatus').style.display = inventoryItemsState.length ? 'none' : '';
+  const ownedSkills=ownedSkillRowsForInventory();
+  if(ownedSkills.length){
+    area.insertAdjacentHTML('beforeend',ownedSkills.map(s=>{
+      const category=String(s.category||'未分類').trim()||'未分類';
+      const searchText=[s.name,s.publicId,s.category,s.weaponType,s.timing,s.cost,s.ct,s.effect,s.description].filter(Boolean).join(' ');
+      const state=normalizeSkillGachaState(skillGachaState||{});
+      return `<details class="inventory-card inventory-skill-card" open data-inventory-row="skill-${esc(s.id)}" data-inventory-location="倉庫" data-inventory-kind="スキル" data-inventory-item-type="スキル" data-inventory-category="${esc(category)}" data-inventory-search="${esc(searchText)}"><summary class="inventory-card-head"><div><div class="inventory-title">${esc(s.name)} <span class="skill-badge">★${esc(s.rank||1)}</span></div><div class="small">倉庫 / スキル / ${esc(category)}</div></div><div class="button-row" style="margin:0;"><button type="button" class="danger" data-skill-remove="${esc(s.id)}" ${state.equippedSkillIds.includes(s.id)?'disabled':''}>削除</button></div></summary><div class="inventory-card-meta"><div class="meta-item"><span class="meta-label">カテゴリ</span>${esc(category)}</div>${s.weaponType?`<div class="meta-item"><span class="meta-label">武器種</span>${esc(s.weaponType)}</div>`:''}<div class="meta-item"><span class="meta-label">登録ID</span>${esc(s.publicId||'未設定')}</div><div class="meta-item"><span class="meta-label">ランク</span>★${esc(s.rank||1)}</div>${s.timing?`<div class="meta-item meta-wide"><span class="meta-label">タイミング</span><div class="inventory-note">${esc(s.timing)}</div></div>`:''}${s.cost?`<div class="meta-item"><span class="meta-label">消費</span>${esc(s.cost)}</div>`:''}${s.ct?`<div class="meta-item"><span class="meta-label">CT</span>${esc(s.ct)}</div>`:''}${s.effect?`<div class="meta-item meta-wide"><span class="meta-label">効果</span><div class="inventory-note">${esc(s.effect)}</div></div>`:''}</div></details>`;
+    }).join(''));
+  }
+  if ($('inventoryEmptyStatus')) $('inventoryEmptyStatus').style.display = (inventoryItemsState.length||ownedSkills.length) ? 'none' : '';
   setReadOnly(currentMode === 'view');
   renderInventoryTabs();
   applyInventoryFilters();
@@ -4938,10 +4963,9 @@ async function fetchGithubCharacterSheetMaster({force=false}={}) {
       throw new Error('GitHub共通DBのmanifestに有効なmasterファイル名がありません。');
     }
 
-    const masterUrl = new URL(masterFile, GITHUB_COMMON_DB_BASE).toString();
-    const masterResponse = await fetch(masterUrl, {
-      cache: force ? 'reload' : 'force-cache'
-    });
+    const masterUrlObject = new URL(masterFile, GITHUB_COMMON_DB_BASE);
+    masterUrlObject.searchParams.set('_ra', String(manifest.sha256 || manifest.version || Date.now()));
+    const masterResponse = await fetch(masterUrlObject.toString(), { cache:'no-store' });
     if (!masterResponse.ok) {
       throw new Error(`GitHub共通DB本体の取得に失敗しました（HTTP ${masterResponse.status}）。`);
     }
@@ -5055,6 +5079,7 @@ function mergeInitialPresetIntoInventoryItem(existing={}, preset={}) {
     count: oldItem.count !== undefined && oldItem.count !== null ? oldItem.count : (base.count || 1),
     upgradeEntries: oldItem.upgradeEntries || [],
     upgradeLines: oldItem.upgradeLines || serializeUpgradeEntries(oldItem.upgradeEntries || []),
+    setSpells: oldItem.setSpells || '',
     location: '倉庫',
   });
 }
@@ -5073,13 +5098,14 @@ function mergeMasterPresetIntoInventoryItem(existing={}, preset={}) {
     count: oldItem.count !== undefined && oldItem.count !== null ? oldItem.count : (base.count || 1),
     upgradeEntries: oldItem.upgradeEntries || [],
     upgradeLines: oldItem.upgradeLines || serializeUpgradeEntries(oldItem.upgradeEntries || []),
+    setSpells: oldItem.setSpells || '',
     location: '倉庫',
   });
 }
 function isSameInventoryCore(a={}, b={}) {
   const aa = normalizeInventoryItem(a);
   const bb = normalizeInventoryItem(b);
-  const keys = ['publicId','masterId','masterSheet','masterSync','name','kind','category','rank','price','equipSlot','power','hit','defense','guard','evade','offhand','upgradeLimit','upgradeMaterialMinRank','spellSlots','target','element','cost','description','effect','checkType','role','source','tags','setItem','recipeResult','materials'];
+  const keys = ['publicId','masterId','masterSheet','masterSync','name','kind','category','rank','price','equipSlot','power','hit','defense','guard','evade','offhand','upgradeLimit','upgradeMaterialMinRank','spellSlots','setSpells','target','element','cost','description','effect','checkType','role','source','tags','setItem','recipeResult','materials'];
   return keys.every(k => String(aa[k] ?? '') === String(bb[k] ?? '')) && Number(aa.count || 0) === Number(bb.count || 0);
 }
 
@@ -5222,6 +5248,7 @@ function mergePublicIdInventoryItem(existing={}, preset={}, addCount=1){
     count: total,
     upgradeEntries: oldItem.upgradeEntries || [],
     upgradeLines: oldItem.upgradeLines || serializeUpgradeEntries(oldItem.upgradeEntries || []),
+    setSpells: oldItem.setSpells || '',
     location: '倉庫'
   });
 }
@@ -5239,6 +5266,19 @@ async function addInventoryByPublicIdPaste(){
     if(status){ status.className='status-box warn'; status.textContent='登録IDを RCA-XXXX-XXXX 形式で入力してください。'; }
     return;
   }
+  const skill=characterSkillByPublicId(publicId);
+  if(skill){
+    const state=normalizeSkillGachaState(skillGachaState||{});
+    if(state.acquiredSkillIds.includes(skill.id)){
+      if(status){status.className='status-box warn';status.textContent=`登録済みです：${skill.name}`;}
+    }else{
+      state.acquiredSkillIds.push(skill.id);skillGachaState=state;renderSkillCrystalPanel();updateAll();
+      if(status){status.className='status-box ok';status.textContent=`スキルを追加しました：${skill.name}`;}
+    }
+    if(idInput)idInput.value='';if(countInput)countInput.value='1';
+    if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon();
+    return;
+  }
   if(!gasUrl()){
     if(status){ status.className='status-box warn'; status.textContent='DBから登録するため、先にGAS WebアプリURLを設定してください。'; }
     return;
@@ -5248,6 +5288,19 @@ async function addInventoryByPublicIdPaste(){
     master = await loadCharacterSheetMasterFromDbForInitial();
   }catch(e){
     if(status){ status.className='status-box error'; status.textContent='DB読み込みに失敗しました：' + e.message; }
+    return;
+  }
+  const loadedSkill=characterSkillByPublicId(publicId);
+  if(loadedSkill){
+    const state=normalizeSkillGachaState(skillGachaState||{});
+    if(state.acquiredSkillIds.includes(loadedSkill.id)){
+      if(status){status.className='status-box warn';status.textContent=`登録済みです：${loadedSkill.name}`;}
+    }else{
+      state.acquiredSkillIds.push(loadedSkill.id);skillGachaState=state;renderSkillCrystalPanel();updateAll();
+      if(status){status.className='status-box ok';status.textContent=`スキルを追加しました：${loadedSkill.name}`;}
+    }
+    if(idInput)idInput.value='';if(countInput)countInput.value='1';
+    if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon();
     return;
   }
   const preset = findPresetByPublicId(master, publicId);
@@ -5417,6 +5470,7 @@ function emptyCharacter() {
 function collectData(updateTime=true) {
   const base = currentCharacter || emptyCharacter();
   syncAllEquipmentUpgradesToInventory();
+  syncAllEquipmentSpellSetsToInventory();
   const equipment = getEquipmentState();
   const baseAbilities = getAbilityValues();
   const abilities = computeEffectiveAbilities(baseAbilities, equipment);
@@ -5803,6 +5857,7 @@ function refreshEquipmentItemSelects() {
     const fallbackId = !current ? findCsItemIdByName($('equip_' + slot.key + '_name')?.value || '') : '';
     const nextValue = current || fallbackId;
     select.value = nextValue && Array.from(select.options).some(o=>o.value===nextValue) ? nextValue : '';
+    select.dataset.previousItemKey = select.value || '';
   }
 }
 function setTypeSelectValue(slotKey, value) {
@@ -5890,6 +5945,8 @@ function updateCarryWarehouseAllocationCount(slotKey, rawValue) {
 function applyCsItemToEquipmentSlot(slotKey) {
   if(!isCarrySlotKey(slotKey))temporaryEnchantmentsState=temporaryEnchantmentsState.filter(row=>row.targetSlot!==slotKey);
   const select = $('equip_' + slotKey + '_itemSelect');
+  const previousItemKey = String(select?.dataset.previousItemKey || '').trim();
+  if (previousItemKey && previousItemKey !== String(select?.value || '').trim()) syncEquippedSpellSetToInventoryItem(slotKey, previousItemKey);
   const row = findCsItemById(select?.value || '');
   if (isCarrySlotKey(slotKey)) {
     if (row && isSpellInventoryItem(row)) {
@@ -5901,7 +5958,7 @@ function applyCsItemToEquipmentSlot(slotKey) {
     updateSummary();
     return;
   }
-  if (!row) return;
+  if (!row) { if(select) select.dataset.previousItemKey=''; return; }
   const typeValue = row.category || row.kind || 'なし';
   if ($('equip_' + slotKey + '_name')) $('equip_' + slotKey + '_name').value = row.name || '';
   setTypeSelectValue(slotKey, typeValue);
@@ -5926,8 +5983,10 @@ function applyCsItemToEquipmentSlot(slotKey) {
     if ($('equip_' + slotKey + '_knownSpells')) $('equip_' + slotKey + '_knownSpells').value = '';
     setSpellSelectValues(slotKey, []);
   } else {
+    setSpellSelectValues(slotKey, row.setSpells || '');
     refreshSpellSetSelect(slotKey, spellContainerKind(typeValue));
   }
+  if (select) select.dataset.previousItemKey = select.value || '';
   updateEquipmentHandLocks(true);
   updateCombatStats();
   updateSpellSlotHints();
@@ -6983,6 +7042,8 @@ function bindEvents() {
   if ($('cancelTemporaryEnchantBtn')) $('cancelTemporaryEnchantBtn').addEventListener('click', () => $('temporaryEnchantDialog')?.close());
   if ($('temporaryEnchantTargetSelect')) $('temporaryEnchantTargetSelect').addEventListener('change', updateTemporaryEnchantDialogPreview);
   if ($('inventoryArea')) $('inventoryArea').addEventListener('click', e => {
+    const skillBtn=e.target.closest('[data-skill-remove]');
+    if(skillBtn){e.preventDefault();e.stopPropagation();removeSkillFromWarehouse(skillBtn.dataset.skillRemove||'');return;}
     const btn = e.target.closest('[data-inventory-action]'); if (!btn) return;
     e.preventDefault();
     e.stopPropagation();
@@ -7028,6 +7089,7 @@ function bindEvents() {
       // 選択中のselect自身をupdateAll()で再生成せず、選択値だけを反映する。
       const slotKey = e.target.dataset.slotKey || '';
       syncSpellSetHidden(slotKey);
+      syncEquippedSpellSetToInventoryItem(slotKey);
       updateSpellSlotDetails(slotKey);
       updateEquipmentSummaries();
       updateSummary();
@@ -7061,6 +7123,7 @@ function bindEvents() {
     if (e.target.id?.startsWith('equip_') && e.target.id.endsWith('_setSpells')) {
       const slotKey = e.target.id.replace(/^equip_/, '').replace(/_setSpells$/, '');
       enforceSpellSetLimit(slotKey);
+      syncEquippedSpellSetToInventoryItem(slotKey);
       updateSpellSlotDetails(slotKey);
       updateSpellSlotHints();
       updateEquipmentSummaries();
@@ -7081,6 +7144,7 @@ function bindEvents() {
     }
     if (e.target.id?.startsWith('equip_') && e.target.id.endsWith('_type')) {
       const slotKey = e.target.id.replace(/^equip_/, '').replace(/_type$/, '');
+      if(!isCarrySlotKey(slotKey)) syncEquippedSpellSetToInventoryItem(slotKey, $('equip_' + slotKey + '_itemSelect')?.dataset.previousItemKey || '');
       if(!isCarrySlotKey(slotKey))temporaryEnchantmentsState=temporaryEnchantmentsState.filter(row=>row.targetSlot!==slotKey);
       if (isCarrySlotKey(slotKey)) releaseCarryWarehouseAllocation(slotKey, {refresh:true});
       const itemSelect = $('equip_' + slotKey + '_itemSelect');
