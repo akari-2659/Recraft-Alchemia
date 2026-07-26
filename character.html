@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.268</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.271</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -261,16 +261,6 @@
   .inventory-chip-row button.active { background: #8f5728; color: #fffaf2; border-color: #8f5728; }
   .inventory-filter-status { margin-top: 8px; font-size: .86rem; color: var(--muted); }
   .inventory-card.inventory-hidden { display: none; }
-  .temporary-enchant-list{display:grid;gap:10px}
-  .temporary-enchant-card{border:1px solid rgba(221,203,176,.9);border-radius:12px;padding:10px;background:rgba(255,253,248,.78)}
-  .temporary-enchant-card.invalid{border-color:#d99;background:#fff3f3}
-  .temporary-enchant-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:8px}
-  .temporary-enchant-title{font-weight:900;color:var(--accent2)}
-  .temporary-enchant-meta{margin-top:6px;color:var(--muted);line-height:1.6;white-space:pre-wrap}
-  .temporary-enchant-actions{display:flex;flex-wrap:wrap;gap:6px}
-  .temporary-enchant-empty{color:var(--muted);border:1px dashed rgba(221,203,176,.9);border-radius:12px;padding:14px}
-  .temporary-enchant-use-row{margin-top:8px}
-  .temporary-enchant-preview{white-space:pre-wrap;line-height:1.65}
   .inventory-list { display: grid; grid-template-columns: 1fr; gap: 10px; }
   .inventory-card { border: 1px solid rgba(221, 203, 176, .9); background: rgba(255, 253, 248, .78); border-radius: 14px; padding: 12px; }
   .inventory-card > summary { list-style: none; cursor: pointer; }
@@ -289,6 +279,7 @@
   .inventory-fields { display: grid; grid-template-columns: 1fr; gap: 10px; }
   @media (min-width: 760px) { .inventory-card-meta { grid-template-columns: repeat(4, minmax(0, 1fr)); } .inventory-card-meta .meta-wide { grid-column: 1 / -1; } .inventory-fields { grid-template-columns: 1.2fr .8fr .55fr .75fr .7fr .7fr; } .inventory-fields .inventory-wide { grid-column: 1 / -1; } }
   .inventory-form-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 12px; }
+  @media (min-width: 760px) { .inventory-registration-card .inventory-form-grid { grid-template-columns: minmax(0, 1fr) 130px; } }
   @media (min-width: 760px) { .inventory-form-grid { grid-template-columns: 1.2fr .8fr .55fr .75fr .7fr .7fr; } .inventory-form-grid .inventory-wide { grid-column: 1 / -1; } }
 
   .quiver-control-panel { border: 1px solid rgba(101, 139, 121, .28); background: rgba(245, 252, 246, .72); border-radius: 14px; padding: 12px; margin: 10px 0 14px; }
@@ -667,7 +658,7 @@ button,.tab,.subtab,.tab-btn,.quest-category-btn{white-space:normal!important;ov
   .buttons,.subtabs,.tab-nav,.quest-category-bar,.section-actions,.filter-actions,.facility-actions,.modal-foot{grid-template-columns:1fr!important}
 }
 
-/* v90.8.268 skill crystal / skill warehouse */
+/* v90.8.271 skill crystal / skill warehouse */
 .skill-crystal-overview{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-bottom:12px}
 .skill-crystal-card,.skill-warehouse-card,.skill-stage-card{border:1px solid var(--line);border-radius:12px;background:#fffdf8;padding:11px;min-width:0}
 .skill-crystal-card h3,.skill-warehouse-card h4,.skill-stage-card h4{margin:0 0 6px}
@@ -679,7 +670,7 @@ button,.tab,.subtab,.tab-btn,.quest-category-btn{white-space:normal!important;ov
 .skill-warehouse-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:9px}.skill-meta{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}.skill-badge{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:2px 7px;font-size:.75rem;background:#fff7ec}.skill-public-id{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.78rem;word-break:break-all}.skill-detail-lines{display:grid;gap:4px;font-size:.88rem;line-height:1.45}.skill-detail-lines b{color:var(--muted)}
 .skill-register-grid{display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:8px;align-items:end}.skill-register-grid textarea{min-height:72px}
 @media(max-width:700px){.skill-register-grid{grid-template-columns:1fr}.skill-slot-row{grid-template-columns:1fr}.skill-chip-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.skill-chip{width:100%}}
-/* v90.8.268: 倉庫スキル統合・セット術式折り畳み */
+/* v90.8.271: 倉庫スキル統合・セット術式折り畳み */
 details.spellbook-fields>summary{cursor:pointer;font-weight:900;padding:4px 2px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 details.spellbook-fields>summary::marker{color:var(--accent)}
 details.spellbook-fields>.spellbook-fields-body{padding-top:8px}
@@ -1034,12 +1025,12 @@ details.big-section>summary{
 </style>
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.268 / 最終更新日：2026年7月25日</div>
+<div class="ra-build-info">Version：v90.8.271 / 最終更新日：2026年7月26日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.268 / 最終更新日：2026年7月25日</div>
+  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.271 / 最終更新日：2026年7月26日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -1357,14 +1348,14 @@ details.big-section>summary{
           <p class="hint">旧「所持品」はこの「倉庫」です。拠点に保管しているアイテムを登録します。倉庫には保管上限はありません。装備欄・所持品欄・バッグ選択の候補は、この倉庫一覧から生成されます。</p>
           <div class="mini-card inventory-registration-card">
             <h3>倉庫へ登録</h3>
-            <p class="hint">GMや進行管理HTMLから受け取った登録IDを入力して、アイテム・術式・レシピ・スキルを倉庫へ追加します。個数はスキル以外に適用され、0個でも登録・保存できます。</p>
+            <p class="hint">GMや進行管理HTMLから受け取った登録IDを入力して、アイテム・術式・レシピ・スキルを倉庫へ追加します。アイテム類は指定した個数で追加でき、0個でも登録・保存できます。</p>
             <div class="inventory-form-grid">
               <div class="field">
                 <label for="publicIdInput">登録ID</label>
                 <input id="publicIdInput" data-inventory-input="1" type="text" inputmode="latin" autocomplete="off" />
               </div>
               <div class="field">
-                <label for="publicIdCountInput">個数（スキルでは不使用）</label>
+                <label for="publicIdCountInput">個数</label>
                 <input id="publicIdCountInput" data-inventory-input="1" type="number" min="0" max="9999" value="1" />
               </div>
             </div>
@@ -1469,12 +1460,6 @@ details.big-section>summary{
       <div class="field" data-inventory-kind-field="weapon item spell"><label for="inventoryFormTarget">対象</label><input id="inventoryFormTarget" type="text" placeholder="例：味方1体 / 敵1体" /></div>
       <div class="field" data-inventory-kind-field="weapon item spell"><label for="inventoryFormCheckType">判定</label><input id="inventoryFormCheckType" type="text" placeholder="例：回避値 / 防御値 / 抵抗値" /></div>
       <div class="field" data-inventory-kind-field="weapon item spell"><label for="inventoryFormElement">属性</label><select id="inventoryFormElement"><option value="">未選択</option><option>物</option><option>火</option><option>水</option><option>風</option><option>雷</option><option>光</option><option>闇</option><option>無</option><option>可変</option><option>矢弾依存</option></select></div>
-      <div class="field" data-inventory-kind-field="item"><label for="inventoryFormEnchantTarget">エンチャント対象</label><select id="inventoryFormEnchantTarget"><option value="">なし</option><option>武器</option><option>防具・盾</option><option>装飾品</option><option>装備</option></select></div>
-      <div class="field" data-inventory-kind-field="item"><label for="inventoryFormEnchantEffectType">エンチャント効果</label><select id="inventoryFormEnchantEffectType"><option value="">なし</option><option>属性付与</option><option>ダメージ補正</option><option>防御補正</option><option>回避補正</option><option>耐性付与</option><option>特殊効果</option></select></div>
-      <div class="field" data-inventory-kind-field="item"><label for="inventoryFormEnchantValue">エンチャント値</label><input id="inventoryFormEnchantValue" type="text" placeholder="例：火 / +1" /></div>
-      <div class="field" data-inventory-kind-field="item"><label for="inventoryFormEnchantDuration">持続期間</label><select id="inventoryFormEnchantDuration"><option value="">なし</option><option>次の攻撃終了まで</option><option>次にダメージを受けるまで</option><option>戦闘終了まで</option><option>ラウンド制</option><option>シーン終了まで</option><option>手動解除</option></select></div>
-      <div class="field" data-inventory-kind-field="item"><label for="inventoryFormEnchantRounds">持続ラウンド</label><input id="inventoryFormEnchantRounds" type="number" min="1" max="99" placeholder="ラウンド制のみ" /></div>
-      <div class="field" data-inventory-kind-field="item"><label for="inventoryFormEnchantStackRule">重複ルール</label><select id="inventoryFormEnchantStackRule"><option>同じ装備は1つ・新しい効果で上書き</option><option>重複可</option></select></div>
       <div class="field" data-inventory-kind-field="spell"><label for="inventoryFormCost">コスト</label><input id="inventoryFormCost" type="text" placeholder="例：MP1 / MP2" /></div>
       <div class="field inventory-wide" data-inventory-kind-field="recipe"><label for="inventoryFormRecipeResult">完成品</label><input id="inventoryFormRecipeResult" type="text" placeholder="例：ポーション ×1" /></div>
       <div class="field inventory-wide" data-inventory-kind-field="recipe"><label for="inventoryFormMaterials">必要素材</label><textarea id="inventoryFormMaterials" placeholder="例：薬草×1、澄んだ水×1"></textarea></div>
@@ -1489,18 +1474,6 @@ details.big-section>summary{
   </div>
 </dialog>
 
-<dialog id="temporaryEnchantDialog" class="output-dialog">
-  <div class="dialog-inner">
-    <div class="dialog-title">一時エンチャントを使用</div>
-    <input id="temporaryEnchantSourceSlot" type="hidden" value="" />
-    <div class="field"><label for="temporaryEnchantTargetSelect">対象装備</label><select id="temporaryEnchantTargetSelect"></select></div>
-    <div id="temporaryEnchantPreview" class="status-box temporary-enchant-preview">使用するアイテムと対象装備を確認してください。</div>
-    <div class="button-row" style="margin-top:12px;">
-      <button id="applyTemporaryEnchantBtn" type="button">使用して付与</button>
-      <button id="cancelTemporaryEnchantBtn" type="button" class="ghost">キャンセル</button>
-    </div>
-  </div>
-</dialog>
 
 <script>
 'use strict';
@@ -2140,9 +2113,6 @@ function renderStatic() {
             </div>
           </div>
           <div id="equip_${slot.key}_effectPreview" class="carry-item-effect" hidden></div>
-          <div class="button-row temporary-enchant-use-row">
-            <button id="equip_${slot.key}_temporaryEnchantUse" type="button" class="secondary" data-temporary-enchant-use="${slot.key}" hidden>エンチャント使用</button>
-          </div>
           <details class="carry-item-edit">
             <summary>詳細編集</summary>
             <div class="equipment-fields three">
@@ -2260,11 +2230,6 @@ function renderStatic() {
         </div>
       </details>`;
   }).join('') + `
-    <details class="equipment-card equipment-wide" id="temporaryEnchantPanel" open>
-      <summary class="equipment-card-summary"><span class="equipment-card-toggle" aria-hidden="true"></span><span class="equipment-card-title">一時エンチャント</span><span class="equipment-summary">期限つき装備効果</span></summary>
-      <p class="hint">所持品へ持ち出したエンチャント調合品から装備を選んで付与します。戦闘終了などの解除タイミングは、この欄のボタンで管理します。</p>
-      <div id="temporaryEnchantList" class="temporary-enchant-list"></div>
-    </details>
     <details class="equipment-card equipment-wide equipment-memo-card">
       <summary class="equipment-card-summary"><span class="equipment-card-toggle" aria-hidden="true"></span><span class="equipment-card-title">装備メモ</span><span class="equipment-summary">補足</span></summary>
       <div class="field">
@@ -2360,8 +2325,6 @@ function makeSummary() {
     }
   }
   pushInventorySummaryLines(lines, data.inventory || {});
-  const temporaryEnchantments=normalizeTemporaryEnchantments(data.temporaryEnchantments||data.activeEnchantments||[]);
-  if(temporaryEnchantments.length){lines.push('');lines.push('■ 一時エンチャント');temporaryEnchantments.forEach(row=>lines.push(`${equipmentSlotLabel(row.targetSlot)} / ${row.targetName||'対象未設定'}：${row.sourceName}${row.value?' / '+row.effectType+':'+row.value:''} / ${row.duration}${row.duration==='ラウンド制'&&row.remainingRounds?'（残り'+row.remainingRounds+'ラウンド）':''}`));}
   if (data.memo) { lines.push(''); lines.push('■ メモ'); lines.push(data.memo); }
   return lines.join('\n');
 }
@@ -3431,12 +3394,8 @@ function updateEquipmentSummaries() {
     if (target) parts.push('対象:' + target);
     if (checkType) parts.push('判定:' + checkType);
     if (spellCount) parts.push('術式' + spellCount + '件');
-    const enchants=temporaryEnchantmentsForSlot(slot.key);
-    if(enchants.length)parts.push('一時:'+enchants.map(row=>row.sourceName+(row.value?'('+row.value+')':'')).join('、'));
     el.textContent = parts.length ? parts.join(' / ') : '未設定';
   }
-  refreshTemporaryEnchantUseButtons();
-  renderTemporaryEnchantments();
 }
 function defaultEquipment() {
   const equipment = {};
@@ -3581,7 +3540,6 @@ function applyEquipmentPreset(slotKey) {
   updateSpellSlotHints();
 }
 function clearHandSlot(slotKey) {
-  temporaryEnchantmentsState=temporaryEnchantmentsState.filter(row=>row.targetSlot!==slotKey);
   for (const suffix of ['itemSelect','name','element','power','offhand','reloadTurns','target','checkType','modifiers','upgradeLimit','upgradeLines','description','note']) {
     const el = $('equip_' + slotKey + '_' + suffix);
     if (el) el.value = '';
@@ -3765,105 +3723,6 @@ let selectedBagId = '';
 let selectedQuiverId = '';
 let quiverAmmoSlotsState = {};
 let carryWarehouseAllocationState = {};
-let temporaryEnchantmentsState = [];
-
-function normalizeTemporaryEnchantment(row={}){
-  const rounds=Number(row.remainingRounds ?? row.enchantRounds ?? row.rounds ?? 0);
-  return {
-    id:String(row.id||('tench_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,6))).trim(),
-    sourceItemId:String(row.sourceItemId||row.itemId||'').trim(),
-    sourceName:String(row.sourceName||row.itemName||row.name||'一時エンチャント').trim(),
-    targetSlot:String(row.targetSlot||'').trim(),
-    targetItemId:String(row.targetItemId||'').trim(),
-    targetName:String(row.targetName||'').trim(),
-    enchantTarget:String(row.enchantTarget||'装備').trim(),
-    effectType:String(row.effectType||row.enchantEffectType||'特殊効果').trim(),
-    value:String(row.value??row.enchantValue??'').trim(),
-    duration:String(row.duration||row.enchantDuration||'手動解除').trim(),
-    remainingRounds:Number.isFinite(rounds)&&rounds>0?Math.floor(rounds):0,
-    stackRule:String(row.stackRule||row.enchantStackRule||'同じ装備は1つ・新しい効果で上書き').trim(),
-    effect:String(row.effect||'').trim(),
-    appliedAt:String(row.appliedAt||nowIso()).trim()
-  };
-}
-function normalizeTemporaryEnchantments(rows=[]){return (Array.isArray(rows)?rows:[]).filter(Boolean).map(normalizeTemporaryEnchantment);}
-function equipmentSlotLabel(slotKey=''){return EQUIPMENT_SLOTS.find(s=>s.key===slotKey)?.name||slotKey||'装備';}
-function temporaryEnchantmentTargetMatches(row={},equipment=getEquipmentState()){
-  const e=normalizeTemporaryEnchantment(row), item=(equipment||{})[e.targetSlot]||{};
-  const slot=EQUIPMENT_SLOTS.find(s=>s.key===e.targetSlot);
-  if(!slot||slot.kind==='carry'||!(item.name||(item.type&&item.type!=='なし')))return false;
-  const itemId=String(item.itemId||'').trim(), name=String(item.name||'').trim();
-  if(e.targetItemId&&itemId)return e.targetItemId===itemId;
-  return !e.targetName||!name||e.targetName===name;
-}
-function temporaryEnchantmentsForSlot(slotKey='',rows=temporaryEnchantmentsState,equipment=getEquipmentState()){
-  return normalizeTemporaryEnchantments(rows).filter(row=>row.targetSlot===slotKey&&temporaryEnchantmentTargetMatches(row,equipment));
-}
-function temporaryEnchantItemFields(item={}){
-  const row=normalizeInventoryItem(item);
-  return {target:String(row.enchantTarget||'').trim(),type:String(row.enchantEffectType||'').trim(),value:String(row.enchantValue||'').trim(),duration:String(row.enchantDuration||'').trim(),rounds:Math.max(0,Math.floor(Number(row.enchantRounds)||0)),stackRule:String(row.enchantStackRule||'同じ装備は1つ・新しい効果で上書き').trim()};
-}
-function isTemporaryEnchantItem(item={}){const info=temporaryEnchantItemFields(item);return !!(info.target&&info.type&&info.duration);}
-function equipmentEligibleForTemporaryEnchant(slot={},item={},target=''){
-  if(!slot||slot.kind==='carry')return false;
-  const type=normalizeEquipmentType(item.type||'なし');
-  if(!(item.name||(type&&type!=='なし')))return false;
-  if(target==='装備')return true;
-  if(target==='武器')return slot.kind==='hand'&&!spellContainerKind(type)&&!['なし','盾','大盾'].includes(type);
-  if(target==='防具・盾')return slot.kind==='armor'||(slot.kind==='hand'&&['盾','大盾'].includes(type));
-  if(target==='装飾品')return slot.kind==='accessory';
-  return false;
-}
-function temporaryEnchantSourceForCarrySlot(slotKey=''){
-  const allocation=carryWarehouseAllocationState[slotKey]||{};
-  if(allocation.warehouseAllocated&&allocation.warehouseItemId){const row=warehouseItemByKey(allocation.warehouseItemId);if(row)return normalizeInventoryItem(row);}
-  return normalizeInventoryItem({name:$('equip_'+slotKey+'_name')?.value||'',kind:'アイテム',itemType:'調合品',itemCategory:$('equip_'+slotKey+'_type')?.value||'',count:$('equip_'+slotKey+'_count')?.value||0,effect:$('equip_'+slotKey+'_note')?.value||''});
-}
-function temporaryEnchantEligibleTargets(source={},equipment=getEquipmentState()){
-  const info=temporaryEnchantItemFields(source);
-  return EQUIPMENT_SLOTS.filter(slot=>equipmentEligibleForTemporaryEnchant(slot,(equipment||{})[slot.key]||{},info.target));
-}
-function renderTemporaryEnchantments(){
-  const area=$('temporaryEnchantList');if(!area)return;
-  const equipment=getEquipmentState();temporaryEnchantmentsState=normalizeTemporaryEnchantments(temporaryEnchantmentsState);
-  if(!temporaryEnchantmentsState.length){area.innerHTML='<div class="temporary-enchant-empty">現在付与されている一時エンチャントはありません。</div>';return;}
-  area.innerHTML=temporaryEnchantmentsState.map((row,index)=>{const valid=temporaryEnchantmentTargetMatches(row,equipment);const remaining=row.duration==='ラウンド制'&&row.remainingRounds?` / 残り${row.remainingRounds}ラウンド`:'';return `<div class="temporary-enchant-card ${valid?'':'invalid'}"><div class="temporary-enchant-head"><div><div class="temporary-enchant-title">${esc(row.sourceName)}</div><div class="small">${esc(equipmentSlotLabel(row.targetSlot))}：${esc(row.targetName||'対象未設定')}${valid?'':' / 対象装備が変更されています'}</div></div><div class="temporary-enchant-actions">${row.duration==='ラウンド制'&&row.remainingRounds>0?`<button type="button" class="ghost" data-temporary-enchant-action="round" data-index="${index}">1ラウンド経過</button>`:''}<button type="button" class="danger" data-temporary-enchant-action="remove" data-index="${index}">解除</button></div></div><div class="temporary-enchant-meta">${esc(`${row.effectType}${row.value?'：'+row.value:''} / ${row.duration}${remaining}${row.effect?'\n'+row.effect:''}`)}</div></div>`;}).join('');
-  area.querySelectorAll('button').forEach(btn=>btn.disabled=currentMode==='view');
-}
-function refreshTemporaryEnchantUseButtons(){
-  for(const slot of EQUIPMENT_SLOTS){if(slot.kind!=='carry')continue;const btn=$('equip_'+slot.key+'_temporaryEnchantUse');if(!btn)continue;const source=temporaryEnchantSourceForCarrySlot(slot.key);const count=clampInt($('equip_'+slot.key+'_count')?.value||0,0,9999);const targets=isTemporaryEnchantItem(source)?temporaryEnchantEligibleTargets(source):[];btn.hidden=!(isTemporaryEnchantItem(source)&&count>0);btn.disabled=currentMode==='view'||!targets.length;btn.title=targets.length?'装備を選んで一時エンチャントを付与します。':'対象にできる装備がありません。';}
-}
-function openTemporaryEnchantDialog(slotKey=''){
-  if(currentMode==='view')return;const source=temporaryEnchantSourceForCarrySlot(slotKey);if(!isTemporaryEnchantItem(source)){showToast('この所持品は一時エンチャント用ではありません。','warn');return;}
-  const targets=temporaryEnchantEligibleTargets(source);if(!targets.length){showToast('対象にできる装備がありません。','warn');return;}
-  const equipment=getEquipmentState();$('temporaryEnchantSourceSlot').value=slotKey;$('temporaryEnchantTargetSelect').innerHTML=targets.map(slot=>`<option value="${esc(slot.key)}">${esc(equipmentSlotLabel(slot.key))} / ${esc(equipment[slot.key]?.name||equipment[slot.key]?.type||'未設定')}</option>`).join('');updateTemporaryEnchantDialogPreview();$('temporaryEnchantDialog')?.showModal();
-}
-function updateTemporaryEnchantDialogPreview(){
-  const sourceSlot=$('temporaryEnchantSourceSlot')?.value||'', targetSlot=$('temporaryEnchantTargetSelect')?.value||'', source=temporaryEnchantSourceForCarrySlot(sourceSlot), info=temporaryEnchantItemFields(source), target=getEquipmentState()[targetSlot]||{};
-  const preview=$('temporaryEnchantPreview');if(preview)preview.textContent=[`使用：${source.name||'未設定'}`,`対象：${equipmentSlotLabel(targetSlot)} / ${target.name||target.type||'未設定'}`,`効果：${info.type}${info.value?' '+info.value:''}`,`持続：${info.duration}${info.duration==='ラウンド制'&&info.rounds?`（${info.rounds}ラウンド）`:''}`,source.effect?`処理：${source.effect}`:''].filter(Boolean).join('\n');
-}
-function consumeTemporaryEnchantCarryItem(slotKey=''){
-  const input=$('equip_'+slotKey+'_count'), current=clampInt(input?.value||0,0,9999);if(current<=0)return false;const next=current-1, allocation=carryWarehouseAllocationState[slotKey]||{};
-  if(next<=0){carryWarehouseAllocationState[slotKey]={warehouseAllocated:false,warehouseItemId:'',count:0,maxStack:allocation.maxStack||99};clearCarrySlotFields(slotKey);}else{if(input)input.value=String(next);carryWarehouseAllocationState[slotKey]={...allocation,count:next};}return true;
-}
-function applyTemporaryEnchantFromDialog(){
-  const sourceSlot=$('temporaryEnchantSourceSlot')?.value||'', targetSlot=$('temporaryEnchantTargetSelect')?.value||'', source=temporaryEnchantSourceForCarrySlot(sourceSlot), info=temporaryEnchantItemFields(source), equipment=getEquipmentState(), target=equipment[targetSlot]||{}, slot=EQUIPMENT_SLOTS.find(s=>s.key===targetSlot);
-  if(!isTemporaryEnchantItem(source)){showToast('使用するエンチャントアイテムを確認できません。','error');return;}if(!equipmentEligibleForTemporaryEnchant(slot,target,info.target)){showToast('対象装備が条件に合いません。','warn');return;}if(!consumeTemporaryEnchantCarryItem(sourceSlot)){showToast('所持数がありません。','warn');return;}
-  if(info.stackRule!=='重複可')temporaryEnchantmentsState=temporaryEnchantmentsState.filter(row=>row.targetSlot!==targetSlot);
-  temporaryEnchantmentsState.push(normalizeTemporaryEnchantment({sourceItemId:inventoryItemKey(source),sourceName:source.name,targetSlot,targetItemId:target.itemId||'',targetName:target.name||target.type||equipmentSlotLabel(targetSlot),enchantTarget:info.target,effectType:info.type,value:info.value,duration:info.duration,remainingRounds:info.duration==='ラウンド制'?Math.max(1,info.rounds||1):0,stackRule:info.stackRule,effect:source.effect||''}));
-  $('temporaryEnchantDialog')?.close();refreshWarehouseQuantityViews({quiver:false});updateEquipmentSummaries();updateSummary();showToast(`${source.name}を${equipmentSlotLabel(targetSlot)}へ付与しました。`,'ok');
-}
-function temporaryEnchantAction(action='',index=-1){
-  const row=temporaryEnchantmentsState[index];if(!row)return;if(action==='round'){const e=normalizeTemporaryEnchantment(row);e.remainingRounds=Math.max(0,e.remainingRounds-1);if(e.remainingRounds<=0){temporaryEnchantmentsState.splice(index,1);showToast(`${e.sourceName}の効果が終了しました。`,'ok');}else temporaryEnchantmentsState[index]=e;}else if(action==='remove'){const removed=temporaryEnchantmentsState.splice(index,1)[0];showToast(`${removed?.sourceName||'一時エンチャント'}を解除しました。`,'ok');}updateEquipmentSummaries();updateSummary();
-}
-function temporaryEnchantElementForSlot(slotKey='',data={},baseElement=''){
-  const rows=normalizeTemporaryEnchantments(data.temporaryEnchantments||data.activeEnchantments||[]), active=temporaryEnchantmentsForSlot(slotKey,rows,data.equipment||{}).filter(row=>row.effectType==='属性付与'&&row.value);return active.length?String(active[active.length-1].value):baseElement;
-}
-function temporaryEnchantDamageBonusForSlot(slotKey='',data={}){
-  const rows=normalizeTemporaryEnchantments(data.temporaryEnchantments||data.activeEnchantments||[]);return temporaryEnchantmentsForSlot(slotKey,rows,data.equipment||{}).filter(row=>row.effectType==='ダメージ補正').reduce((sum,row)=>sum+parseFlatBonus(row.value),0);
-}
-function getTemporaryEnchantmentsState(){return normalizeTemporaryEnchantments(temporaryEnchantmentsState);}
-function setTemporaryEnchantmentsState(rows=[]){temporaryEnchantmentsState=normalizeTemporaryEnchantments(rows);renderTemporaryEnchantments();refreshTemporaryEnchantUseButtons();}
 
 function defaultInventory() {
   const basicBag = { id:'bag_simple', masterId:'', masterSheet:'', masterSync:'', name:'簡素なバッグ', kind:'バッグ', itemType:'バッグ', category:'バッグ', itemCategory:'バッグ', count:1, capacity:8, bagCapacity:8, location:'倉庫', rank:1, price:'', equipSlot:'', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', spellSlots:'', target:'', element:'', cost:'', checkType:'', role:'', source:'初期支給 / 鍛冶屋', tags:'バッグ,初期倉庫', setItem:'', description:'冒険に必要な最低限の荷物を入れられる簡素なバッグ。', effect:'所持品枠8。', recipeResult:'', materials:'', note:'' };
@@ -4550,7 +4409,7 @@ function renderInventory() {
     const equipMeta = [item.equipSlot ? '装備/使用枠：' + item.equipSlot : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : '', item.hit ? '命中補正：' + item.hit : '', item.defense ? '防御値：' + item.defense : '', item.guard ? '防御行動値：' + item.guard : '', item.evade ? '回避補正：' + item.evade : '', item.offhand ? '副手追撃値：' + item.offhand : '', inventoryKindSupportsUpgradeLimit(item.kind) && item.upgradeLimit ? '強化枠上限：' + item.upgradeLimit : '', inventoryKindSupportsUpgradeLimit(item.kind) && item.upgradeMaterialMinRank ? '強化素材最低ランク：' + characterPlayerRankLabel(item.upgradeMaterialMinRank) : ''].filter(Boolean).join(' / ') || '—';
     const spellMeta = item.kind === '術式' ? [item.category ? '種別：' + item.category : '', item.element ? '属性：' + item.element : '', item.cost ? 'コスト：' + item.cost : '', item.target ? '対象：' + item.target : '', item.power ? 'ダメージ/威力：' + item.power : '', item.checkType ? '判定：' + checkExpressionDisplay(item.checkType) : '', item.role ? '役割：' + item.role : ''].filter(Boolean).join(' / ') : '';
     const recipeMeta = item.kind === 'レシピ' ? [item.recipeResult ? '完成品：' + item.recipeResult : '', item.materials ? '必要素材：' + item.materials : ''].filter(Boolean).join('\n') : '';
-    const itemUseMeta = ['アイテム','素材','矢筒','バッグ'].includes(item.kind) ? [item.target ? '対象：' + item.target : '', item.element ? '属性：' + item.element : '', item.enchantTarget ? 'エンチャント対象：' + item.enchantTarget : '', item.enchantEffectType ? 'エンチャント効果：' + item.enchantEffectType + (item.enchantValue ? ' ' + item.enchantValue : '') : '', item.enchantDuration ? '持続：' + item.enchantDuration + (item.enchantDuration === 'ラウンド制' && item.enchantRounds ? ' ' + item.enchantRounds + 'ラウンド' : '') : '', item.enchantStackRule ? '重複：' + item.enchantStackRule : '', item.power ? '威力：' + item.power : '', item.cost ? 'コスト：' + item.cost : '', item.checkType ? '判定：' + checkExpressionDisplay(item.checkType) : '', item.ammoKind ? '矢弾種別：' + item.ammoKind : '', item.compatibleWeaponTypes ? '対応武器種：' + item.compatibleWeaponTypes : '', item.spellSlots ? '最大スタック数：' + item.spellSlots : '', item.quiverCapacity ? '矢筒収納種類数：' + item.quiverCapacity : '', item.bagCapacity ? 'バッグ容量：' + item.bagCapacity : '', item.source ? '入手先：' + item.source : '', item.tags ? 'タグ：' + item.tags : ''].filter(Boolean).join(' / ') : '';
+    const itemUseMeta = ['アイテム','素材','矢筒','バッグ'].includes(item.kind) ? [item.target ? '対象：' + item.target : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : '', item.cost ? 'コスト：' + item.cost : '', item.checkType ? '判定：' + checkExpressionDisplay(item.checkType) : '', item.ammoKind ? '矢弾種別：' + item.ammoKind : '', item.compatibleWeaponTypes ? '対応武器種：' + item.compatibleWeaponTypes : '', item.spellSlots ? '最大スタック数：' + item.spellSlots : '', item.quiverCapacity ? '矢筒収納種類数：' + item.quiverCapacity : '', item.bagCapacity ? 'バッグ容量：' + item.bagCapacity : '', item.source ? '入手先：' + item.source : '', item.tags ? 'タグ：' + item.tags : ''].filter(Boolean).join(' / ') : '';
     const spellSlotMeta = item.spellSlots && ['武器','防具','装飾品','術式'].includes(item.kind) ? `術式枠補正：+${item.spellSlots}` : '';
     const savedUpgradeMeta = serializeUpgradeEntries(item.upgradeEntries || parseUpgradeLines(item.upgradeLines || ''));
     const bagMeta = item.kind === 'バッグ' ? `バッグ容量：${clampInt(item.capacity || 0, 0, 99)}` : '';
@@ -5465,7 +5324,7 @@ function sortInventoryItems() {
 function emptyCharacter() {
   const stats = Object.fromEntries(STAT_ORDER.map(k => [k, '']));
   const abilities = Object.fromEntries(ABILITIES.map(a => [a.key, 0]));
-  return { id: uuid(), name: '', gender: '', age: '', stats, abilities, skills: defaultSkillAlloc(), manualCategoryBonuses: emptyCategoryBonus(), resources: { hpBonus:0, mpBonus:0, currentHp:'', currentMp:'', fatigue:0 }, equipment: defaultEquipment(), inventory: defaultInventory(), temporaryEnchantments:[], skillGacha:defaultSkillGachaState(), autoSaveEnabled:true, memo: '', createdAt: nowIso(), updatedAt: nowIso() };
+  return { id: uuid(), name: '', gender: '', age: '', stats, abilities, skills: defaultSkillAlloc(), manualCategoryBonuses: emptyCategoryBonus(), resources: { hpBonus:0, mpBonus:0, currentHp:'', currentMp:'', fatigue:0 }, equipment: defaultEquipment(), inventory: defaultInventory(), skillGacha:defaultSkillGachaState(), autoSaveEnabled:true, memo: '', createdAt: nowIso(), updatedAt: nowIso() };
 }
 function collectData(updateTime=true) {
   const base = currentCharacter || emptyCharacter();
@@ -5487,7 +5346,6 @@ function collectData(updateTime=true) {
     resources: computeResources(abilities, getResourceState(), equipment),
     equipment,
     inventory: getInventoryState(),
-    temporaryEnchantments: getTemporaryEnchantmentsState(),
     skillGacha: getSkillGachaState(),
     combatStats: computeCombatStats(abilities, getSkillAlloc(), equipment),
     autoSaveEnabled: autoSaveEnabled!==false,
@@ -5511,7 +5369,6 @@ function applyData(data) {
   setResourceState(currentCharacter.resources || {});
   setInventoryState(currentCharacter.inventory || {});
   setEquipmentState(currentCharacter.equipment || {});
-  setTemporaryEnchantmentsState(currentCharacter.temporaryEnchantments || currentCharacter.activeEnchantments || []);
   setSkillGachaState(currentCharacter.skillGacha || {});
   renderBagSelect();
   applyBagCapacityToEquipmentSlots();
@@ -5536,7 +5393,6 @@ function setReadOnly(readOnly) {
     el.disabled = readOnly || (!!quiverSlot && !quiverState?.warehouseAllocated);
   }
   for (const btn of document.querySelectorAll('[data-inventory-action]')) btn.disabled = readOnly;
-  for (const btn of document.querySelectorAll('[data-temporary-enchant-use],[data-temporary-enchant-action]')) btn.disabled = readOnly;
   for (const el of document.querySelectorAll('[data-skill-crystal-input]')) el.disabled = readOnly;
   for (const btn of document.querySelectorAll('[data-skill-remove],#addSkillByPublicIdBtn,#clearSkillPublicIdBtn')) btn.disabled = readOnly || (btn.dataset.skillRemove && normalizeSkillGachaState(skillGachaState||{}).equippedSkillIds.includes(btn.dataset.skillRemove));
   if ($('addInventoryItemBtn')) $('addInventoryItemBtn').disabled = readOnly;
@@ -5943,7 +5799,6 @@ function updateCarryWarehouseAllocationCount(slotKey, rawValue) {
   applyBagCapacityToEquipmentSlots();
 }
 function applyCsItemToEquipmentSlot(slotKey) {
-  if(!isCarrySlotKey(slotKey))temporaryEnchantmentsState=temporaryEnchantmentsState.filter(row=>row.targetSlot!==slotKey);
   const select = $('equip_' + slotKey + '_itemSelect');
   const previousItemKey = String(select?.dataset.previousItemKey || '').trim();
   if (previousItemKey && previousItemKey !== String(select?.value || '').trim()) syncEquippedSpellSetToInventoryItem(slotKey, previousItemKey);
@@ -6354,8 +6209,6 @@ function makeSummaryFromData(data) {
     }
   }
   pushInventorySummaryLines(lines, data.inventory || {});
-  const temporaryEnchantments=normalizeTemporaryEnchantments(data.temporaryEnchantments||data.activeEnchantments||[]);
-  if(temporaryEnchantments.length){lines.push('');lines.push('■ 一時エンチャント');temporaryEnchantments.forEach(row=>lines.push(`${equipmentSlotLabel(row.targetSlot)} / ${row.targetName||'対象未設定'}：${row.sourceName}${row.value?' / '+row.effectType+':'+row.value:''} / ${row.duration}${row.duration==='ラウンド制'&&row.remainingRounds?'（残り'+row.remainingRounds+'ラウンド）':''}`));}
   if (data.memo) { lines.push(''); lines.push('■ メモ'); lines.push(data.memo); }
   return lines.join('\n');
 }
@@ -6534,9 +6387,8 @@ function collectWeaponDamagePaletteLines(data={}, totals={}) {
       }
     }
     const powerBonus = equipmentUpgradeNumericBonus(merged,[/^威力$/, /^威力\+1$/, /^武器威力$/]);
-    const enchantDamageBonus = temporaryEnchantDamageBonusForSlot(spec.key,data);
-    const effectiveElement = temporaryEnchantElementForSlot(spec.key,data,merged.element||source?.element||item.element||'物');
-    const formula = paletteDamageFormulaWithBonus(power, skillBonus + powerBonus + enchantDamageBonus, offhandBonus);
+    const effectiveElement = merged.element||source?.element||item.element||'物';
+    const formula = paletteDamageFormulaWithBonus(power, skillBonus + powerBonus, offhandBonus);
     if (!formula) continue;
     const skillLabel = skillKey === 'shoot' ? '射撃' : (skillKey === 'melee' ? '近接' : '');
     const elementLabel = effectiveElement ? ` / ${effectiveElement}` : '';
@@ -6544,8 +6396,6 @@ function collectWeaponDamagePaletteLines(data={}, totals={}) {
     const key = label + '::' + formula;
     if (used.has(key)) continue;
     used.add(key);
-    const activeEnchants=temporaryEnchantmentsForSlot(spec.key,normalizeTemporaryEnchantments(data.temporaryEnchantments||data.activeEnchantments||[]),equipment);
-    activeEnchants.forEach(row=>{const comment=`//一時エンチャント：${row.sourceName}${row.value?' / '+row.effectType+':'+row.value:''} / ${row.duration}`;if(!used.has(comment)){used.add(comment);result.push(comment);}});
     result.push(`${formula} 【${label}】`);
     if (twoHand) break;
   }
@@ -6986,10 +6836,6 @@ function bindEvents() {
   $('actionBarToggleBtn').addEventListener('click', () => setActionBarCollapsed(!$('editorActionBar').classList.contains('collapsed')));
 
   document.addEventListener('click', e => {
-    const enchantUse=e.target.closest('[data-temporary-enchant-use]');
-    if(enchantUse){e.preventDefault();openTemporaryEnchantDialog(enchantUse.dataset.temporaryEnchantUse||'');return;}
-    const enchantAction=e.target.closest('[data-temporary-enchant-action]');
-    if(enchantAction){e.preventDefault();temporaryEnchantAction(enchantAction.dataset.temporaryEnchantAction||'',Number(enchantAction.dataset.index||-1));return;}
     const add = e.target.closest('[data-modifier-add]');
     if (add) {
       const list = $(add.dataset.modifierAdd);
@@ -7038,9 +6884,6 @@ function bindEvents() {
   if ($('bagSelect')) $('bagSelect').addEventListener('change', e => { selectedBagId = e.target.value || ''; applyBagCapacityToEquipmentSlots(); updateSummary(); });
   if ($('saveInventoryDialogBtn')) $('saveInventoryDialogBtn').addEventListener('click', saveInventoryDialog);
   if ($('cancelInventoryDialogBtn')) $('cancelInventoryDialogBtn').addEventListener('click', () => $('inventoryDialog')?.close());
-  if ($('applyTemporaryEnchantBtn')) $('applyTemporaryEnchantBtn').addEventListener('click', applyTemporaryEnchantFromDialog);
-  if ($('cancelTemporaryEnchantBtn')) $('cancelTemporaryEnchantBtn').addEventListener('click', () => $('temporaryEnchantDialog')?.close());
-  if ($('temporaryEnchantTargetSelect')) $('temporaryEnchantTargetSelect').addEventListener('change', updateTemporaryEnchantDialogPreview);
   if ($('inventoryArea')) $('inventoryArea').addEventListener('click', e => {
     const skillBtn=e.target.closest('[data-skill-remove]');
     if(skillBtn){e.preventDefault();e.stopPropagation();removeSkillFromWarehouse(skillBtn.dataset.skillRemove||'');return;}
@@ -7145,7 +6988,6 @@ function bindEvents() {
     if (e.target.id?.startsWith('equip_') && e.target.id.endsWith('_type')) {
       const slotKey = e.target.id.replace(/^equip_/, '').replace(/_type$/, '');
       if(!isCarrySlotKey(slotKey)) syncEquippedSpellSetToInventoryItem(slotKey, $('equip_' + slotKey + '_itemSelect')?.dataset.previousItemKey || '');
-      if(!isCarrySlotKey(slotKey))temporaryEnchantmentsState=temporaryEnchantmentsState.filter(row=>row.targetSlot!==slotKey);
       if (isCarrySlotKey(slotKey)) releaseCarryWarehouseAllocation(slotKey, {refresh:true});
       const itemSelect = $('equip_' + slotKey + '_itemSelect');
       if (itemSelect) itemSelect.value = '';
