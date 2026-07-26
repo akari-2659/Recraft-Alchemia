@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.279</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.280</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1025,12 +1025,12 @@ details.big-section>summary{
 </style>
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.279 / 最終更新日：2026年7月26日</div>
+<div class="ra-build-info">Version：v90.8.280 / 最終更新日：2026年7月26日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.279 / 最終更新日：2026年7月26日</div>
+  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.280 / 最終更新日：2026年7月26日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -3542,6 +3542,7 @@ function setEquipmentState(equipment={}) {
       const countInput = $('equip_' + slot.key + '_count');
       if (countInput) countInput.max = String(carryWarehouseAllocationState[slot.key].maxStack || 99);
     } else {
+      const isBook = isSpellBookType(normalizeEquipmentType(item.type || 'なし'));
       if ($('equip_' + slot.key + '_power')) $('equip_' + slot.key + '_power').value = item.power || '';
       if ($('equip_' + slot.key + '_offhand')) $('equip_' + slot.key + '_offhand').value = item.offhand || '';
       if ($('equip_' + slot.key + '_reloadTurns')) $('equip_' + slot.key + '_reloadTurns').value = item.reloadTurns || '';
@@ -4878,7 +4879,7 @@ function setCharacterSheetMasterSourceStatus(res=null, options={}) {
   if (res.__source === 'github') {
     const version = res.__version ? ` v${res.__version}` : '';
     el.className = 'status-box master-source-status' + (res.__versionWarning ? ' warn' : ' ok');
-    el.textContent = `固定マスター：GitHub共通DB${version}を使用中${res.__cached ? '（前回正常データ）' : res.__versionWarning ? '（更新反映待ち）' : ''}`;
+    el.textContent = `固定マスター：GitHub共通DB${version}を使用中${res.__versionWarning ? '（更新反映待ち）' : ''}`;
     return;
   }
   el.className = 'status-box master-source-status warn';
@@ -4932,22 +4933,11 @@ function buildCharacterSheetMasterFromGithub(masterDocument={}, manifest={}) {
     __masterFile: String(manifest.master || '')
   };
 }
-const CHARACTER_GITHUB_MASTER_CACHE_KEY = APP_NAME + '.githubCharacterMaster.v1';
 function characterGithubDelay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
-async function characterFetchGithubJson(url, timeoutMs=20000) {
-  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-  const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
-  try {
-    const response = await fetch(url, { cache:'no-store', signal:controller ? controller.signal : undefined });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const text = (await response.text()).replace(/^\uFEFF/, '').trim();
-    if (!text || (!text.startsWith('{') && !text.startsWith('['))) {
-      throw new Error('JSONではない応答を受信しました。');
-    }
-    return JSON.parse(text);
-  } finally {
-    if (timer) clearTimeout(timer);
-  }
+async function characterFetchGithubJson(url) {
+  const response = await fetch(url, { cache:'no-store' });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  return response.json();
 }
 function characterGithubMasterResult(masterDocument, manifest={}) {
   const manifestVersion = String(manifest.version || '').trim();
@@ -4958,31 +4948,14 @@ function characterGithubMasterResult(masterDocument, manifest={}) {
     ? `manifest ${manifestVersion} / master ${masterVersion}` : '';
   return result;
 }
-function saveCharacterGithubMasterCache(masterDocument, manifest={}) {
-  try {
-    localStorage.setItem(CHARACTER_GITHUB_MASTER_CACHE_KEY, JSON.stringify({ masterDocument, manifest, savedAt:Date.now() }));
-  } catch (_) {}
-}
-function readCharacterGithubMasterCache() {
-  try {
-    const cached = JSON.parse(localStorage.getItem(CHARACTER_GITHUB_MASTER_CACHE_KEY) || 'null');
-    if (!cached || !cached.masterDocument) return null;
-    const result = characterGithubMasterResult(cached.masterDocument, cached.manifest || {});
-    result.__cached = true;
-    return result;
-  } catch (_) {
-    try { localStorage.removeItem(CHARACTER_GITHUB_MASTER_CACHE_KEY); } catch (_) {}
-    return null;
-  }
-}
 async function fetchGithubCharacterSheetMaster({force=false}={}) {
   if (githubCharacterSheetMasterPromise && !force) return githubCharacterSheetMasterPromise;
 
   const task = (async () => {
     let lastError = null;
-    // 同じ試行内でmanifestとmasterを取得し、異なる世代を混ぜない。
-    for (let attempt = 0; attempt < 2; attempt++) {
-      const token = `${Date.now()}_${attempt}`;
+    let usableMismatch = null;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const token = `${Date.now()}_${attempt}_${Math.random().toString(36).slice(2)}`;
       try {
         const manifestUrl = new URL(GITHUB_COMMON_DB_MANIFEST_URL);
         manifestUrl.searchParams.set('_ra', token);
@@ -4992,23 +4965,27 @@ async function fetchGithubCharacterSheetMaster({force=false}={}) {
           throw new Error('GitHub共通DBのmanifestに有効なmasterファイル名がありません。');
         }
         const masterUrlObject = new URL(masterFile, GITHUB_COMMON_DB_BASE);
-        masterUrlObject.searchParams.set('_ra', String(manifest.sha256 || manifest.version || token));
-        const masterDocument = await characterFetchGithubJson(masterUrlObject.toString(), 30000);
+        masterUrlObject.searchParams.set('_ra', `${String(manifest.sha256 || manifest.version || 'master')}_${token}`);
+        const masterDocument = await characterFetchGithubJson(masterUrlObject.toString());
         const result = characterGithubMasterResult(masterDocument, manifest);
-        saveCharacterGithubMasterCache(masterDocument, manifest);
-        // 構造が正常なら、CDN反映差による版違いだけで読込を失敗させない。
-        return result;
+        if (!result.__versionWarning) return result;
+        usableMismatch = result;
+        lastError = new Error(`GitHub共通DBの更新反映待ちです（${result.__versionWarning}）。`);
       } catch (error) {
         lastError = error;
-        if (attempt === 0) await characterGithubDelay(500);
       }
+      if (attempt < 3) await characterGithubDelay(350 * (attempt + 1));
     }
-    const cached = readCharacterGithubMasterCache();
-    if (cached) {
-      cached.__githubError = lastError && lastError.message ? lastError.message : String(lastError || '');
-      return cached;
+    // manifestの反映だけが遅れている場合は、固定名のmasterを直接確認してGitHub側を継続利用する。
+    try {
+      const directUrl = new URL('recraft_alchemia_master.json', GITHUB_COMMON_DB_BASE);
+      directUrl.searchParams.set('_ra', `${Date.now()}_direct_${Math.random().toString(36).slice(2)}`);
+      const masterDocument = await characterFetchGithubJson(directUrl.toString());
+      return characterGithubMasterResult(masterDocument, {master:'recraft_alchemia_master.json'});
+    } catch (directError) {
+      if (usableMismatch) return usableMismatch;
+      throw new Error([lastError && lastError.message, directError && directError.message].filter(Boolean).join(' / ') || 'GitHub共通DBを取得できませんでした。');
     }
-    throw lastError || new Error('GitHub共通DBを取得できませんでした。');
   })();
 
   githubCharacterSheetMasterPromise = task;
@@ -5705,7 +5682,7 @@ function cloudJsonpRequest(action, payload={}) {
     const script = document.createElement('script');
     const timer = setTimeout(()=>{
       cleanup(); reject(new Error('DB読み込みがタイムアウトしました。GASの再デプロイとWebアプリURLを確認してください。'));
-    }, 30000);
+    }, 20000);
     function cleanup(){
       clearTimeout(timer);
       try { delete window[callback]; } catch(e) { window[callback] = undefined; }
@@ -5717,7 +5694,6 @@ function cloudJsonpRequest(action, payload={}) {
       u.searchParams.set('api','1');
       u.searchParams.set('action', action);
       u.searchParams.set('callback', callback);
-      u.searchParams.set('_ra', `${Date.now()}_${Math.random().toString(36).slice(2)}`);
       Object.entries(payload || {}).forEach(([k,v])=>{
         if (v === undefined || v === null) return;
         if (typeof v === 'object') u.searchParams.set(k, JSON.stringify(v));
@@ -5746,19 +5722,9 @@ async function cloudRequest(action, payload={}) {
   // CORS制限で POST の返答を取得できず Failed to fetch になることがあります。
   // 読み込み系はJSONP、保存/削除系は no-cors POST に寄せて回避します。
   if (CLOUD_JSONP_ACTIONS.has(action)) {
-    let lastError = null;
-    const attempts = action === 'list' || action === 'load' ? 2 : 1;
-    for (let attempt = 0; attempt < attempts; attempt++) {
-      try {
-        const json = await cloudJsonpRequest(action, payload);
-        if (!json.ok) throw new Error(json.error || 'DB読み込みに失敗しました。');
-        return json;
-      } catch (error) {
-        lastError = error;
-        if (attempt + 1 < attempts) await sleepMs(500);
-      }
-    }
-    throw lastError || new Error('DB読み込みに失敗しました。');
+    const json = await cloudJsonpRequest(action, payload);
+    if (!json.ok) throw new Error(json.error || 'DB読み込みに失敗しました。');
+    return json;
   }
   if (action === 'save' || action === 'delete') {
     return await cloudNoCorsPost(action, payload);
