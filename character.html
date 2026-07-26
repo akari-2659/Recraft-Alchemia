@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.276</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.278</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1025,12 +1025,12 @@ details.big-section>summary{
 </style>
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.276 / 最終更新日：2026年7月26日</div>
+<div class="ra-build-info">Version：v90.8.278 / 最終更新日：2026年7月26日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.276 / 最終更新日：2026年7月26日</div>
+  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.278 / 最終更新日：2026年7月26日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -4877,8 +4877,8 @@ function setCharacterSheetMasterSourceStatus(res=null, options={}) {
   }
   if (res.__source === 'github') {
     const version = res.__version ? ` v${res.__version}` : '';
-    el.className = 'status-box master-source-status ok';
-    el.textContent = `固定マスター：GitHub共通DB${version}を使用中`;
+    el.className = 'status-box master-source-status' + (res.__versionWarning ? ' warn' : ' ok');
+    el.textContent = `固定マスター：GitHub共通DB${version}を使用中${res.__versionWarning ? '（更新反映待ち）' : ''}`;
     return;
   }
   el.className = 'status-box master-source-status warn';
@@ -4932,36 +4932,59 @@ function buildCharacterSheetMasterFromGithub(masterDocument={}, manifest={}) {
     __masterFile: String(manifest.master || '')
   };
 }
+function characterGithubDelay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+async function characterFetchGithubJson(url) {
+  const response = await fetch(url, { cache:'no-store' });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  return response.json();
+}
+function characterGithubMasterResult(masterDocument, manifest={}) {
+  const manifestVersion = String(manifest.version || '').trim();
+  const masterVersion = String(masterDocument && masterDocument.version || '').trim();
+  const result = buildCharacterSheetMasterFromGithub(masterDocument, manifest);
+  result.__version = masterVersion || manifestVersion;
+  result.__versionWarning = manifestVersion && masterVersion && manifestVersion !== masterVersion
+    ? `manifest ${manifestVersion} / master ${masterVersion}` : '';
+  return result;
+}
 async function fetchGithubCharacterSheetMaster({force=false}={}) {
   if (githubCharacterSheetMasterPromise && !force) return githubCharacterSheetMasterPromise;
 
   const task = (async () => {
-    const manifestResponse = await fetch(GITHUB_COMMON_DB_MANIFEST_URL, {
-      cache: 'no-store'
-    });
-    if (!manifestResponse.ok) {
-      throw new Error(`GitHub共通DBのmanifest取得に失敗しました（HTTP ${manifestResponse.status}）。`);
+    let lastError = null;
+    let usableMismatch = null;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const token = `${Date.now()}_${attempt}_${Math.random().toString(36).slice(2)}`;
+      try {
+        const manifestUrl = new URL(GITHUB_COMMON_DB_MANIFEST_URL);
+        manifestUrl.searchParams.set('_ra', token);
+        const manifest = await characterFetchGithubJson(manifestUrl.toString());
+        const masterFile = String(manifest.master || '').trim();
+        if (!masterFile || masterFile.includes('..') || masterFile.includes('\\')) {
+          throw new Error('GitHub共通DBのmanifestに有効なmasterファイル名がありません。');
+        }
+        const masterUrlObject = new URL(masterFile, GITHUB_COMMON_DB_BASE);
+        masterUrlObject.searchParams.set('_ra', `${String(manifest.sha256 || manifest.version || 'master')}_${token}`);
+        const masterDocument = await characterFetchGithubJson(masterUrlObject.toString());
+        const result = characterGithubMasterResult(masterDocument, manifest);
+        if (!result.__versionWarning) return result;
+        usableMismatch = result;
+        lastError = new Error(`GitHub共通DBの更新反映待ちです（${result.__versionWarning}）。`);
+      } catch (error) {
+        lastError = error;
+      }
+      if (attempt < 3) await characterGithubDelay(350 * (attempt + 1));
     }
-    const manifest = await manifestResponse.json();
-    const masterFile = String(manifest.master || '').trim();
-    if (!masterFile || masterFile.includes('..') || masterFile.includes('\\')) {
-      throw new Error('GitHub共通DBのmanifestに有効なmasterファイル名がありません。');
+    // manifestの反映だけが遅れている場合は、固定名のmasterを直接確認してGitHub側を継続利用する。
+    try {
+      const directUrl = new URL('recraft_alchemia_master.json', GITHUB_COMMON_DB_BASE);
+      directUrl.searchParams.set('_ra', `${Date.now()}_direct_${Math.random().toString(36).slice(2)}`);
+      const masterDocument = await characterFetchGithubJson(directUrl.toString());
+      return characterGithubMasterResult(masterDocument, {master:'recraft_alchemia_master.json'});
+    } catch (directError) {
+      if (usableMismatch) return usableMismatch;
+      throw new Error([lastError && lastError.message, directError && directError.message].filter(Boolean).join(' / ') || 'GitHub共通DBを取得できませんでした。');
     }
-
-    const masterUrlObject = new URL(masterFile, GITHUB_COMMON_DB_BASE);
-    masterUrlObject.searchParams.set('_ra', String(manifest.sha256 || manifest.version || Date.now()));
-    const masterResponse = await fetch(masterUrlObject.toString(), { cache:'no-store' });
-    if (!masterResponse.ok) {
-      throw new Error(`GitHub共通DB本体の取得に失敗しました（HTTP ${masterResponse.status}）。`);
-    }
-    const masterDocument = await masterResponse.json();
-
-    const manifestVersion = String(manifest.version || '').trim();
-    const masterVersion = String(masterDocument.version || '').trim();
-    if (manifestVersion && masterVersion && manifestVersion !== masterVersion) {
-      throw new Error(`GitHub共通DBのバージョンが一致しません（manifest ${manifestVersion} / master ${masterVersion}）。`);
-    }
-    return buildCharacterSheetMasterFromGithub(masterDocument, manifest);
   })();
 
   githubCharacterSheetMasterPromise = task;
