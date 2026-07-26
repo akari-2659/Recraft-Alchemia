@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.271</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.276</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -658,7 +658,7 @@ button,.tab,.subtab,.tab-btn,.quest-category-btn{white-space:normal!important;ov
   .buttons,.subtabs,.tab-nav,.quest-category-bar,.section-actions,.filter-actions,.facility-actions,.modal-foot{grid-template-columns:1fr!important}
 }
 
-/* v90.8.271 skill crystal / skill warehouse */
+/* v90.8.272 skill crystal / skill warehouse */
 .skill-crystal-overview{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-bottom:12px}
 .skill-crystal-card,.skill-warehouse-card,.skill-stage-card{border:1px solid var(--line);border-radius:12px;background:#fffdf8;padding:11px;min-width:0}
 .skill-crystal-card h3,.skill-warehouse-card h4,.skill-stage-card h4{margin:0 0 6px}
@@ -670,7 +670,7 @@ button,.tab,.subtab,.tab-btn,.quest-category-btn{white-space:normal!important;ov
 .skill-warehouse-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:9px}.skill-meta{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}.skill-badge{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:2px 7px;font-size:.75rem;background:#fff7ec}.skill-public-id{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.78rem;word-break:break-all}.skill-detail-lines{display:grid;gap:4px;font-size:.88rem;line-height:1.45}.skill-detail-lines b{color:var(--muted)}
 .skill-register-grid{display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:8px;align-items:end}.skill-register-grid textarea{min-height:72px}
 @media(max-width:700px){.skill-register-grid{grid-template-columns:1fr}.skill-slot-row{grid-template-columns:1fr}.skill-chip-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.skill-chip{width:100%}}
-/* v90.8.271: 倉庫スキル統合・セット術式折り畳み */
+/* v90.8.272: 倉庫スキル統合・セット術式折り畳み */
 details.spellbook-fields>summary{cursor:pointer;font-weight:900;padding:4px 2px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 details.spellbook-fields>summary::marker{color:var(--accent)}
 details.spellbook-fields>.spellbook-fields-body{padding-top:8px}
@@ -1025,12 +1025,12 @@ details.big-section>summary{
 </style>
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.271 / 最終更新日：2026年7月26日</div>
+<div class="ra-build-info">Version：v90.8.276 / 最終更新日：2026年7月26日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.271 / 最終更新日：2026年7月26日</div>
+  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.276 / 最終更新日：2026年7月26日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -1458,7 +1458,8 @@ details.big-section>summary{
       </div>
       <div class="field" data-inventory-kind-field="accessory"><label for="inventoryFormSpellSlots">術式／祈祷枠</label><input id="inventoryFormSpellSlots" type="number" min="0" max="99" value="" placeholder="魔印/聖印用" /></div>
       <div class="field" data-inventory-kind-field="weapon item spell"><label for="inventoryFormTarget">対象</label><input id="inventoryFormTarget" type="text" placeholder="例：味方1体 / 敵1体" /></div>
-      <div class="field" data-inventory-kind-field="weapon item spell"><label for="inventoryFormCheckType">判定</label><input id="inventoryFormCheckType" type="text" placeholder="例：回避値 / 防御値 / 抵抗値" /></div>
+      <div class="field" data-inventory-kind-field="weapon"><label for="inventoryFormSkill">使用技能</label><input id="inventoryFormSkill" type="text" readonly placeholder="武器カテゴリから自動設定" /></div>
+      <div class="field" data-inventory-kind-field="item spell"><label for="inventoryFormCheckType">判定</label><input id="inventoryFormCheckType" type="text" placeholder="例：回避値 / 防御値 / 抵抗値" /></div>
       <div class="field" data-inventory-kind-field="weapon item spell"><label for="inventoryFormElement">属性</label><select id="inventoryFormElement"><option value="">未選択</option><option>物</option><option>火</option><option>水</option><option>風</option><option>雷</option><option>光</option><option>闇</option><option>無</option><option>可変</option><option>矢弾依存</option></select></div>
       <div class="field" data-inventory-kind-field="spell"><label for="inventoryFormCost">コスト</label><input id="inventoryFormCost" type="text" placeholder="例：MP1 / MP2" /></div>
       <div class="field inventory-wide" data-inventory-kind-field="recipe"><label for="inventoryFormRecipeResult">完成品</label><input id="inventoryFormRecipeResult" type="text" placeholder="例：ポーション ×1" /></div>
@@ -1487,6 +1488,7 @@ const EQUIPMENT_CATEGORY_CACHE_META_KEY = APP_NAME + '.equipmentCategories.meta'
 const CS_ITEM_CACHE_KEY = APP_NAME + '.characterSheetItems';
 let CS_ITEM_MASTER = [];
 let DB_INITIAL_ITEM_MASTER = [];
+let DB_INITIAL_ITEM_MASTER_INDEX = { byId:new Map(), byPublicId:new Map(), byName:new Map() };
 let DB_INITIAL_SPELL_MASTER = [];
 let DB_RECIPE_MASTER = [];
 let DB_SKILL_MASTER = [];
@@ -2181,8 +2183,8 @@ function renderStatic() {
               <input id="equip_${slot.key}_target" data-equipment-input="1" type="text" placeholder="例：敵1体" />
             </div>
             <div class="field" data-equipment-field="check">
-              <label for="equip_${slot.key}_checkType">判定</label>
-              <input id="equip_${slot.key}_checkType" data-equipment-input="1" type="text" placeholder="例：回避値" />
+              <label for="equip_${slot.key}_checkType">使用技能</label>
+              <input id="equip_${slot.key}_checkType" data-equipment-input="1" type="text" readonly placeholder="武器種から自動設定" />
             </div>
           </div>
 
@@ -2517,8 +2519,16 @@ function presetModifierTextForType(type='') {
   const preset = EQUIPMENT_PRESETS[normalizeEquipmentType(type || 'なし')] || null;
   return preset ? migratedModifierTextForItem(preset) : '';
 }
+function equipmentModifierIsBoundToInventoryItem(item={}) {
+  if (String(item.itemId || '').trim()) return true;
+  const kind = normalizeInventoryKind(item.kind || item.itemType || '');
+  return !!String(item.id || item.masterId || '').trim() && ['武器','防具','装飾品'].includes(kind);
+}
 function itemModifierTextWithPresetFallback(item={}) {
   const own = migratedModifierTextForItem(item || {});
+  // 倉庫の装備個体や、倉庫から選択中の装備では、空欄もその装備固有の設定として扱う。
+  // 手入力で武器種だけを選んだ場合は、従来どおりカテゴリプリセットを使用する。
+  if (equipmentModifierIsBoundToInventoryItem(item || {})) return own;
   if(String(own || '').trim()) return own;
   return presetModifierTextForType(item.type || item.category || item.kind || item.itemCategory || '');
 }
@@ -2578,7 +2588,12 @@ function upgradeEntryModifierRow(entry={}) {
 function equipmentUpgradeModifierRows(item={}) {
   return parseUpgradeLines(item.upgradeLines || item.upgradeEntries || '').map(upgradeEntryModifierRow).filter(Boolean);
 }
+function equipmentItemIsActive(item={}) {
+  const type = normalizeEquipmentType(item.type || item.category || item.kind || 'なし');
+  return !!String(item.itemId || item.name || '').trim() || (!!type && type !== 'なし');
+}
 function activeEquipmentModifierRows(item={}) {
+  if (!equipmentItemIsActive(item || {})) return [];
   return equipmentModifierRows(item).concat(equipmentUpgradeModifierRows(item));
 }
 
@@ -3200,10 +3215,53 @@ function renderEquipmentUpgradeSlots(slotKey, sourceEntries=null){
   if(hidden) hidden.value = serializeUpgradeEntries(entries.slice(0, limit));
   if(typeof updateEquipmentFieldAvailability === 'function') updateEquipmentFieldAvailability();
 }
-function inventoryItemIndexForEquipmentSlot(slotKey=''){
-  const selectedKey = String($('equip_' + slotKey + '_itemSelect')?.value || '').trim();
+function inventoryItemIndexForEquipmentKey(itemKey=''){
+  const selectedKey = String(itemKey || '').trim();
   if(!selectedKey) return -1;
   return (inventoryItemsState || []).findIndex(raw => inventoryItemKey(normalizeInventoryItem(raw)) === selectedKey);
+}
+function inventoryItemIndexForEquipmentSlot(slotKey=''){
+  const selectedKey = String($('equip_' + slotKey + '_itemSelect')?.value || '').trim();
+  return inventoryItemIndexForEquipmentKey(selectedKey);
+}
+function syncEquipmentModifiersToInventoryItem(slotKey='', itemKey=''){
+  const selectedKey = String(itemKey || $('equip_' + slotKey + '_itemSelect')?.value || '').trim();
+  const index = inventoryItemIndexForEquipmentKey(selectedKey);
+  if(index < 0) return false;
+  const current = normalizeInventoryItem(inventoryItemsState[index] || {});
+  if(!['武器','防具','装飾品'].includes(current.kind)) return false;
+  const editor = $('equip_' + slotKey + '_modifierRows')?.closest('[data-char-modifier-editor]');
+  if(editor) syncModifierEditor(editor);
+  const exactModifiers = serializeModifierRows(
+    migrateLegacyDefenseActionRows(parseModifierRows($('equip_' + slotKey + '_modifiers')?.value || ''), current)
+  );
+  inventoryItemsState[index] = normalizeInventoryItem({
+    ...inventoryItemsState[index],
+    modifiers: exactModifiers,
+    modifierRows:'',
+    bonuses:'',
+    hit:'', hitMod:'',
+    defense:'', alwaysDefense:'',
+    guard:'', guardValue:'',
+    evade:'', evasionMod:''
+  });
+  return true;
+}
+function syncAllEquipmentModifiersToInventory(){
+  for(const slot of EQUIPMENT_SLOTS){
+    if(slot.kind !== 'carry') syncEquipmentModifiersToInventoryItem(slot.key);
+  }
+}
+function equipmentSlotKeyFromModifierEditor(editor=null){
+  const hiddenId = String(editor?.dataset?.modifierHidden || '').trim();
+  const match = hiddenId.match(/^equip_(.+)_modifiers$/);
+  return match ? match[1] : '';
+}
+function syncModifierEditorAndInventory(editor=null){
+  if(!editor) return;
+  syncModifierEditor(editor);
+  const slotKey = equipmentSlotKeyFromModifierEditor(editor);
+  if(slotKey) syncEquipmentModifiersToInventoryItem(slotKey);
 }
 function syncEquipmentUpgradeToInventoryItem(slotKey=''){
   const index = inventoryItemIndexForEquipmentSlot(slotKey);
@@ -3390,9 +3448,9 @@ function updateEquipmentSummaries() {
     const element = $('equip_' + slot.key + '_element')?.value || '';
     if (element) parts.push('属性:' + element);
     const target = $('equip_' + slot.key + '_target')?.value?.trim() || '';
-    const checkType = checkExpressionRightDisplay($('equip_' + slot.key + '_checkType')?.value || '');
+    const usageSkill = canonicalWeaponUsageSkill({ itemCategory:type, category:type });
     if (target) parts.push('対象:' + target);
-    if (checkType) parts.push('判定:' + checkType);
+    if (usageSkill && !['盾','大盾'].includes(type) && !spellContainerKind(type)) parts.push('使用技能:' + usageSkill);
     if (spellCount) parts.push('術式' + spellCount + '件');
     el.textContent = parts.length ? parts.join(' / ') : '未設定';
   }
@@ -3432,7 +3490,7 @@ function getEquipmentState() {
       base.offhand = isBook ? '' : ($('equip_' + slot.key + '_offhand')?.value?.trim() || '');
       base.reloadTurns = isBook ? '' : ($('equip_' + slot.key + '_reloadTurns')?.value?.trim() || '');
       base.target = isBook ? '' : ($('equip_' + slot.key + '_target')?.value?.trim() || '');
-      base.checkType = isBook ? '' : normalizeCheckExpression($('equip_' + slot.key + '_checkType')?.value || '');
+      base.checkType = '';
       base.modifiers = isBook ? '' : ($('equip_' + slot.key + '_modifiers')?.value?.trim() || '');
       base.upgradeLimit = $('equip_' + slot.key + '_upgradeLimit')?.value?.trim() || '';
       base.upgradeEntries = collectUpgradeEntries(slot.key).slice(0, equipmentUpgradeLimit(slot.key));
@@ -3488,7 +3546,7 @@ function setEquipmentState(equipment={}) {
       if ($('equip_' + slot.key + '_offhand')) $('equip_' + slot.key + '_offhand').value = item.offhand || '';
       if ($('equip_' + slot.key + '_reloadTurns')) $('equip_' + slot.key + '_reloadTurns').value = item.reloadTurns || '';
       if ($('equip_' + slot.key + '_target')) $('equip_' + slot.key + '_target').value = item.target || '';
-      if ($('equip_' + slot.key + '_checkType')) $('equip_' + slot.key + '_checkType').value = checkExpressionRightDisplay(item.checkType || '');
+      if ($('equip_' + slot.key + '_checkType')) $('equip_' + slot.key + '_checkType').value = (!isBook && !['盾','大盾'].includes(normalizeEquipmentType(item.type || 'なし'))) ? canonicalWeaponUsageSkill({ itemCategory:normalizeEquipmentType(item.type || 'なし') }) : '';
       // 倉庫から選択済みの装備は、現在の倉庫アイテム側を正として基本補正を復元する。
       // これにより、旧保存データに残った小盾の誤った回避-1なども表示・再保存されない。
       const modifierSourceItem = selectedRow || item;
@@ -3529,6 +3587,8 @@ function applyEquipmentPreset(slotKey) {
     const el = $('equip_' + slotKey + '_' + key);
     if (el) el.value = preset[key] || '';
   }
+  const usageSkillEl=$('equip_' + slotKey + '_checkType');
+  if(usageSkillEl) usageSkillEl.value = (!['なし','盾','大盾','魔導書','祈祷書'].includes(normalized)) ? canonicalWeaponUsageSkill({itemCategory:normalized}) : '';
   if (!spellContainerKind(normalized)) {
     const known = $('equip_' + slotKey + '_knownSpells');
     if (known) known.value = '';
@@ -3539,13 +3599,29 @@ function applyEquipmentPreset(slotKey) {
   updateEquipmentFieldAvailability();
   updateSpellSlotHints();
 }
-function clearHandSlot(slotKey) {
-  for (const suffix of ['itemSelect','name','element','power','offhand','reloadTurns','target','checkType','modifiers','upgradeLimit','upgradeLines','description','note']) {
+function clearEquipmentSlotFields(slotKey, {keepSelection=false}={}) {
+  const select = $('equip_' + slotKey + '_itemSelect');
+  if (select && !keepSelection) select.value = '';
+  for (const suffix of ['name','element','power','offhand','reloadTurns','target','checkType','modifiers','upgradeLimit','upgradeLines','knownSpells','setSpells','description','note']) {
     const el = $('equip_' + slotKey + '_' + suffix);
     if (el) el.value = '';
   }
   const typeEl = $('equip_' + slotKey + '_type');
   if (typeEl) typeEl.value = 'なし';
+  renderModifierEditor('equip_' + slotKey + '_modifierRows', '');
+  renderEquipmentUpgradeSlots(slotKey, []);
+  setSpellSelectValues(slotKey, []);
+  if (select) select.dataset.previousItemKey = select.value || '';
+}
+function clearHandSlot(slotKey) {
+  const select = $('equip_' + slotKey + '_itemSelect');
+  const itemKey = String(select?.value || select?.dataset?.previousItemKey || '').trim();
+  if (itemKey) {
+    syncEquipmentModifiersToInventoryItem(slotKey, itemKey);
+    syncEquipmentUpgradeToInventoryItem(slotKey);
+    syncEquippedSpellSetToInventoryItem(slotKey, itemKey);
+  }
+  clearEquipmentSlotFields(slotKey);
 }
 function setHandSlotDisabled(slotKey, disabled) {
   const card = document.querySelector(`[data-equipment-card="${slotKey}"]`);
@@ -3712,6 +3788,35 @@ const INVENTORY_KIND_OPTIONS = ['アイテム','素材','武器','防具','装�
 const INVENTORY_KIND_TOKEN = { '武器':'weapon', '防具':'armor', '装飾品':'accessory', 'アイテム':'item', '素材':'material', 'バッグ':'bag', '矢筒':'quiver', '術式':'spell', 'レシピ':'recipe', '重要品':'important', 'その他':'other' };
 const INVENTORY_SMALL_CATEGORY_ORDER = ['武器','防具','盾','装飾品','調合品','道具','特殊矢弾','収納具','素材','スクロール','換金品','レシピ','術式','スキル','重要品','その他'];
 const INVENTORY_MATERIAL_TYPE_ORDER = ['食材','魔物素材','採取素材','加工素材','特殊素材'];
+function canonicalInventoryMaterialType(value=''){
+  const raw=String(value||'').trim();
+  if(['モンスタードロップ','魔物ドロップ','敵素材'].includes(raw)) return '魔物素材';
+  return raw;
+}
+function rebuildInventoryMasterClassificationIndex(){
+  const byId=new Map(), byPublicId=new Map(), byName=new Map();
+  for(const row of (DB_INITIAL_ITEM_MASTER||[])){
+    const id=String(row.id||'').trim();
+    const publicId=String(row.publicId||'').trim().toUpperCase();
+    const name=canonicalInventoryItemName(row.name||'');
+    if(id) byId.set(id,row);
+    if(publicId) byPublicId.set(publicId,row);
+    if(name) byName.set(name,row);
+  }
+  DB_INITIAL_ITEM_MASTER_INDEX={byId,byPublicId,byName};
+}
+function inventoryMasterRowForClassification(item={}){
+  const index=DB_INITIAL_ITEM_MASTER_INDEX||{};
+  const masterId=String(item.masterId||item.masterID||item.sourceId||item.sourceID||'').trim();
+  const ownId=String(item.id||'').trim();
+  const publicId=String(item.publicId||item.publicID||'').trim().toUpperCase();
+  const name=canonicalInventoryItemName(item.name||'');
+  return (masterId && index.byId?.get(masterId))
+    || (ownId && index.byId?.get(ownId))
+    || (publicId && index.byPublicId?.get(publicId))
+    || (name && index.byName?.get(name))
+    || null;
+}
 const LEGACY_WEAPON_NAME_ALIASES = Object.freeze({"魔導書":"グリモア","アルカナ・コーデックス":"アルカナコーデックス","祈祷書":"ミサル","ウィンドラス・クロスボウ":"ウィンドラスクロスボウ","バグ・ナク":"バグナク","グラスホーン・アンカー":"グラスホーンアンカー","サルヴェ・ミサル":"サルヴェミサル","イージス・リタニー":"イージスリタニー","アクア・リフレイン":"アクアリフレイン","ヴォイド・レクイエム":"ヴォイドレクイエム","ミラー・グリモア":"ミラーグリモア","アストラル・コーデックス":"アストラルコーデックス","リフレクト・ミサル":"リフレクトミサル","アビサル・リタニー":"アビサルリタニー","ミラージュ・ボルター":"ミラージュボルター","ファントム・ピアサー":"ファントムピアサー","リフト・デストロイヤー":"リフトデストロイヤー","アビス・スコーピオン":"アビススコーピオン","アビス・リーパー":"アビスリーパー","シルフィード・アーチ":"シルフィードアーチ","フェザー・ハント":"フェザーハント","シェル・ブレイカー":"シェルブレイカー","ゼファー・ボルター":"ゼファーボルター","フォートレス・アーバレスト":"フォートレスアーバレスト","マイア・カノン":"マイアカノン","マイセリア・グリモア":"マイセリアグリモア","シルヴァン・ミサル":"シルヴァンミサル","ヴェルデ・スティング":"ヴェルデスティング","シルヴァ・エッジ":"シルヴァエッジ","マイア・スティング":"マイアスティング","ホーン・レガリア":"ホーンレガリア","シルヴァン・ガード":"シルヴァンガード","マイア・セイバー":"マイアセイバー","グラス・クリーヴァ":"グラスクリーヴァ","エルダー・ハチェット":"エルダーハチェット","ボグ・クリーヴァ":"ボグクリーヴァ","ホーン・クラッシャー":"ホーンクラッシャー","ウッドランド・メイス":"ウッドランドメイス","マイア・クラッシャー":"マイアクラッシャー","ヴェルデ・ランサー":"ヴェルデランサー","マイア・スピア":"マイアスピア","ホーン・セプター":"ホーンセプター","シルヴァン・ロッド":"シルヴァンロッド","ミアズマ・ロッド":"ミアズマロッド","ヴェルデ・ストライド":"ヴェルデストライド","エルダー・リーフ":"エルダーリーフ","マレア・リフレイン":"マレアリフレイン","ヴェルデ・ボルター":"ヴェルデボルター","グリーン・ワーデン":"グリーンワーデン","マレア・ボルター":"マレアボルター","グランド・ホーン":"グランドホーン","フォレスト・バスティオン":"フォレストバスティオン","マイア・バリスタ":"マイアバリスタ","マイア・ランサー":"マイアランサー","グラス・テンペスト":"グラステンペスト","エルダー・ガード":"エルダーガード","ボグ・クレイモア":"ボグクレイモア","ハートウッド・モール":"ハートウッドモール","マイア・モール":"マイアモール","アイヴィ・サイス":"アイヴィサイス","ミアズマ・サイス":"ミアズマサイス","ホーン・ブレイサー":"ホーンブレイサー","シルヴァン・グリーヴ":"シルヴァングリーヴ","ボグ・ブレイサー":"ボグブレイサー","アイヴィ・ウィップ":"アイヴィウィップ","ミアズマ・ウィップ":"ミアズマウィップ","ヴェルダント・グリモア":"ヴェルダントグリモア","シルヴァン・コーデックス":"シルヴァンコーデックス","マイア・グリモア":"マイアグリモア","ヴェルダント・ミサル":"ヴェルダントミサル","マイア・リタニー":"マイアリタニー","クリスタル・リタニー":"クリスタルリタニー","黒鉄の短剣":"クロガネスティレット","黒鉄の剣":"クロガネセイバー","岩割りの斧":"ロックハチェット","山鳴りの槌":"ロアメイス","岩貫きの槍":"ロックピアサー","燐晶の杖":"リンショウスタッフ","鉄弦の弓":"アイアンストリング","岩穿ちの弩":"ロックボーラー","坑道破りの大弩":"トンネルブレイカー","地脈の長槍":"レイラインパイク","黒鉄の大剣":"クロガネクレイモア","断岩の大槌":"ロックブレイカーモール","鉱脈の大鎌":"ヴェインサイズ","黒鉄の拳甲":"クロガネナックル","鋼線の鞭":"スチールワイヤー","燐晶の魔導書":"リンショウグリモア","地脈の祈祷書":"レイラインミサル","苔守りの長槍":"モスガードパイク","水走りの拳甲":"アクアランナーナックル","穿王の牙":"グランドファング","地脈の剣":"レイラインセイバー","穿岩の斧":"ロックリーヴァ","地鳴りの槌":"クエイクメイス","穿王の短槍":"グランドピアサー","地脈晶の杖":"ジオクリスタルロッド","山鳴りの弓":"エコーストリング","穿岩の弩":"ロックドリラー","穿王の大弩":"グランドバリスタ","穿王の長槍":"グランドランサー","地割れの大剣":"リフトクレイモア","穿王の大槌":"グランドモール","地層断ちの大鎌":"ストラタサイズ","穿王の拳甲":"グランドナックル","地脈の鋼鞭":"レイラインチェイン","地脈晶の魔導書":"ジオクリスタルグリモア","山守りの祈祷書":"ガーディアンミサル"});
 function canonicalInventoryItemName(name){
   const raw = String(name || '').trim();
@@ -4123,7 +4228,7 @@ function inventoryManualClassification(kind='', category='') {
 }
 function emptyInventoryItem() {
   const cls = inventoryManualClassification(defaultInventoryKind(), '');
-  return { id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), masterId:'', masterSheet:'', masterSync:'', name:'', kind:cls.kind, itemType:cls.itemType, itemCategory:cls.itemCategory, materialType:cls.materialType, materialCategory:cls.materialCategory, category:'', count:1, capacity:'', location:'倉庫', rank:'', price:'', equipSlot:'', power:'', offhand:'', reloadTurns:'', modifiers:'', upgradeLimit:'', upgradeMaterialMinRank:'', upgradeLines:'', upgradeEntries:[], spellSlots:'', setSpells:'', target:'', element:'', enchantTarget:'', enchantEffectType:'', enchantValue:'', enchantDuration:'', enchantRounds:'', enchantStackRule:'', cost:'', checkType:'', role:'', source:'', tags:'', setItem:'', description:'', effect:'', recipeResult:'', materials:'', note:'' };
+  return { id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), masterId:'', masterSheet:'', masterSync:'', name:'', kind:cls.kind, itemType:cls.itemType, itemCategory:cls.itemCategory, materialType:cls.materialType, materialCategory:cls.materialCategory, category:'', count:1, capacity:'', location:'倉庫', rank:'', price:'', equipSlot:'', skill:'', power:'', offhand:'', reloadTurns:'', modifiers:'', upgradeLimit:'', upgradeMaterialMinRank:'', upgradeLines:'', upgradeEntries:[], spellSlots:'', setSpells:'', target:'', element:'', enchantTarget:'', enchantEffectType:'', enchantValue:'', enchantDuration:'', enchantRounds:'', enchantStackRule:'', cost:'', checkType:'', role:'', source:'', tags:'', setItem:'', description:'', effect:'', recipeResult:'', materials:'', note:'' };
 }
 function inferInventoryItemType(item={}, kind='') {
   const explicit = String(item.itemType || '').trim();
@@ -4201,16 +4306,32 @@ function inventoryInternalCategories(selectedType='') {
   if (selectedType === '収納具') return ['全て', ...['バッグ','矢筒'].filter(v => present.has(v))];
   return ['全て', ...[...present].sort((a,b)=>a.localeCompare(b,'ja',{numeric:true}))];
 }
+function canonicalWeaponUsageSkill(item={}) {
+  const category=String(item.itemCategory || item.category || item.type || '').trim();
+  if(['弓','弩','大型弩'].includes(category)) return '射撃';
+  if(category==='杖') return '近接/魔法';
+  if(['魔導書','祈祷書'].includes(category)) return '';
+  return '近接';
+}
 function normalizeInventoryItem(item={}) {
-  const rawCategory = String(item.category || item.type || item.itemCategory || item.materialCategory || '').trim();
+  const masterRow = inventoryMasterRowForClassification(item);
+  const masterIsMaterial = String(masterRow?.dataKind || '').trim()==='素材';
+  const masterIsFood = !masterIsMaterial && String(masterRow?.itemType || '').trim()==='食材';
+  const resolvedMaterialType = masterIsMaterial
+    ? canonicalInventoryMaterialType(masterRow?.materialType)
+    : canonicalInventoryMaterialType(item.materialType);
+  const resolvedMaterialCategory = masterIsMaterial
+    ? String(masterRow?.materialCategory || '').trim()
+    : String(item.materialCategory || '').trim();
+  const rawCategory = String(item.category || item.type || item.itemCategory || resolvedMaterialCategory || '').trim();
   const rawCheckType = String(item.checkType || item['判定'] || '').trim();
   const rawMasterSheet = String(item.masterSheet || item.sourceSheet || '').trim().toLowerCase();
   const categoryLooksSpell = rawCategory.includes('術式') || ['魔法','祈祷','魔術','聖術','神聖術','攻撃魔法'].includes(rawCategory) || /^魔法\s*>=|^祈祷\s*>=/.test(rawCheckType) || rawMasterSheet === 'spells' || rawMasterSheet === 'spell';
-  let kind = normalizeInventoryKind(item.kind || item.itemType || (categoryLooksSpell ? '術式' : 'アイテム'));
+  let kind = normalizeInventoryKind(masterIsMaterial ? '素材' : (masterIsFood ? 'アイテム' : (item.kind || item.itemType || (categoryLooksSpell ? '術式' : 'アイテム'))));
   if (kind === 'アイテム' && categoryLooksSpell) kind = '術式';
   if (isBagLikeFields({ ...item, kind, category:rawCategory })) kind = 'バッグ';
   if (isQuiverLikeFields({ ...item, kind, category:rawCategory })) kind = '矢筒';
-  if (kind === 'アイテム' && (String(item.materialType || '').trim() || String(item.materialCategory || '').trim() || /(?:^|[,、\s])素材(?:$|[,、\s])/.test(String(item.tags || item.usageTags || '')))) kind = '素材';
+  if (masterIsMaterial || (kind === 'アイテム' && (resolvedMaterialType || resolvedMaterialCategory || /(?:^|[,、\s])素材(?:$|[,、\s])/.test(String(item.tags || item.usageTags || ''))))) kind = '素材';
   const oldDescription = item['fla' + 'vor' + 'Text'];
   const normalizedUpgradeEntries = parseUpgradeLines(item.upgradeEntries || item.upgradeLines || '');
   const normalizedModifierRows = migrateLegacyDefenseActionRows(parseModifierRows(migratedModifierTextForItem(item)), item);
@@ -4224,10 +4345,10 @@ function normalizeInventoryItem(item={}) {
     masterSync: String(item.masterSync || item.syncRole || '').trim(),
     name: canonicalInventoryItemName(item.name || ''),
     kind,
-    itemType: inferInventoryItemType(item, kind),
-    itemCategory: String(item.itemCategory || item.category || item.type || '').trim(),
-    materialType: String(item.materialType || '').trim(),
-    materialCategory: String(item.materialCategory || ((kind === '素材' || ['素材','食材'].includes(String(item.itemType || '').trim()) || String(item.materialType || '').trim()) ? (item.category || item.type || '') : '')).trim(),
+    itemType: masterIsMaterial ? '' : (masterIsFood ? '食材' : inferInventoryItemType(item, kind)),
+    itemCategory: masterIsMaterial ? '' : String(masterRow?.itemCategory || item.itemCategory || item.category || item.type || '').trim(),
+    materialType: resolvedMaterialType,
+    materialCategory: resolvedMaterialCategory || String(((kind === '素材' || ['素材','食材'].includes(String(item.itemType || '').trim()) || resolvedMaterialType) ? (item.category || item.type || '') : '')).trim(),
     category: String(item.category || item.type || item.itemCategory || item.materialCategory || '').trim(),
     count: clampInt(item.count ?? item.quantity ?? 1, 0, 9999),
     capacity: kind === 'バッグ' ? parseBagCapacity(item) : 0,
@@ -4239,6 +4360,7 @@ function normalizeInventoryItem(item={}) {
     rank: String(item.rank || '').trim(),
     price: String(item.price || '').trim(),
     equipSlot: inferEquipSlotForInventory({ ...item, kind }),
+    skill: kind === '武器' ? canonicalWeaponUsageSkill(item) : String(item.skill || '').trim(),
     power: String(item.power || item.damage || item.damageValue || '').trim(),
     hit: String(item.hit || item.hitMod || firstModifierText('hit')).trim(),
     defense: String(item.defense || item.alwaysDefense || firstModifierText('combat:defense')).trim(),
@@ -4262,7 +4384,7 @@ function normalizeInventoryItem(item={}) {
     enchantRounds: String(item.enchantRounds || '').trim(),
     enchantStackRule: String(item.enchantStackRule || '').trim(),
     cost: String(item.cost || item.mpCost || item['MP'] || item['コスト'] || '').trim(),
-    checkType: normalizeCheckExpression(item.checkType || item['判定'] || ''),
+    checkType: kind === '武器' ? '' : normalizeCheckExpression(item.checkType || item['判定'] || ''),
     role: String(item.role || item['役割'] || '').trim(),
     source: String(item.source || '').trim(),
     tags: String(item.tags || '').trim(),
@@ -4316,6 +4438,7 @@ function isCarrySlotKey(slotKey) {
   return !!slot && slot.kind === 'carry';
 }
 function getInventoryState() {
+  syncAllEquipmentModifiersToInventory();
   syncAllEquipmentUpgradesToInventory();
   const items = inventoryItemsState.map(item => normalizeInventoryItem(item)).filter(item => item.name || item.category || item.power || item.description || item.effect || item.capacity || item.count > 0);
   return { items, bagId:selectedBagId || '', quiverId:selectedQuiverId || '', quiverAmmoSlots:normalizeQuiverAmmoSlotsState(quiverAmmoSlotsState) };
@@ -4406,7 +4529,7 @@ function renderInventory() {
     const title = item.name || '未設定アイテム';
     const description = item.description || '';
     const effectText = item.effect || '';
-    const equipMeta = [item.equipSlot ? '装備/使用枠：' + item.equipSlot : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : '', item.hit ? '命中補正：' + item.hit : '', item.defense ? '防御値：' + item.defense : '', item.guard ? '防御行動値：' + item.guard : '', item.evade ? '回避補正：' + item.evade : '', item.offhand ? '副手追撃値：' + item.offhand : '', inventoryKindSupportsUpgradeLimit(item.kind) && item.upgradeLimit ? '強化枠上限：' + item.upgradeLimit : '', inventoryKindSupportsUpgradeLimit(item.kind) && item.upgradeMaterialMinRank ? '強化素材最低ランク：' + characterPlayerRankLabel(item.upgradeMaterialMinRank) : ''].filter(Boolean).join(' / ') || '—';
+    const equipMeta = [item.equipSlot ? '装備/使用枠：' + item.equipSlot : '', item.kind === '武器' && item.skill ? '使用技能：' + item.skill : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : '', item.hit ? '命中補正：' + item.hit : '', item.defense ? '防御値：' + item.defense : '', item.guard ? '防御行動値：' + item.guard : '', item.evade ? '回避補正：' + item.evade : '', item.offhand ? '副手追撃値：' + item.offhand : '', inventoryKindSupportsUpgradeLimit(item.kind) && item.upgradeLimit ? '強化枠上限：' + item.upgradeLimit : '', inventoryKindSupportsUpgradeLimit(item.kind) && item.upgradeMaterialMinRank ? '強化素材最低ランク：' + characterPlayerRankLabel(item.upgradeMaterialMinRank) : ''].filter(Boolean).join(' / ') || '—';
     const spellMeta = item.kind === '術式' ? [item.category ? '種別：' + item.category : '', item.element ? '属性：' + item.element : '', item.cost ? 'コスト：' + item.cost : '', item.target ? '対象：' + item.target : '', item.power ? 'ダメージ/威力：' + item.power : '', item.checkType ? '判定：' + checkExpressionDisplay(item.checkType) : '', item.role ? '役割：' + item.role : ''].filter(Boolean).join(' / ') : '';
     const recipeMeta = item.kind === 'レシピ' ? [item.recipeResult ? '完成品：' + item.recipeResult : '', item.materials ? '必要素材：' + item.materials : ''].filter(Boolean).join('\n') : '';
     const itemUseMeta = ['アイテム','素材','矢筒','バッグ'].includes(item.kind) ? [item.target ? '対象：' + item.target : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : '', item.cost ? 'コスト：' + item.cost : '', item.checkType ? '判定：' + checkExpressionDisplay(item.checkType) : '', item.ammoKind ? '矢弾種別：' + item.ammoKind : '', item.compatibleWeaponTypes ? '対応武器種：' + item.compatibleWeaponTypes : '', item.spellSlots ? '最大スタック数：' + item.spellSlots : '', item.quiverCapacity ? '矢筒収納種類数：' + item.quiverCapacity : '', item.bagCapacity ? 'バッグ容量：' + item.bagCapacity : '', item.source ? '入手先：' + item.source : '', item.tags ? 'タグ：' + item.tags : ''].filter(Boolean).join(' / ') : '';
@@ -4415,7 +4538,7 @@ function renderInventory() {
     const bagMeta = item.kind === 'バッグ' ? `バッグ容量：${clampInt(item.capacity || 0, 0, 99)}` : '';
     const displayType = inventorySmallCategory(item);
     const displayCategory = inventoryInternalCategory(item);
-    const searchText = [title, displayType, displayCategory, item.itemType, item.itemCategory, item.materialType, item.materialCategory, item.kind, item.category, item.rank, item.price, item.equipSlot, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.upgradeLimit, item.upgradeMaterialMinRank, item.spellSlots, item.capacity, item.bagCapacity, item.quiverCapacity, item.ammoKind, item.compatibleWeaponTypes, item.target, item.element, item.enchantTarget, item.enchantEffectType, item.enchantValue, item.enchantDuration, item.enchantRounds, item.enchantStackRule, item.cost, item.power, item.description, item.effect, item.checkType, item.role, item.source, item.tags, item.recipeResult, item.materials, item.upgradeLines].filter(Boolean).join(' ');
+    const searchText = [title, displayType, displayCategory, item.itemType, item.itemCategory, item.materialType, item.materialCategory, item.kind, item.category, item.rank, item.price, item.equipSlot, item.skill, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.upgradeLimit, item.upgradeMaterialMinRank, item.spellSlots, item.capacity, item.bagCapacity, item.quiverCapacity, item.ammoKind, item.compatibleWeaponTypes, item.target, item.element, item.enchantTarget, item.enchantEffectType, item.enchantValue, item.enchantDuration, item.enchantRounds, item.enchantStackRule, item.cost, item.power, item.description, item.effect, item.checkType, item.role, item.source, item.tags, item.recipeResult, item.materials, item.upgradeLines].filter(Boolean).join(' ');
     return `
     <details class="inventory-card" open data-inventory-row="${index}" data-inventory-id="${esc(item.id || '')}" data-inventory-location="倉庫" data-inventory-kind="${esc(item.kind || 'アイテム')}" data-inventory-item-type="${esc(displayType)}" data-inventory-category="${esc(displayCategory)}" data-inventory-search="${esc(searchText)}">
       <summary class="inventory-card-head">
@@ -4490,6 +4613,7 @@ function openInventoryDialog(index=-1) {
   if ($('inventoryFormPrice')) $('inventoryFormPrice').value = item.price || '';
   if ($('inventoryFormCategory')) $('inventoryFormCategory').value = item.category || '';
   if ($('inventoryFormEquipSlot')) $('inventoryFormEquipSlot').value = item.equipSlot || '';
+  if ($('inventoryFormSkill')) $('inventoryFormSkill').value = item.kind === '武器' ? canonicalWeaponUsageSkill(item) : (item.skill || '');
   if ($('inventoryFormPower')) $('inventoryFormPower').value = item.power || '';
   if ($('inventoryFormOffhand')) $('inventoryFormOffhand').value = item.offhand || '';
   if ($('inventoryFormReloadTurns')) $('inventoryFormReloadTurns').value = item.reloadTurns || '';
@@ -4538,6 +4662,7 @@ function collectInventoryDialogItem() {
     rank: $('inventoryFormRank')?.value || '',
     price: $('inventoryFormPrice')?.value || '',
     equipSlot: $('inventoryFormEquipSlot')?.value || '',
+    skill: kind === '武器' ? canonicalWeaponUsageSkill({ itemCategory:$('inventoryFormCategory')?.value || '', category:$('inventoryFormCategory')?.value || '' }) : '',
     power: $('inventoryFormPower')?.value || '',
     offhand: $('inventoryFormOffhand')?.value || '',
     reloadTurns: $('inventoryFormReloadTurns')?.value || '',
@@ -4545,7 +4670,7 @@ function collectInventoryDialogItem() {
     upgradeLimit: $('inventoryFormUpgradeLimit')?.value || '',
     spellSlots: $('inventoryFormSpellSlots')?.value || '',
     target: $('inventoryFormTarget')?.value || '',
-    checkType: $('inventoryFormCheckType')?.value || '',
+    checkType: kind === '武器' ? '' : ($('inventoryFormCheckType')?.value || ''),
     element: $('inventoryFormElement')?.value || '',
     enchantTarget: $('inventoryFormEnchantTarget')?.value || '',
     enchantEffectType: $('inventoryFormEnchantEffectType')?.value || '',
@@ -4653,6 +4778,7 @@ function dbItemToInventoryItem(row) {
     rank: row.rank || '',
     price: row.price || '',
     equipSlot: row.equipSlot || '',
+    skill: row.skill || '',
     power: row.power || '',
     offhand: row.offhandBonus || '',
     upgradeLimit: row.upgradeLimit || '',
@@ -4875,6 +5001,11 @@ function characterSheetMasterSourceLabel(res={}) {
 }
 function setDbCharacterSheetMaster(res={}) {
   DB_INITIAL_ITEM_MASTER = Array.isArray(res.cs_items) ? res.cs_items : [];
+  rebuildInventoryMasterClassificationIndex();
+  if(Array.isArray(inventoryItemsState) && inventoryItemsState.length){
+    inventoryItemsState = inventoryItemsState.map(item=>normalizeInventoryItem(item));
+    try{ renderInventoryTabs(); renderInventory(); }catch(_){ }
+  }
   DB_INITIAL_SPELL_MASTER = Array.isArray(res.spells) ? res.spells : [];
   DB_RECIPE_MASTER = Array.isArray(res.recipes) ? res.recipes : [];
   DB_SKILL_MASTER = Array.isArray(res.skills) ? res.skills : [];
@@ -4964,7 +5095,7 @@ function mergeMasterPresetIntoInventoryItem(existing={}, preset={}) {
 function isSameInventoryCore(a={}, b={}) {
   const aa = normalizeInventoryItem(a);
   const bb = normalizeInventoryItem(b);
-  const keys = ['publicId','masterId','masterSheet','masterSync','name','kind','category','rank','price','equipSlot','power','hit','defense','guard','evade','offhand','upgradeLimit','upgradeMaterialMinRank','spellSlots','setSpells','target','element','cost','description','effect','checkType','role','source','tags','setItem','recipeResult','materials'];
+  const keys = ['publicId','masterId','masterSheet','masterSync','name','kind','itemType','itemCategory','materialType','materialCategory','category','rank','price','equipSlot','skill','power','hit','defense','guard','evade','offhand','upgradeLimit','upgradeMaterialMinRank','spellSlots','setSpells','target','element','cost','description','effect','checkType','role','source','tags','setItem','recipeResult','materials'];
   return keys.every(k => String(aa[k] ?? '') === String(bb[k] ?? '')) && Number(aa.count || 0) === Number(bb.count || 0);
 }
 
@@ -5328,6 +5459,7 @@ function emptyCharacter() {
 }
 function collectData(updateTime=true) {
   const base = currentCharacter || emptyCharacter();
+  syncAllEquipmentModifiersToInventory();
   syncAllEquipmentUpgradesToInventory();
   syncAllEquipmentSpellSetsToInventory();
   const equipment = getEquipmentState();
@@ -5801,8 +5933,12 @@ function updateCarryWarehouseAllocationCount(slotKey, rawValue) {
 function applyCsItemToEquipmentSlot(slotKey) {
   const select = $('equip_' + slotKey + '_itemSelect');
   const previousItemKey = String(select?.dataset.previousItemKey || '').trim();
-  if (previousItemKey && previousItemKey !== String(select?.value || '').trim()) syncEquippedSpellSetToInventoryItem(slotKey, previousItemKey);
-  const row = findCsItemById(select?.value || '');
+  const nextItemKey = String(select?.value || '').trim();
+  if (previousItemKey && previousItemKey !== nextItemKey) {
+    syncEquipmentModifiersToInventoryItem(slotKey, previousItemKey);
+    syncEquippedSpellSetToInventoryItem(slotKey, previousItemKey);
+  }
+  const row = findCsItemById(nextItemKey);
   if (isCarrySlotKey(slotKey)) {
     if (row && isSpellInventoryItem(row)) {
       if (select) select.value = '';
@@ -5813,12 +5949,23 @@ function applyCsItemToEquipmentSlot(slotKey) {
     updateSummary();
     return;
   }
-  if (!row) { if(select) select.dataset.previousItemKey=''; return; }
+  if (!row) {
+    // 倉庫装備を外したときは、旧武器の表示値・補正値・強化値を装備枠へ残さない。
+    // 手入力装備は、最初から未選択の状態で各項目を直接入力した場合だけ使用できる。
+    if (previousItemKey) clearEquipmentSlotFields(slotKey, {keepSelection:true});
+    if(select) select.dataset.previousItemKey='';
+    updateEquipmentHandLocks(true);
+    updateCombatStats();
+    updateSpellSlotHints();
+    updateEquipmentSummaries();
+    updateSummary();
+    return;
+  }
   const typeValue = row.category || row.kind || 'なし';
   if ($('equip_' + slotKey + '_name')) $('equip_' + slotKey + '_name').value = row.name || '';
   setTypeSelectValue(slotKey, typeValue);
   if ($('equip_' + slotKey + '_count')) $('equip_' + slotKey + '_count').value = Math.min(Number(row.count) || 1, 99);
-  const map = { element:'element', power:'power', offhand:'offhand', reloadTurns:'reloadTurns', target:'target', checkType:'checkType', upgradeLimit:'upgradeLimit' };
+  const map = { element:'element', power:'power', offhand:'offhand', reloadTurns:'reloadTurns', target:'target', upgradeLimit:'upgradeLimit' };
   const selectedItemFallbacks = {};
   for (const [suffix, field] of Object.entries(map)) {
     const el = $('equip_' + slotKey + '_' + suffix);
@@ -5826,6 +5973,8 @@ function applyCsItemToEquipmentSlot(slotKey) {
     const value = row[field];
     el.value = value !== undefined && value !== null && String(value).trim() !== '' ? value : (selectedItemFallbacks[field] || '');
   }
+  const usageSkillEl=$('equip_' + slotKey + '_checkType');
+  if(usageSkillEl) usageSkillEl.value = (!spellContainerKind(typeValue) && !['盾','大盾'].includes(typeValue)) ? canonicalWeaponUsageSkill(row) : '';
   const restoredModifiers = serializeModifierRows(equipmentModifierRows(row));
   if ($('equip_' + slotKey + '_modifiers')) $('equip_' + slotKey + '_modifiers').value = restoredModifiers;
   renderModifierEditor('equip_' + slotKey + '_modifierRows', restoredModifiers);
@@ -5998,17 +6147,40 @@ async function deleteItem(id) {
   if (!String(playerKey).trim()) throw new Error('削除にはプレイヤーキーが必要です。');
   await cloudRequest('delete', { id, playerKey });
 }
+function sleepMs(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+async function verifyCloudCharacterSave(data, playerKey) {
+  const expectedHash = autoSaveContentHash(data);
+  const delays = [250, 600, 1200];
+  let lastError = null;
+  for (let i = 0; i < delays.length; i++) {
+    if (i > 0) await sleepMs(delays[i]);
+    try {
+      const res = await cloudRequest('load', { id:data.id, playerKey });
+      const loaded = res && res.data ? res.data : null;
+      if (loaded && autoSaveContentHash(loaded) === expectedHash) return loaded;
+      lastError = new Error('クラウド上の保存内容が送信内容と一致しません。');
+    } catch (e) {
+      lastError = e;
+    }
+  }
+  throw new Error('クラウド保存を確認できませんでした。保存先の容量・GASの更新・実行ログを確認してください。' + (lastError?.message ? '（' + lastError.message + '）' : ''));
+}
 async function saveItem(data) {
   const auth = getCloudAuth();
   if (!auth.playerKey && !auth.newPlayerKey) throw new Error('クラウド保存にはプレイヤーキーが必要です。');
-  await cloudRequest('save', { data: stripRuntimeOnlyData(data), playerKey: auth.playerKey, newPlayerKey: auth.newPlayerKey });
+  const cleanData = stripRuntimeOnlyData(data);
+  const effectivePlayerKey = auth.newPlayerKey || auth.playerKey;
+  await cloudRequest('save', { data: cleanData, playerKey: auth.playerKey, newPlayerKey: auth.newPlayerKey });
+  await verifyCloudCharacterSave(cleanData, effectivePlayerKey);
   if (auth.newPlayerKey) {
     currentCloudPlayerKey = auth.newPlayerKey;
     if ($('playerKey')) $('playerKey').value = auth.newPlayerKey;
     if ($('newPlayerKey')) $('newPlayerKey').value = '';
     if ($('cloudPlayerKeyInput')) $('cloudPlayerKeyInput').value = auth.newPlayerKey;
   }
-  return { saved:true, cloudSaved:true };
+  return { saved:true, cloudSaved:true, verified:true };
 }
 async function refreshList() {
   $('characterList').innerHTML = '';
@@ -6844,7 +7016,7 @@ function bindEvents() {
         if (!list.querySelector('[data-modifier-row]')) list.innerHTML = '';
         const idx = list.querySelectorAll('[data-modifier-row]').length;
         list.insertAdjacentHTML('beforeend', modifierRowHtml({}, idx));
-        syncModifierEditor(editor);
+        syncModifierEditorAndInventory(editor);
         updateAll();
       }
       return;
@@ -6855,7 +7027,7 @@ function bindEvents() {
       rem.closest('[data-modifier-row]')?.remove();
       const list = editor?.querySelector('[id$="ModifierRows"], [id$="modifierRows"]');
       if (list && !list.querySelector('[data-modifier-row]')) list.innerHTML = '<div class="small">補正値はまだありません。</div>';
-      syncModifierEditor(editor);
+      syncModifierEditorAndInventory(editor);
       updateAll();
       return;
     }
@@ -6938,7 +7110,7 @@ function bindEvents() {
       updateSummary();
       return;
     }
-    if (e.target.closest('[data-char-modifier-editor]')) syncModifierEditor(e.target.closest('[data-char-modifier-editor]'));
+    if (e.target.closest('[data-char-modifier-editor]')) syncModifierEditorAndInventory(e.target.closest('[data-char-modifier-editor]'));
     if (e.target.closest?.('[data-upgrade-row]')) {
       const row = e.target.closest('[data-upgrade-row]');
       const slotRoot = row?.closest('[id$="_upgradeSlots"]');
@@ -6949,11 +7121,11 @@ function bindEvents() {
       return;
     }
     if (e.target.dataset.equipmentInput) { updateAll(); return; }
-    if (e.target.dataset.inventoryInput) { if (e.target.closest('[data-char-modifier-editor]')) syncModifierEditor(e.target.closest('[data-char-modifier-editor]')); applyInventoryFilters(); updateSummary(); return; }
+    if (e.target.dataset.inventoryInput) { if (e.target.closest('[data-char-modifier-editor]')) syncModifierEditorAndInventory(e.target.closest('[data-char-modifier-editor]')); applyInventoryFilters(); updateSummary(); return; }
     if (e.target.id?.startsWith('stat_') || e.target.dataset.abilityInput || e.target.dataset.skillInput || e.target.id?.startsWith('manualBonus_') || ['currentHp','currentMp','hpBonus','mpBonus','fatigueLevel'].includes(e.target.id)) updateAll();
   });
   document.addEventListener('change', e => {
-    if (e.target.closest?.('[data-char-modifier-editor]')) { syncModifierEditor(e.target.closest('[data-char-modifier-editor]')); updateAll(); return; }
+    if (e.target.closest?.('[data-char-modifier-editor]')) { syncModifierEditorAndInventory(e.target.closest('[data-char-modifier-editor]')); updateAll(); return; }
     if (e.target.classList?.contains('spell-slot-select')) {
       const slotKey = e.target.dataset.slotKey || '';
       syncSpellSetHidden(slotKey);
