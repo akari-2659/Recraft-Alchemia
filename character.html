@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.287</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.289</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1025,7 +1025,7 @@ details.big-section>summary{
 </style>
 
 <style id="raMaintenanceV287">
-/* v90.8.287 usability maintenance */
+/* v90.8.289 usability maintenance */
 body{padding-bottom:0}
 .ra-build-info{font-size:12px;padding:6px 12px;text-align:right;color:var(--muted);background:rgba(255,253,248,.9);border-bottom:1px solid var(--line)}
 #editorView>section:first-child{padding:10px 12px;margin-bottom:8px}
@@ -1059,7 +1059,7 @@ body{padding-bottom:0}
 .inventory-card{padding:0!important;overflow:hidden}
 .inventory-card>summary{padding:10px 12px}
 .inventory-card>.inventory-card-meta{padding:0 12px 12px}
-.editor-action-bar{position:static!important;left:auto!important;right:auto!important;bottom:auto!important;transform:none!important;width:100%;max-width:100%!important;margin:0 0 8px;padding:7px;border-radius:12px;box-shadow:none}.editor-action-bar.collapsed{display:flex!important;justify-content:flex-end;background:transparent;border:0;padding:0}.editor-action-bar:not(.collapsed) .editor-action-inner{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%}.editor-action-bar:not(.collapsed) .editor-action-toggle{margin-bottom:7px}.editor-action-toggle{width:auto!important}.editor-action-inner{width:100%}.editor-action-inner button{width:100%!important}body.editor-active main{margin-bottom:0!important}
+.editor-action-bar{position:fixed!important;left:auto!important;right:12px!important;bottom:max(12px,env(safe-area-inset-bottom))!important;transform:none!important;display:flex!important;align-items:center!important;gap:6px!important;width:max-content!important;max-width:calc(100vw - 24px)!important;margin:0!important;padding:6px!important;border:1px solid rgba(221,203,176,.96)!important;border-radius:13px!important;background:rgba(255,253,248,.97)!important;box-shadow:0 8px 22px rgba(70,45,25,.18)!important;z-index:120!important}.editor-action-bar.collapsed{padding:4px!important}.editor-action-bar.collapsed .editor-action-inner{display:none!important}.editor-action-bar:not(.collapsed) .editor-action-inner{display:flex!important;align-items:center!important;flex-wrap:wrap!important;gap:6px!important;width:auto!important}.editor-action-toggle{width:auto!important;min-width:0!important;padding:7px 10px!important;white-space:nowrap!important}.editor-action-inner{width:auto!important}.editor-action-inner button{width:auto!important;min-width:0!important;min-height:34px!important;padding:7px 11px!important;white-space:nowrap!important}body.editor-active main{padding-bottom:78px!important;margin-bottom:0!important}
 @media(max-width:720px){
   header{padding-top:10px;padding-bottom:10px} header h1{font-size:1.35rem;margin-bottom:2px}.subtitle{font-size:.76rem}
   .ra-build-info{text-align:left}
@@ -1067,16 +1067,25 @@ body{padding-bottom:0}
   .skill-category-title{align-items:flex-start;flex-wrap:wrap}.skill-category-title .small{width:100%;text-align:left!important}
   .editor-tabs{grid-template-columns:repeat(3,minmax(0,1fr))!important}
 }
-@media(max-width:430px){.editor-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}.editor-action-bar:not(.collapsed) .editor-action-inner{grid-template-columns:1fr 1fr 1fr}}
+@media(max-width:430px){.editor-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}.editor-action-bar{right:8px!important;bottom:max(8px,env(safe-area-inset-bottom))!important;max-width:calc(100vw - 16px)!important}.editor-action-toggle,.editor-action-inner button{padding:6px 8px!important;font-size:.78rem!important}}
+
+/* v90.8.289: 折り畳み表示と操作バーを安定化 */
+details.big-section>summary::before,.skill-category-title::before{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 16px!important;width:16px!important;margin-right:6px!important;transform:rotate(0deg)!important;transform-origin:center!important;transition:transform .14s ease!important}
+details.big-section[open]>summary::before,.skill-category-card[open]>.skill-category-title::before{transform:rotate(90deg)!important}
+#tabEquipment .equipment-card-toggle{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:14px!important;height:18px!important;position:static!important}
+#tabEquipment .equipment-card-toggle::before{content:'▶'!important;position:static!important;display:block!important;width:auto!important;height:auto!important;border:0!important;color:var(--accent2)!important;font-size:.72rem!important;line-height:1!important;transform:rotate(0deg)!important;transition:transform .14s ease!important}
+#tabEquipment .equipment-card[open]>.equipment-card-summary .equipment-card-toggle::before{transform:rotate(90deg)!important}
+.inventory-registration-card{margin:8px 0 12px!important}
+.inventory-registration-card>summary{padding:9px 11px!important}
 </style>
 </head>
 <body>
-<div class="ra-build-info">v90.8.287｜更新：2026年7月27日</div>
+<div class="ra-build-info">v90.8.289｜更新：2026年7月27日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール｜クラウド保存専用｜v90.8.287｜更新：2026年7月27日</div>
+  <div class="subtitle">キャラクター作成ツール｜クラウド保存専用｜v90.8.289｜更新：2026年7月27日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -1406,6 +1415,28 @@ body{padding-bottom:0}
         <summary>倉庫</summary>
         <div class="section-body">
           <p class="hint">旧「所持品」はこの「倉庫」です。拠点に保管しているアイテムを登録します。倉庫には保管上限はありません。装備欄・所持品欄・バッグ選択の候補は、この倉庫一覧から生成されます。</p>
+          <details class="mini-card inventory-registration-card" open>
+            <summary>倉庫へ登録</summary>
+            <div class="inventory-registration-body">
+            <p class="hint">GMや進行管理HTMLから受け取った登録IDを入力して、アイテム・術式・レシピ・スキルを倉庫へ追加します。アイテム類は指定した個数で追加でき、0個でも登録・保存できます。</p>
+            <div class="inventory-form-grid">
+              <div class="field">
+                <label for="publicIdInput">登録ID</label>
+                <input id="publicIdInput" data-inventory-input="1" type="text" inputmode="latin" autocomplete="off" />
+              </div>
+              <div class="field">
+                <label for="publicIdCountInput">個数</label>
+                <input id="publicIdCountInput" data-inventory-input="1" type="number" min="0" max="9999" value="1" />
+              </div>
+            </div>
+            <div class="button-row">
+              <button id="addByPublicIdPasteBtn" type="button" class="secondary">登録IDで倉庫へ追加</button>
+              <button id="clearPublicIdPasteBtn" type="button" class="ghost">入力欄をクリア</button>
+              <button id="addInitialWeaponSetBtn" type="button" class="secondary">初期倉庫アイテムをDB同期</button>
+            </div>
+            <div id="publicIdPasteStatus" class="status-box">登録IDと個数を入力してください。</div>
+            </div>
+          </details>
           <div class="inventory-list-heading">
             <div>
               <h3>倉庫一覧</h3>
@@ -1439,28 +1470,6 @@ body{padding-bottom:0}
           </details>
           <div id="inventoryArea" class="inventory-list"></div>
           <div id="inventoryEmptyStatus" class="status-box">まだアイテムが登録されていません。</div>
-          <details class="mini-card inventory-registration-card">
-            <summary>倉庫へ登録</summary>
-            <div class="inventory-registration-body">
-            <p class="hint">GMや進行管理HTMLから受け取った登録IDを入力して、アイテム・術式・レシピ・スキルを倉庫へ追加します。アイテム類は指定した個数で追加でき、0個でも登録・保存できます。</p>
-            <div class="inventory-form-grid">
-              <div class="field">
-                <label for="publicIdInput">登録ID</label>
-                <input id="publicIdInput" data-inventory-input="1" type="text" inputmode="latin" autocomplete="off" />
-              </div>
-              <div class="field">
-                <label for="publicIdCountInput">個数</label>
-                <input id="publicIdCountInput" data-inventory-input="1" type="number" min="0" max="9999" value="1" />
-              </div>
-            </div>
-            <div class="button-row">
-              <button id="addByPublicIdPasteBtn" type="button" class="secondary">登録IDで倉庫へ追加</button>
-              <button id="clearPublicIdPasteBtn" type="button" class="ghost">入力欄をクリア</button>
-              <button id="addInitialWeaponSetBtn" type="button" class="secondary">初期倉庫アイテムをDB同期</button>
-            </div>
-            <div id="publicIdPasteStatus" class="status-box">登録IDと個数を入力してください。</div>
-            </div>
-          </details>
         </div>
       </details>
     </div>
@@ -3317,8 +3326,9 @@ function syncModifierEditorAndInventory(editor=null){
   const slotKey = equipmentSlotKeyFromModifierEditor(editor);
   if(slotKey) syncEquipmentModifiersToInventoryItem(slotKey);
 }
-function syncEquipmentUpgradeToInventoryItem(slotKey=''){
-  const index = inventoryItemIndexForEquipmentSlot(slotKey);
+function syncEquipmentUpgradeToInventoryItem(slotKey='', itemKey=''){
+  const selectedKey = String(itemKey || $('equip_' + slotKey + '_itemSelect')?.value || '').trim();
+  const index = inventoryItemIndexForEquipmentKey(selectedKey);
   if(index < 0) return false;
   const current = normalizeInventoryItem(inventoryItemsState[index] || {});
   if(!['武器','防具','装飾品'].includes(current.kind)) return false;
@@ -3545,7 +3555,7 @@ function getEquipmentState() {
       base.reloadTurns = isBook ? '' : ($('equip_' + slot.key + '_reloadTurns')?.value?.trim() || '');
       base.target = isBook ? '' : ($('equip_' + slot.key + '_target')?.value?.trim() || '');
       base.checkType = '';
-      base.modifiers = isBook ? '' : ($('equip_' + slot.key + '_modifiers')?.value?.trim() || '');
+      base.modifiers = $('equip_' + slot.key + '_modifiers')?.value?.trim() || '';
       base.upgradeLimit = $('equip_' + slot.key + '_upgradeLimit')?.value?.trim() || '';
       base.upgradeEntries = collectUpgradeEntries(slot.key).slice(0, equipmentUpgradeLimit(slot.key));
       base.upgradeLines = serializeUpgradeEntries(base.upgradeEntries);
@@ -3680,7 +3690,7 @@ function clearHandSlot(slotKey) {
   const itemKey = String(select?.value || select?.dataset?.previousItemKey || '').trim();
   if (itemKey) {
     syncEquipmentModifiersToInventoryItem(slotKey, itemKey);
-    syncEquipmentUpgradeToInventoryItem(slotKey);
+    syncEquipmentUpgradeToInventoryItem(slotKey, itemKey);
     syncEquippedSpellSetToInventoryItem(slotKey, itemKey);
   }
   clearEquipmentSlotFields(slotKey);
@@ -3773,7 +3783,7 @@ function showEditorTab(tab) {
 }
 
 
-const SKILL_CATEGORY_ORDER=['全て','武器専用','魔導書専用','祈祷書専用','汎用戦闘','探索系'];
+const SKILL_CATEGORY_ORDER=['全て','武器専用','汎用戦闘','探索系'];
 function normalizeSkillGachaState(raw={}){
   if(window.RASkillGachaCore?.normalizeState)return window.RASkillGachaCore.normalizeState(raw||{});
   const slots=Math.max(2,Math.min(6,Number(raw.crystalSlots)||2));
@@ -5690,7 +5700,7 @@ function openEditor(mode, data=null) {
   $('editorStatus').textContent = mode === 'view'
     ? '閲覧モードです。編集する場合は「編集に切替」を押してください。'
     : (autoSaveEnabled ? '編集中です。変更は自動保存されます。' : '編集中です。自動保存はOFFです。');
-  setActionBarCollapsed(true);
+  setActionBarCollapsed(false);
   showEditorTab('ability');
   setView('editor');
   setCharacterSheetMasterSourceStatus(lastCharacterSheetMasterResult, {loading:!lastCharacterSheetMasterResult});
@@ -6022,6 +6032,7 @@ function applyCsItemToEquipmentSlot(slotKey) {
   const nextItemKey = String(select?.value || '').trim();
   if (previousItemKey && previousItemKey !== nextItemKey) {
     syncEquipmentModifiersToInventoryItem(slotKey, previousItemKey);
+    syncEquipmentUpgradeToInventoryItem(slotKey, previousItemKey);
     syncEquippedSpellSetToInventoryItem(slotKey, previousItemKey);
   }
   const row = findCsItemById(nextItemKey);
@@ -7245,7 +7256,12 @@ function bindEvents() {
     }
     if (e.target.id?.startsWith('equip_') && e.target.id.endsWith('_type')) {
       const slotKey = e.target.id.replace(/^equip_/, '').replace(/_type$/, '');
-      if(!isCarrySlotKey(slotKey)) syncEquippedSpellSetToInventoryItem(slotKey, $('equip_' + slotKey + '_itemSelect')?.dataset.previousItemKey || '');
+      if(!isCarrySlotKey(slotKey)) {
+        const previousItemKey=$('equip_' + slotKey + '_itemSelect')?.dataset.previousItemKey || '';
+        syncEquipmentModifiersToInventoryItem(slotKey, previousItemKey);
+        syncEquipmentUpgradeToInventoryItem(slotKey, previousItemKey);
+        syncEquippedSpellSetToInventoryItem(slotKey, previousItemKey);
+      }
       if (isCarrySlotKey(slotKey)) releaseCarryWarehouseAllocation(slotKey, {refresh:true});
       const itemSelect = $('equip_' + slotKey + '_itemSelect');
       if (itemSelect) itemSelect.value = '';
