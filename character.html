@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.281</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.287</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1023,14 +1023,60 @@ details.big-section>summary{
 }
 
 </style>
+
+<style id="raMaintenanceV287">
+/* v90.8.287 usability maintenance */
+body{padding-bottom:0}
+.ra-build-info{font-size:12px;padding:6px 12px;text-align:right;color:var(--muted);background:rgba(255,253,248,.9);border-bottom:1px solid var(--line)}
+#editorView>section:first-child{padding:10px 12px;margin-bottom:8px}
+#editorView>section:first-child .topbar{margin-bottom:4px}
+#editorView>section:first-child h2{font-size:1.08rem;margin:0}
+#editorView>section:first-child #editorSub{font-size:.76rem}
+#editorStatus:not(.error):not(.warn):not(.bad){display:none}
+#masterSourceStatus{margin:5px 0;padding:7px 9px;font-size:.76rem}
+#autoSavePanel{margin:5px 0 0;padding:7px 9px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.editor-tabs{position:sticky;top:0;z-index:35;padding:7px;background:rgba(247,242,232,.97);border:1px solid var(--line);box-shadow:0 6px 16px rgba(80,50,20,.08);backdrop-filter:blur(8px)}
+.editor-tab-btn{justify-content:center!important;text-align:center!important}
+.skill-maintenance-tools{display:grid;grid-template-columns:minmax(180px,1fr) auto auto;gap:8px;margin:10px 0}
+.skill-maintenance-tools input{min-width:0}
+.skill-category-card{padding:0!important;overflow:hidden}
+.skill-category-title{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 12px;background:rgba(243,226,203,.65);font-weight:900}
+.skill-category-title::-webkit-details-marker{display:none}
+.skill-category-title::before{content:'▶';color:var(--accent2);transition:transform .15s}
+.skill-category-card[open]>.skill-category-title::before{transform:rotate(90deg)}
+.skill-category-title>span:first-of-type{flex:1}
+.skill-category-title .small{text-align:right!important;font-weight:700}
+.skill-category-body{padding:8px 10px 10px}
+.skill-row.skill-filter-hidden{display:none!important}
+#tabEquipment .equipment-card:not([open]){background:rgba(255,253,248,.76)}
+#tabInventory .inventory-list-heading{margin-top:0}
+.inventory-registration-card{padding:0!important;margin-top:14px;overflow:hidden}
+.inventory-registration-card>summary{cursor:pointer;list-style:none;padding:12px 14px;font-weight:900;background:rgba(243,226,203,.65)}
+.inventory-registration-card>summary::-webkit-details-marker{display:none}
+.inventory-registration-card>summary::before{content:'＋';display:inline-block;margin-right:8px}
+.inventory-registration-card[open]>summary::before{content:'－'}
+.inventory-registration-body{padding:12px}
+.inventory-card{padding:0!important;overflow:hidden}
+.inventory-card>summary{padding:10px 12px}
+.inventory-card>.inventory-card-meta{padding:0 12px 12px}
+.editor-action-bar{position:static!important;left:auto!important;right:auto!important;bottom:auto!important;transform:none!important;width:100%;max-width:100%!important;margin:0 0 8px;padding:7px;border-radius:12px;box-shadow:none}.editor-action-bar.collapsed{display:flex!important;justify-content:flex-end;background:transparent;border:0;padding:0}.editor-action-bar:not(.collapsed) .editor-action-inner{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%}.editor-action-bar:not(.collapsed) .editor-action-toggle{margin-bottom:7px}.editor-action-toggle{width:auto!important}.editor-action-inner{width:100%}.editor-action-inner button{width:100%!important}body.editor-active main{margin-bottom:0!important}
+@media(max-width:720px){
+  header{padding-top:10px;padding-bottom:10px} header h1{font-size:1.35rem;margin-bottom:2px}.subtitle{font-size:.76rem}
+  .ra-build-info{text-align:left}
+  .skill-maintenance-tools{grid-template-columns:1fr 1fr}.skill-maintenance-tools input{grid-column:1/-1}
+  .skill-category-title{align-items:flex-start;flex-wrap:wrap}.skill-category-title .small{width:100%;text-align:left!important}
+  .editor-tabs{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+@media(max-width:430px){.editor-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}.editor-action-bar:not(.collapsed) .editor-action-inner{grid-template-columns:1fr 1fr 1fr}}
+</style>
 </head>
 <body>
-<div class="ra-build-info">Version：v90.8.281 / 最終更新日：2026年7月26日</div>
+<div class="ra-build-info">v90.8.287｜更新：2026年7月27日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール / クラウド保存専用版 v90.8.281 / 最終更新日：2026年7月26日</div>
+  <div class="subtitle">キャラクター作成ツール｜クラウド保存専用｜v90.8.287｜更新：2026年7月27日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -1108,6 +1154,15 @@ details.big-section>summary{
       <button type="button" class="editor-tab-btn" data-editor-tab="equipment">装備</button>
       <button type="button" class="editor-tab-btn" data-editor-tab="carry">所持品</button>
       <button type="button" class="editor-tab-btn" data-editor-tab="inventory">倉庫</button>
+    </div>
+
+    <div id="editorActionBar" class="editor-action-bar collapsed" aria-label="編集操作">
+      <button id="actionBarToggleBtn" type="button" class="editor-action-toggle" aria-expanded="false">操作を開く</button>
+      <div class="editor-action-inner">
+        <button id="saveBtn" type="button">保存</button>
+        <button id="outputBtn" type="button" class="secondary">出力</button>
+        <button id="shareBtn" type="button" class="blue">共有</button>
+      </div>
     </div>
 
     <div id="tabAbility" class="editor-tab-page active">
@@ -1259,6 +1314,11 @@ details.big-section>summary{
         <div class="section-body">
           <p class="hint">各分類ポイントは分類ごとに2点＋ボーナス、自由ポイントは合計3点です。「その他」には装備・強化内容などの補正値合計が自動で反映されます。</p>
           <div id="skillPointStatus" class="status-box">技能ポイントを確認します。</div>
+          <div class="skill-maintenance-tools">
+            <input id="skillSearchInput" type="search" autocomplete="off" placeholder="技能名・説明で検索" aria-label="技能検索" />
+            <button id="openAllSkillCategoriesBtn" type="button" class="ghost">すべて開く</button>
+            <button id="closeAllSkillCategoriesBtn" type="button" class="ghost">すべて閉じる</button>
+          </div>
           <div id="skillArea"></div>
         </div>
       </details>
@@ -1346,27 +1406,6 @@ details.big-section>summary{
         <summary>倉庫</summary>
         <div class="section-body">
           <p class="hint">旧「所持品」はこの「倉庫」です。拠点に保管しているアイテムを登録します。倉庫には保管上限はありません。装備欄・所持品欄・バッグ選択の候補は、この倉庫一覧から生成されます。</p>
-          <div class="mini-card inventory-registration-card">
-            <h3>倉庫へ登録</h3>
-            <p class="hint">GMや進行管理HTMLから受け取った登録IDを入力して、アイテム・術式・レシピ・スキルを倉庫へ追加します。アイテム類は指定した個数で追加でき、0個でも登録・保存できます。</p>
-            <div class="inventory-form-grid">
-              <div class="field">
-                <label for="publicIdInput">登録ID</label>
-                <input id="publicIdInput" data-inventory-input="1" type="text" inputmode="latin" autocomplete="off" />
-              </div>
-              <div class="field">
-                <label for="publicIdCountInput">個数</label>
-                <input id="publicIdCountInput" data-inventory-input="1" type="number" min="0" max="9999" value="1" />
-              </div>
-            </div>
-            <div class="button-row">
-              <button id="addByPublicIdPasteBtn" type="button" class="secondary">登録IDで倉庫へ追加</button>
-              <button id="clearPublicIdPasteBtn" type="button" class="ghost">入力欄をクリア</button>
-              <button id="addInitialWeaponSetBtn" type="button" class="secondary">初期倉庫アイテムをDB同期</button>
-            </div>
-            <div id="publicIdPasteStatus" class="status-box">登録IDと個数を入力してください。</div>
-          </div>
-
           <div class="inventory-list-heading">
             <div>
               <h3>倉庫一覧</h3>
@@ -1400,20 +1439,33 @@ details.big-section>summary{
           </details>
           <div id="inventoryArea" class="inventory-list"></div>
           <div id="inventoryEmptyStatus" class="status-box">まだアイテムが登録されていません。</div>
+          <details class="mini-card inventory-registration-card">
+            <summary>倉庫へ登録</summary>
+            <div class="inventory-registration-body">
+            <p class="hint">GMや進行管理HTMLから受け取った登録IDを入力して、アイテム・術式・レシピ・スキルを倉庫へ追加します。アイテム類は指定した個数で追加でき、0個でも登録・保存できます。</p>
+            <div class="inventory-form-grid">
+              <div class="field">
+                <label for="publicIdInput">登録ID</label>
+                <input id="publicIdInput" data-inventory-input="1" type="text" inputmode="latin" autocomplete="off" />
+              </div>
+              <div class="field">
+                <label for="publicIdCountInput">個数</label>
+                <input id="publicIdCountInput" data-inventory-input="1" type="number" min="0" max="9999" value="1" />
+              </div>
+            </div>
+            <div class="button-row">
+              <button id="addByPublicIdPasteBtn" type="button" class="secondary">登録IDで倉庫へ追加</button>
+              <button id="clearPublicIdPasteBtn" type="button" class="ghost">入力欄をクリア</button>
+              <button id="addInitialWeaponSetBtn" type="button" class="secondary">初期倉庫アイテムをDB同期</button>
+            </div>
+            <div id="publicIdPasteStatus" class="status-box">登録IDと個数を入力してください。</div>
+            </div>
+          </details>
         </div>
       </details>
     </div>
 </div>
 </main>
-
-<div id="editorActionBar" class="editor-action-bar collapsed" aria-label="編集操作">
-  <button id="actionBarToggleBtn" type="button" class="editor-action-toggle" aria-expanded="false">操作を開く</button>
-  <div class="editor-action-inner">
-    <button id="saveBtn" type="button">保存</button>
-    <button id="outputBtn" type="button" class="secondary">出力</button>
-    <button id="shareBtn" type="button" class="blue">共有</button>
-  </div>
-</div>
 
 <dialog id="outputDialog" class="output-dialog">
   <div class="dialog-inner">
@@ -2079,22 +2131,24 @@ function renderStatic() {
   `).join('');
 
   $('skillArea').innerHTML = SKILL_CATEGORIES.map(cat => `
-    <div class="skill-category-card" data-cat="${cat.key}">
-      <h3>${cat.name} <span class="small">基礎能力：${ABILITY_NAMES[cat.ability]} / 分類P 0/2</span></h3>
-      <div class="skill-row header">
-        <div>技能</div><div>能力</div><div>分類P</div><div>自由P</div><div>その他</div><div>技能値</div>
-      </div>
-      ${cat.skills.map(sk => `
-        <div class="skill-row">
-          <div class="skill-name">${sk.name}<details class="skill-detail"><summary>詳細</summary><div class="skill-detail-body">${esc(sk.detail || sk.desc || '')}</div></details></div>
-          <div class="skill-cell base"><span id="skill_base_${sk.key}">0</span></div>
-          <div class="skill-cell cat"><input id="skill_cat_${sk.key}" data-skill-input="1" type="number" min="0" max="99" value="0" /></div>
-          <div class="skill-cell free"><input id="skill_free_${sk.key}" data-skill-input="1" type="number" min="0" max="3" value="0" /></div>
-          <div class="skill-cell other"><div id="skill_other_${sk.key}" class="skill-other-auto">0</div></div>
-          <div class="skill-cell total computed-value" id="skill_total_${sk.key}">0</div>
+    <details class="skill-category-card" data-cat="${cat.key}">
+      <summary class="skill-category-title"><span>${cat.name}</span><span class="small">基礎能力：${ABILITY_NAMES[cat.ability]} / 分類P 0/2</span></summary>
+      <div class="skill-category-body">
+        <div class="skill-row header">
+          <div>技能</div><div>能力</div><div>分類P</div><div>自由P</div><div>その他</div><div>技能値</div>
         </div>
-      `).join('')}
-    </div>
+        ${cat.skills.map(sk => `
+          <div class="skill-row" data-skill-search="${esc([sk.name,sk.detail||sk.desc||''].join(' '))}">
+            <div class="skill-name">${sk.name}<details class="skill-detail"><summary>詳細</summary><div class="skill-detail-body">${esc(sk.detail || sk.desc || '')}</div></details></div>
+            <div class="skill-cell base"><span id="skill_base_${sk.key}">0</span></div>
+            <div class="skill-cell cat"><input id="skill_cat_${sk.key}" data-skill-input="1" type="number" min="0" max="99" value="0" /></div>
+            <div class="skill-cell free"><input id="skill_free_${sk.key}" data-skill-input="1" type="number" min="0" max="3" value="0" /></div>
+            <div class="skill-cell other"><div id="skill_other_${sk.key}" class="skill-other-auto">0</div></div>
+            <div class="skill-cell total computed-value" id="skill_total_${sk.key}">0</div>
+          </div>
+        `).join('')}
+      </div>
+    </details>
   `).join('');
 
 
@@ -2139,7 +2193,7 @@ function renderStatic() {
         </div>`;
     }
     return `
-      <details class="equipment-card equipment-kind-${slot.kind}" data-equipment-card="${slot.key}" open>
+      <details class="equipment-card equipment-kind-${slot.kind}" data-equipment-card="${slot.key}">
         <summary class="equipment-card-summary">
           <span class="equipment-card-toggle" aria-hidden="true"></span>
           <span class="equipment-card-title"><span class="equipment-slot-label">${slot.name}</span></span>
@@ -2275,7 +2329,7 @@ function updateSkills() {
   }
   const check = validateSkills(alloc, getStats(), getManualCategoryBonuses());
   for (const cat of SKILL_CATEGORIES) {
-    const el = document.querySelector(`[data-cat="${cat.key}"] h3 .small`);
+    const el = document.querySelector(`[data-cat="${cat.key}"] .skill-category-title .small`);
     if (el) el.textContent = `基礎能力：${ABILITY_NAMES[cat.ability]} / 分類P ${check.catSums[cat.key]}/${check.catLimits[cat.key]}`;
   }
   if (check.errors.length) {
@@ -3571,6 +3625,13 @@ function setEquipmentState(equipment={}) {
     }
   }
   if ($('equipmentMemo')) $('equipmentMemo').value = eq.memo || '';
+  for (const slot of EQUIPMENT_SLOTS) {
+    if (slot.kind === 'carry') continue;
+    const card = document.querySelector(`[data-equipment-card="${slot.key}"]`);
+    if (!card) continue;
+    const item = eq[slot.key] || {};
+    card.open = !!String(item.name || item.itemId || '').trim();
+  }
   updateEquipmentHandLocks(false);
   updateSpellSlotHints();
   updateEquipmentSummaries();
@@ -4541,7 +4602,7 @@ function renderInventory() {
     const displayCategory = inventoryInternalCategory(item);
     const searchText = [title, displayType, displayCategory, item.itemType, item.itemCategory, item.materialType, item.materialCategory, item.kind, item.category, item.rank, item.price, item.equipSlot, item.skill, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.upgradeLimit, item.upgradeMaterialMinRank, item.spellSlots, item.capacity, item.bagCapacity, item.quiverCapacity, item.ammoKind, item.compatibleWeaponTypes, item.target, item.element, item.enchantTarget, item.enchantEffectType, item.enchantValue, item.enchantDuration, item.enchantRounds, item.enchantStackRule, item.cost, item.power, item.description, item.effect, item.checkType, item.role, item.source, item.tags, item.recipeResult, item.materials, item.upgradeLines].filter(Boolean).join(' ');
     return `
-    <details class="inventory-card" open data-inventory-row="${index}" data-inventory-id="${esc(item.id || '')}" data-inventory-location="倉庫" data-inventory-kind="${esc(item.kind || 'アイテム')}" data-inventory-item-type="${esc(displayType)}" data-inventory-category="${esc(displayCategory)}" data-inventory-search="${esc(searchText)}">
+    <details class="inventory-card" data-inventory-row="${index}" data-inventory-id="${esc(item.id || '')}" data-inventory-location="倉庫" data-inventory-kind="${esc(item.kind || 'アイテム')}" data-inventory-item-type="${esc(displayType)}" data-inventory-category="${esc(displayCategory)}" data-inventory-search="${esc(searchText)}">
       <summary class="inventory-card-head">
         <div><div class="inventory-title">${esc(title)}</div><div class="small">倉庫 / ${esc(displayType)} / ${esc(displayCategory)}</div></div>
         <div class="button-row" style="margin:0;">
@@ -4573,7 +4634,7 @@ function renderInventory() {
       const category=String(s.category||'未分類').trim()||'未分類';
       const searchText=[s.name,s.publicId,s.category,s.weaponType,s.timing,s.cost,s.ct,s.effect,s.description].filter(Boolean).join(' ');
       const state=normalizeSkillGachaState(skillGachaState||{});
-      return `<details class="inventory-card inventory-skill-card" open data-inventory-row="skill-${esc(s.id)}" data-inventory-location="倉庫" data-inventory-kind="スキル" data-inventory-item-type="スキル" data-inventory-category="${esc(category)}" data-inventory-search="${esc(searchText)}"><summary class="inventory-card-head"><div><div class="inventory-title">${esc(s.name)} <span class="skill-badge">★${esc(s.rank||1)}</span></div><div class="small">倉庫 / スキル / ${esc(category)}</div></div><div class="button-row" style="margin:0;"><button type="button" class="danger" data-skill-remove="${esc(s.id)}" ${state.equippedSkillIds.includes(s.id)?'disabled':''}>削除</button></div></summary><div class="inventory-card-meta"><div class="meta-item"><span class="meta-label">カテゴリ</span>${esc(category)}</div>${s.weaponType?`<div class="meta-item"><span class="meta-label">武器種</span>${esc(s.weaponType)}</div>`:''}<div class="meta-item"><span class="meta-label">登録ID</span>${esc(s.publicId||'未設定')}</div><div class="meta-item"><span class="meta-label">ランク</span>★${esc(s.rank||1)}</div>${s.timing?`<div class="meta-item meta-wide"><span class="meta-label">タイミング</span><div class="inventory-note">${esc(s.timing)}</div></div>`:''}${s.cost?`<div class="meta-item"><span class="meta-label">消費</span>${esc(s.cost)}</div>`:''}${s.ct?`<div class="meta-item"><span class="meta-label">CT</span>${esc(s.ct)}</div>`:''}${s.effect?`<div class="meta-item meta-wide"><span class="meta-label">効果</span><div class="inventory-note">${esc(s.effect)}</div></div>`:''}</div></details>`;
+      return `<details class="inventory-card inventory-skill-card" data-inventory-row="skill-${esc(s.id)}" data-inventory-location="倉庫" data-inventory-kind="スキル" data-inventory-item-type="スキル" data-inventory-category="${esc(category)}" data-inventory-search="${esc(searchText)}"><summary class="inventory-card-head"><div><div class="inventory-title">${esc(s.name)} <span class="skill-badge">★${esc(s.rank||1)}</span></div><div class="small">倉庫 / スキル / ${esc(category)}</div></div><div class="button-row" style="margin:0;"><button type="button" class="danger" data-skill-remove="${esc(s.id)}" ${state.equippedSkillIds.includes(s.id)?'disabled':''}>削除</button></div></summary><div class="inventory-card-meta"><div class="meta-item"><span class="meta-label">カテゴリ</span>${esc(category)}</div>${s.weaponType?`<div class="meta-item"><span class="meta-label">武器種</span>${esc(s.weaponType)}</div>`:''}<div class="meta-item"><span class="meta-label">登録ID</span>${esc(s.publicId||'未設定')}</div><div class="meta-item"><span class="meta-label">ランク</span>★${esc(s.rank||1)}</div>${s.timing?`<div class="meta-item meta-wide"><span class="meta-label">タイミング</span><div class="inventory-note">${esc(s.timing)}</div></div>`:''}${s.cost?`<div class="meta-item"><span class="meta-label">消費</span>${esc(s.cost)}</div>`:''}${s.ct?`<div class="meta-item"><span class="meta-label">CT</span>${esc(s.ct)}</div>`:''}${s.effect?`<div class="meta-item meta-wide"><span class="meta-label">効果</span><div class="inventory-note">${esc(s.effect)}</div></div>`:''}</div></details>`;
     }).join(''));
   }
   if ($('inventoryEmptyStatus')) $('inventoryEmptyStatus').style.display = (inventoryItemsState.length||ownedSkills.length) ? 'none' : '';
@@ -7344,5 +7405,32 @@ document.addEventListener('DOMContentLoaded', ()=>{
 });
 </script>
 
+
+<script id="raMaintenanceV287Script">
+(function(){
+  function norm(v){return String(v||'').normalize('NFKC').toLocaleLowerCase('ja').replace(/\s+/g,'');}
+  function filterSkills(){
+    const q=norm(document.getElementById('skillSearchInput')?.value);
+    document.querySelectorAll('#skillArea .skill-category-card').forEach(card=>{
+      let hits=0;
+      card.querySelectorAll('.skill-row:not(.header)').forEach(row=>{
+        const ok=!q||norm(row.dataset.skillSearch||row.textContent).includes(q);
+        row.classList.toggle('skill-filter-hidden',!ok); if(ok)hits++;
+      });
+      card.hidden=!!q&&!hits; if(q&&hits)card.open=true;
+    });
+  }
+  document.addEventListener('DOMContentLoaded',()=>{
+    const search=document.getElementById('skillSearchInput');
+    search?.addEventListener('input',filterSkills);
+    document.getElementById('openAllSkillCategoriesBtn')?.addEventListener('click',()=>document.querySelectorAll('#skillArea .skill-category-card:not([hidden])').forEach(x=>x.open=true));
+    document.getElementById('closeAllSkillCategoriesBtn')?.addEventListener('click',()=>document.querySelectorAll('#skillArea .skill-category-card').forEach(x=>x.open=false));
+    document.getElementById('equipmentArea')?.addEventListener('change',e=>{const card=e.target.closest?.('.equipment-card');if(card)card.open=true;});
+    document.querySelectorAll('.editor-tab-btn').forEach(btn=>btn.addEventListener('click',()=>{
+      requestAnimationFrame(()=>{const tabs=document.querySelector('.editor-tabs');if(tabs&&tabs.getBoundingClientRect().top<0)tabs.scrollIntoView({block:'start'});});
+    }));
+  });
+})();
+</script>
 </body>
 </html>
