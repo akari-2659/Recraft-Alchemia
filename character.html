@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.290</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.292</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1025,7 +1025,7 @@ details.big-section>summary{
 </style>
 
 <style id="raMaintenanceV287">
-/* v90.8.290 usability maintenance */
+/* v90.8.292 usability maintenance */
 body{padding-bottom:0}
 .ra-build-info{font-size:12px;padding:6px 12px;text-align:right;color:var(--muted);background:rgba(255,253,248,.9);border-bottom:1px solid var(--line)}
 #editorView>section:first-child{padding:10px 12px;margin-bottom:8px}
@@ -1069,7 +1069,7 @@ body{padding-bottom:0}
 }
 @media(max-width:430px){.editor-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}.editor-action-bar{right:8px!important;bottom:max(8px,env(safe-area-inset-bottom))!important;max-width:calc(100vw - 16px)!important}.editor-action-toggle,.editor-action-inner button{padding:6px 8px!important;font-size:.78rem!important}}
 
-/* v90.8.290: 折り畳み表示と操作バーを安定化 */
+/* v90.8.292: 折り畳み表示と操作バーを安定化 */
 details.big-section>summary::before,.skill-category-title::before{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 16px!important;width:16px!important;margin-right:6px!important;transform:rotate(0deg)!important;transform-origin:center!important;transition:transform .14s ease!important}
 details.big-section[open]>summary::before,.skill-category-card[open]>.skill-category-title::before{transform:rotate(90deg)!important}
 #tabEquipment .equipment-card-toggle{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:14px!important;height:18px!important;position:static!important}
@@ -1080,12 +1080,12 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
 </style>
 </head>
 <body>
-<div class="ra-build-info">v90.8.290｜更新：2026年7月27日</div>
+<div class="ra-build-info">v90.8.292｜更新：2026年7月29日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール｜クラウド保存専用｜v90.8.290｜更新：2026年7月27日</div>
+  <div class="subtitle">キャラクター作成ツール｜クラウド保存専用｜v90.8.292｜更新：2026年7月29日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -3068,6 +3068,42 @@ function characterNumericRankValue(value, fallback=''){
   return Number.isFinite(n)&&n>=1?Math.floor(n):fallback;
 }
 function characterPlayerRankLabel(value){ const n=characterNumericRankValue(value,''); return n?`★${n}`:String(value ?? '').trim(); }
+
+function characterCraftingRequiredToolRank(rank){
+  const n=Math.max(1,Number(rank)||1);
+  return Math.ceil(n/3)*3;
+}
+function characterCraftingDifficultyRows(rank,difficulty){
+  const base=Number(String(difficulty??'').trim());
+  if(!Number.isFinite(base)) return [];
+  const required=characterCraftingRequiredToolRank(rank);
+  return [0,1,2].map(step=>({
+    toolRank:required+step*3,
+    reduction:step*2,
+    finalDifficulty:base-step*2
+  }));
+}
+function characterCraftingDifficultySummary(rank,difficulty){
+  const rows=characterCraftingDifficultyRows(rank,difficulty);
+  if(!rows.length) return String(difficulty||'未設定');
+  return rows.map((r,i)=>`★${r.toolRank}対応：${r.finalDifficulty}${i?`（－${r.reduction}）`:'（基礎）'}`).join(' / ')+' / 以降1段階ごとに－2';
+}
+function characterCraftingToolName(craftSkill='',craftType=''){
+  const skill=String(craftSkill||'').trim();
+  const type=String(craftType||'').trim();
+  if(skill==='調合'||type==='調合') return '調合道具';
+  if(skill==='細工'||type==='細工'||type==='仕掛け製作') return '細工道具';
+  if(skill==='設計'||skill==='鍛冶'||['武器派生','防具製作','盾製作','装飾品製作','バッグ製作','矢筒製作','素材加工','鍛冶製作'].includes(type)) return '鍛冶道具';
+  return '対応道具';
+}
+function characterCraftingSelfText(row={}){
+  const skill=row.craftSkill || (row.craftType==='調合'?'調合':row.craftType==='細工'?'細工':row.craftType==='料理'?'なし':'設計');
+  const difficultyRows=characterCraftingDifficultyRows(row.rank,row.difficulty);
+  if(!difficultyRows.length){
+    return `自作：レシピ必須 / 使用技能：${skill} / 作成難易度：${row.difficulty||'未設定'}`;
+  }
+  return `自作：レシピ必須 / 使用技能：${skill} / 使用道具：${characterCraftingToolName(skill,row.craftType)} / 基礎作成難易度：${row.difficulty||'未設定'} / ${characterCraftingDifficultySummary(row.rank,row.difficulty)}`;
+}
 function inventoryRankLabel(item={}){
   return characterPlayerRankLabel(item.rank);
 }
@@ -4923,7 +4959,7 @@ function dbRecipeToInventoryItem(row) {
     source: row.recipeSource || row.unlockFacility || '',
     tags: row.tags || '',
     description: row.description || '',
-    effect: [row.effect, `自作：レシピ必須 / ${row.craftSkill || (row.craftType==='調合'?'調合':row.craftType==='細工'?'細工':'鍛冶')}>=${row.difficulty || '未設定'} / ${characterPlayerRankLabel(row.rank)}以下を扱える道具を使用`, `施設依頼：レシピ不要${row.price ? ' / '+row.price+'G' : ''}`].filter(Boolean).join('\n'),
+    effect: [row.effect, characterCraftingSelfText(row), `施設依頼：レシピ不要${row.price ? ' / '+row.price+'G' : ''}`].filter(Boolean).join('\n'),
     recipeResult: [resultName, row.resultCount ? `×${row.resultCount}` : ''].filter(Boolean).join(' '),
     materials: row.requiredMaterials || '',
     note: row.notes || ''
