@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.299</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.303</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1025,7 +1025,7 @@ details.big-section>summary{
 </style>
 
 <style id="raMaintenanceV287">
-/* v90.8.299 usability maintenance */
+/* v90.8.303 usability maintenance */
 body{padding-bottom:0}
 .ra-build-info{font-size:12px;padding:6px 12px;text-align:right;color:var(--muted);background:rgba(255,253,248,.9);border-bottom:1px solid var(--line)}
 #editorView>section:first-child{padding:10px 12px;margin-bottom:8px}
@@ -1069,7 +1069,7 @@ body{padding-bottom:0}
 }
 @media(max-width:430px){.editor-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}.editor-action-bar{right:8px!important;bottom:max(8px,env(safe-area-inset-bottom))!important;max-width:calc(100vw - 16px)!important}.editor-action-toggle,.editor-action-inner button{padding:6px 8px!important;font-size:.78rem!important}}
 
-/* v90.8.299: 折り畳み表示と操作バーを安定化 */
+/* v90.8.303: 折り畳み表示と操作バーを安定化 */
 details.big-section>summary::before,.skill-category-title::before{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 16px!important;width:16px!important;margin-right:6px!important;transform:rotate(0deg)!important;transform-origin:center!important;transition:transform .14s ease!important}
 details.big-section[open]>summary::before,.skill-category-card[open]>.skill-category-title::before{transform:rotate(90deg)!important}
 #tabEquipment .equipment-card-toggle{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:14px!important;height:18px!important;position:static!important}
@@ -1080,12 +1080,12 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
 </style>
 </head>
 <body>
-<div class="ra-build-info">v90.8.299｜更新：2026年7月29日</div>
+<div class="ra-build-info">v90.8.303｜更新：2026年7月29日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール｜クラウド保存専用｜v90.8.299｜更新：2026年7月29日</div>
+  <div class="subtitle">キャラクター作成ツール｜クラウド保存専用｜v90.8.303｜更新：2026年7月29日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -4066,8 +4066,19 @@ function parseQuiverCapacity(itemOrValue) {
   const m = text.match(/(?:収納(?:可能)?種類数|矢弾種類数|種類数|収納)\s*[:：]?\s*(\d{1,2})/);
   return m ? clampInt(m[1], 0, 9) : 0;
 }
+const QUIVER_AMMO_KINDS = new Set(['矢','ボルト','大型ボルト']);
+function isQuiverAmmoInventoryItem(item={}) {
+  const kind = normalizeInventoryKind(item.kind || 'アイテム');
+  const itemType = String(item.itemType || '').trim();
+  const itemCategory = String(item.itemCategory || item.category || '').trim();
+  const ammoKind = String(item.ammoKind || '').trim();
+  return kind === 'アイテム'
+    && itemType === '特殊矢弾'
+    && itemCategory === '矢弾'
+    && QUIVER_AMMO_KINDS.has(ammoKind);
+}
 function inventoryAmmoRows() {
-  return (inventoryItemsState || []).map(item => normalizeInventoryItem(item)).filter(item => /矢弾|矢|ボルト|弾/.test([item.kind,item.itemType,item.category,item.name,item.tags].join(' ')));
+  return (inventoryItemsState || []).map(item => normalizeInventoryItem(item)).filter(item => isQuiverAmmoInventoryItem(item));
 }
 function inventoryStackLimit(item={}) {
   const value = Number(item.maxStack || item.spellSlots || item.stackLimit || 0);
@@ -4100,29 +4111,45 @@ function refreshWarehouseQuantityViews({quiver=true}={}) {
   if (quiver) renderQuiverControls();
   updateSummary();
 }
-function normalizeQuiverAmmoSlotState(value) {
+function rawQuiverAmmoSlotState(value) {
   if (!value) return null;
-  if (typeof value === 'string') {
-    const row = warehouseItemByKey('', value);
-    return { itemId:row ? inventoryItemKey(row) : '', name:value, count:0, maxStack:row ? inventoryStackLimit(row) : 99, warehouseAllocated:false };
-  }
+  if (typeof value === 'string') return { itemId:'', name:String(value).trim(), count:0, maxStack:99, warehouseAllocated:false };
   const itemId = String(value.itemId || value.id || value.masterId || '').trim();
   const name = String(value.name || '').trim();
   if (!itemId && !name) return null;
-  const row = warehouseItemByKey(itemId, name);
   return {
-    itemId:itemId || (row ? inventoryItemKey(row) : ''),
-    name:name || row?.name || '',
+    itemId,
+    name,
     count:clampInt(value.count || value.quantity || 0, 0, 9999),
-    maxStack:clampInt(value.maxStack || (row ? inventoryStackLimit(row) : 99), 1, 9999),
+    maxStack:clampInt(value.maxStack || 99, 1, 9999),
     warehouseAllocated:!!value.warehouseAllocated
   };
 }
-function normalizeQuiverAmmoSlotsState(slots={}) {
+function normalizeQuiverAmmoSlotState(value) {
+  const raw = rawQuiverAmmoSlotState(value);
+  if (!raw) return null;
+  const row = warehouseItemByKey(raw.itemId, raw.name);
+  if (!row || !isQuiverAmmoInventoryItem(row)) return null;
+  return {
+    itemId:raw.itemId || inventoryItemKey(row),
+    name:raw.name || row.name || '',
+    count:raw.count,
+    maxStack:clampInt(raw.maxStack || inventoryStackLimit(row), 1, inventoryStackLimit(row)),
+    warehouseAllocated:raw.warehouseAllocated
+  };
+}
+function normalizeQuiverAmmoSlotsState(slots={}, {restoreInvalid=false}={}) {
   const result = {};
   for (const [key, value] of Object.entries(slots || {})) {
+    const raw = rawQuiverAmmoSlotState(value);
     const normalized = normalizeQuiverAmmoSlotState(value);
-    if (normalized) result[key] = normalized;
+    if (normalized) {
+      result[key] = normalized;
+      continue;
+    }
+    if (restoreInvalid && raw?.warehouseAllocated && raw.count > 0) {
+      adjustWarehouseItemCount(raw.itemId, raw.count, raw.name);
+    }
   }
   return result;
 }
@@ -4175,7 +4202,12 @@ function selectQuiverAmmoForSlot(slotKey, itemId='') {
   }
   const row = warehouseItemByKey(nextId);
   const available = Number(row?.count || 0);
-  if (!row || available <= 0) {
+  if (!row || !isQuiverAmmoInventoryItem(row)) {
+    showToast('矢筒には矢・ボルト・大型ボルトだけを収納できます。', 'warn');
+    refreshWarehouseQuantityViews();
+    return;
+  }
+  if (available <= 0) {
     showToast('倉庫に残っている矢弾がありません。', 'warn');
     refreshWarehouseQuantityViews();
     return;
@@ -4202,6 +4234,7 @@ function updateQuiverAmmoSlotCount(slotKey, rawValue) {
 }
 
 function renderQuiverControls() {
+  quiverAmmoSlotsState = normalizeQuiverAmmoSlotsState(quiverAmmoSlotsState, {restoreInvalid:true});
   const select = $('quiverSelect');
   const status = $('quiverCapacityStatus');
   const area = $('quiverAmmoSlots');
@@ -4538,7 +4571,7 @@ function setInventoryState(inventory=defaultInventory()) {
   inventoryItemsState = normalized.items;
   selectedBagId = normalized.bagId || '';
   selectedQuiverId = normalized.quiverId || '';
-  quiverAmmoSlotsState = normalizeQuiverAmmoSlotsState(normalized.quiverAmmoSlots || {});
+  quiverAmmoSlotsState = normalizeQuiverAmmoSlotsState(normalized.quiverAmmoSlots || {}, {restoreInvalid:true});
   ensureDefaultBagItem();
   if (!selectedBagId) {
     const defaultBag = inventoryItemsState.find(item => isBagInventoryItem(item) && (inventoryItemKey(item) === 'bag_simple' || item.id === 'bag_simple' || item.name === '簡素なバッグ'));
@@ -4628,7 +4661,10 @@ function renderInventory() {
     const bagMeta = item.kind === 'バッグ' ? `バッグ容量：${clampInt(item.capacity || 0, 0, 99)}` : '';
     const displayType = inventorySmallCategory(item);
     const displayCategory = inventoryInternalCategory(item);
-    const searchText = [title, displayType, displayCategory, item.itemType, item.itemCategory, item.materialType, item.materialCategory, item.kind, item.category, item.rank, item.price, item.equipSlot, item.skill, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.upgradeLimit, item.upgradeMaterialMinRank, item.spellSlots, item.capacity, item.bagCapacity, item.quiverCapacity, item.ammoKind, item.compatibleWeaponTypes, item.target, item.element, item.enchantTarget, item.enchantEffectType, item.enchantValue, item.enchantDuration, item.enchantRounds, item.enchantStackRule, item.cost, item.power, item.description, item.effect, item.checkType, item.role, item.source, item.tags, item.recipeResult, item.materials, item.upgradeLines].filter(Boolean).join(' ');
+    const categoryDisplay = displayType === '素材'
+      ? [item.materialType || '素材', item.materialCategory || item.category || ''].filter(Boolean).join(' / ')
+      : (item.category || displayCategory || '—');
+    const searchText = [title, displayType, displayCategory, categoryDisplay, item.itemType, item.itemCategory, item.materialType, item.materialCategory, item.kind, item.category, item.rank, item.price, item.equipSlot, item.skill, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.upgradeLimit, item.upgradeMaterialMinRank, item.spellSlots, item.capacity, item.bagCapacity, item.quiverCapacity, item.ammoKind, item.compatibleWeaponTypes, item.target, item.element, item.enchantTarget, item.enchantEffectType, item.enchantValue, item.enchantDuration, item.enchantRounds, item.enchantStackRule, item.cost, item.power, item.description, item.effect, item.checkType, item.role, item.source, item.tags, item.recipeResult, item.materials, item.upgradeLines].filter(Boolean).join(' ');
     return `
     <details class="inventory-card" data-inventory-row="${index}" data-inventory-id="${esc(item.id || '')}" data-inventory-location="倉庫" data-inventory-kind="${esc(item.kind || 'アイテム')}" data-inventory-item-type="${esc(displayType)}" data-inventory-category="${esc(displayCategory)}" data-inventory-search="${esc(searchText)}">
       <summary class="inventory-card-head">
@@ -4640,7 +4676,7 @@ function renderInventory() {
         </div>
       </summary>
       <div class="inventory-card-meta">
-        <div class="meta-item"><span class="meta-label">カテゴリ</span>${esc(item.category || '—')}</div>
+        <div class="meta-item"><span class="meta-label">カテゴリ</span>${esc(categoryDisplay)}</div>
         ${item.publicId ? `<div class="meta-item"><span class="meta-label">登録ID</span>${esc(item.publicId)}</div>` : ''}
         <div class="meta-item"><span class="meta-label">個数</span>${esc(item.count ?? 0)}</div>
         ${bagMeta ? `<div class="meta-item"><span class="meta-label">バッグ容量</span>${esc(item.capacity || 0)}</div>` : ''}
