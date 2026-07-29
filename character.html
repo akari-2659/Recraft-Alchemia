@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.296</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.298</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1025,7 +1025,7 @@ details.big-section>summary{
 </style>
 
 <style id="raMaintenanceV287">
-/* v90.8.296 usability maintenance */
+/* v90.8.298 usability maintenance */
 body{padding-bottom:0}
 .ra-build-info{font-size:12px;padding:6px 12px;text-align:right;color:var(--muted);background:rgba(255,253,248,.9);border-bottom:1px solid var(--line)}
 #editorView>section:first-child{padding:10px 12px;margin-bottom:8px}
@@ -1069,7 +1069,7 @@ body{padding-bottom:0}
 }
 @media(max-width:430px){.editor-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}.editor-action-bar{right:8px!important;bottom:max(8px,env(safe-area-inset-bottom))!important;max-width:calc(100vw - 16px)!important}.editor-action-toggle,.editor-action-inner button{padding:6px 8px!important;font-size:.78rem!important}}
 
-/* v90.8.296: 折り畳み表示と操作バーを安定化 */
+/* v90.8.298: 折り畳み表示と操作バーを安定化 */
 details.big-section>summary::before,.skill-category-title::before{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 16px!important;width:16px!important;margin-right:6px!important;transform:rotate(0deg)!important;transform-origin:center!important;transition:transform .14s ease!important}
 details.big-section[open]>summary::before,.skill-category-card[open]>.skill-category-title::before{transform:rotate(90deg)!important}
 #tabEquipment .equipment-card-toggle{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:14px!important;height:18px!important;position:static!important}
@@ -1080,12 +1080,12 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
 </style>
 </head>
 <body>
-<div class="ra-build-info">v90.8.296｜更新：2026年7月29日</div>
+<div class="ra-build-info">v90.8.298｜更新：2026年7月29日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール｜クラウド保存専用｜v90.8.296｜更新：2026年7月29日</div>
+  <div class="subtitle">キャラクター作成ツール｜クラウド保存専用｜v90.8.298｜更新：2026年7月29日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -1603,7 +1603,7 @@ const SKILL_CATEGORIES = [
     { key:'alchemy', name:'調合', desc:'アイテム作成', detail:'素材を組み合わせ、アイテム・薬品・道具などを作成する判定に使用します。調合の成功、品質の向上、追加効果の付与などに関わります。' },
     { key:'appraise', name:'鑑定', desc:'価値や性質を見極める', detail:'アイテム、素材、装備、魔物素材などの性質や価値を見極める判定に使用します。未知の素材や特殊なアイテムの効果、危険性、売却価値を調べる場面で使います。' },
     { key:'knowledge', name:'知識', desc:'魔物・素材・属性', detail:'魔物、素材、属性について知っているかを確認する判定に使用します。魔物の特徴、素材の性質、属性の相性などを思い出す場面で使います。魔物に対して使用する場合、成功すると指定した1つの耐性・弱点・無効属性などを知ることができます。' },
-    { key:'design', name:'設計', desc:'仕組みを考える', detail:'装備、道具、設備、罠、構造物などの仕組みを考える判定に使用します。レシピの改良、装備の設計、工房設備の調整、構造の解析などに関わります。' },
+    { key:'design', name:'設計', desc:'罠の仕組みを組む', detail:'罠の構造を考え、作成・調整する判定に使用します。現状、武器作成・武器派生・武器強化には使用せず、それらは細工で判定します。' },
   ]},
   { key:'will', name:'意志系', ability:'will', skills:[
     { key:'resist', name:'抵抗', desc:'状態異常や精神干渉に耐える', detail:'毒、呪い、恐怖、麻痺、精神干渉、弱体化などに耐える基準です。身体・精神・状態に作用する効果へ使用します。抵抗値 = 5 + 抵抗技能値 + 装備などの抵抗補正。' },
@@ -3071,17 +3071,18 @@ function characterCraftingToolName(craftSkill='',craftType=''){
   const skill=String(craftSkill||'').trim();
   const type=String(craftType||'').trim();
   if(skill==='調合'||type==='調合') return '調合道具';
-  if(skill==='細工'||type==='細工'||type==='仕掛け製作') return '細工道具';
-  if(skill==='設計'||skill==='鍛冶'||['武器派生','防具製作','盾製作','装飾品製作','バッグ製作','矢筒製作','素材加工','鍛冶製作'].includes(type)) return '鍛冶道具';
+  if(type==='細工'||type==='仕掛け製作'||skill==='設計') return '細工道具';
+  if(['武器派生','防具製作','盾製作','装飾品製作','バッグ製作','矢筒製作','鍛冶製作','鍛冶'].includes(type)) return '鍛冶道具';
+  if(skill==='細工') return '細工道具';
   return '対応道具';
 }
 function characterCraftingSelfText(row={}){
-  const skill=row.craftSkill || (row.craftType==='調合'?'調合':row.craftType==='細工'?'細工':row.craftType==='料理'?'なし':'設計');
+  const skill=row.craftSkill || (row.craftType==='調合'?'調合':row.craftType==='料理'?'なし':(row.craftType==='細工'||row.craftType==='仕掛け製作')?'設計':'細工');
   const difficultyRows=characterCraftingDifficultyRows(row.rank,row.difficulty);
   if(!difficultyRows.length){
-    return `自作：レシピ必須 / 使用技能：${skill} / 作成難易度：${row.difficulty||'未設定'}`;
+    return `自作：レシピ必須 / 製作技能：${skill} / 作成難易度：${row.difficulty||'未設定'}`;
   }
-  return `自作：レシピ必須 / 使用技能：${skill} / 使用道具：${characterCraftingToolName(skill,row.craftType)} / 基礎作成難易度：${row.difficulty||'未設定'} / ${characterCraftingDifficultySummary(row.rank,row.difficulty)}`;
+  return `自作：レシピ必須 / 製作技能：${skill} / 使用道具：${characterCraftingToolName(skill,row.craftType)} / 基礎作成難易度：${row.difficulty||'未設定'} / ${characterCraftingDifficultySummary(row.rank,row.difficulty)}`;
 }
 function inventoryRankLabel(item={}){
   return characterPlayerRankLabel(item.rank);
@@ -3506,7 +3507,7 @@ function updateEquipmentSummaries() {
     const target = $('equip_' + slot.key + '_target')?.value?.trim() || '';
     const usageSkill = canonicalWeaponUsageSkill({ itemCategory:type, category:type });
     if (target) parts.push('対象:' + target);
-    if (usageSkill && !['盾','大盾'].includes(type) && !spellContainerKind(type)) parts.push('使用技能:' + usageSkill);
+    if (usageSkill && !['盾','大盾'].includes(type)) parts.push('使用技能:' + usageSkill);
     if (spellCount) parts.push('術式' + spellCount + '件');
     el.textContent = parts.length ? parts.join(' / ') : '未設定';
   }
@@ -3627,7 +3628,7 @@ function setEquipmentState(equipment={}) {
       if ($('equip_' + slot.key + '_offhand')) $('equip_' + slot.key + '_offhand').value = item.offhand || '';
       if ($('equip_' + slot.key + '_reloadTurns')) $('equip_' + slot.key + '_reloadTurns').value = item.reloadTurns || '';
       if ($('equip_' + slot.key + '_target')) $('equip_' + slot.key + '_target').value = item.target || '';
-      if ($('equip_' + slot.key + '_checkType')) $('equip_' + slot.key + '_checkType').value = (!isBook && !['盾','大盾'].includes(normalizeEquipmentType(item.type || 'なし'))) ? canonicalWeaponUsageSkill({ itemCategory:normalizeEquipmentType(item.type || 'なし') }) : '';
+      if ($('equip_' + slot.key + '_checkType')) $('equip_' + slot.key + '_checkType').value = (!['盾','大盾'].includes(normalizeEquipmentType(item.type || 'なし'))) ? canonicalWeaponUsageSkill({ itemCategory:normalizeEquipmentType(item.type || 'なし') }) : '';
       // 倉庫から選択した装備は、その装備個体に登録された補正だけを使用する。
       const modifierSourceItem = selectedRow || item;
       const restoredModifiers = serializeModifierRows(equipmentModifierRows(modifierSourceItem));
@@ -3673,7 +3674,7 @@ function applyEquipmentPreset(slotKey) {
     if (el) el.value = preset[key] || '';
   }
   const usageSkillEl=$('equip_' + slotKey + '_checkType');
-  if(usageSkillEl) usageSkillEl.value = (!['なし','盾','大盾','魔導書','祈祷書'].includes(normalized)) ? canonicalWeaponUsageSkill({itemCategory:normalized}) : '';
+  if(usageSkillEl) usageSkillEl.value = (!['なし','盾','大盾'].includes(normalized)) ? canonicalWeaponUsageSkill({itemCategory:normalized}) : '';
   if (!spellContainerKind(normalized)) {
     const known = $('equip_' + slotKey + '_knownSpells');
     if (known) known.value = '';
@@ -4394,8 +4395,8 @@ function inventoryInternalCategories(selectedType='') {
 function canonicalWeaponUsageSkill(item={}) {
   const category=String(item.itemCategory || item.category || item.type || '').trim();
   if(['弓','弩','大型弩'].includes(category)) return '射撃';
-  if(category==='杖') return '近接/魔法';
-  if(['魔導書','祈祷書'].includes(category)) return '';
+  if(category==='魔導書') return '魔法';
+  if(category==='祈祷書') return '祈祷';
   return '近接';
 }
 function normalizeInventoryItem(item={}) {
@@ -6095,7 +6096,7 @@ function applyCsItemToEquipmentSlot(slotKey) {
     el.value = value !== undefined && value !== null && String(value).trim() !== '' ? value : (selectedItemFallbacks[field] || '');
   }
   const usageSkillEl=$('equip_' + slotKey + '_checkType');
-  if(usageSkillEl) usageSkillEl.value = (!spellContainerKind(typeValue) && !['盾','大盾'].includes(typeValue)) ? canonicalWeaponUsageSkill(row) : '';
+  if(usageSkillEl) usageSkillEl.value = (!['盾','大盾'].includes(typeValue)) ? canonicalWeaponUsageSkill(row) : '';
   const restoredModifiers = serializeModifierRows(equipmentModifierRows(row));
   if ($('equip_' + slotKey + '_modifiers')) $('equip_' + slotKey + '_modifiers').value = restoredModifiers;
   renderModifierReadOnly('equip_' + slotKey + '_modifierRows', restoredModifiers);
