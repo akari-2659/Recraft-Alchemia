@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.293</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.294</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1025,7 +1025,7 @@ details.big-section>summary{
 </style>
 
 <style id="raMaintenanceV287">
-/* v90.8.293 usability maintenance */
+/* v90.8.294 usability maintenance */
 body{padding-bottom:0}
 .ra-build-info{font-size:12px;padding:6px 12px;text-align:right;color:var(--muted);background:rgba(255,253,248,.9);border-bottom:1px solid var(--line)}
 #editorView>section:first-child{padding:10px 12px;margin-bottom:8px}
@@ -1069,7 +1069,7 @@ body{padding-bottom:0}
 }
 @media(max-width:430px){.editor-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}.editor-action-bar{right:8px!important;bottom:max(8px,env(safe-area-inset-bottom))!important;max-width:calc(100vw - 16px)!important}.editor-action-toggle,.editor-action-inner button{padding:6px 8px!important;font-size:.78rem!important}}
 
-/* v90.8.293: 折り畳み表示と操作バーを安定化 */
+/* v90.8.294: 折り畳み表示と操作バーを安定化 */
 details.big-section>summary::before,.skill-category-title::before{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 16px!important;width:16px!important;margin-right:6px!important;transform:rotate(0deg)!important;transform-origin:center!important;transition:transform .14s ease!important}
 details.big-section[open]>summary::before,.skill-category-card[open]>.skill-category-title::before{transform:rotate(90deg)!important}
 #tabEquipment .equipment-card-toggle{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:14px!important;height:18px!important;position:static!important}
@@ -1080,12 +1080,12 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
 </style>
 </head>
 <body>
-<div class="ra-build-info">v90.8.293｜更新：2026年7月29日</div>
+<div class="ra-build-info">v90.8.294｜更新：2026年7月29日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール｜クラウド保存専用｜v90.8.293｜更新：2026年7月29日</div>
+  <div class="subtitle">キャラクター作成ツール｜クラウド保存専用｜v90.8.294｜更新：2026年7月29日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -1511,11 +1511,10 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
       <div class="field" data-inventory-kind-field="weapon"><label for="inventoryFormReloadTurns">装填ターン</label><input id="inventoryFormReloadTurns" type="number" min="0" max="9" value="" placeholder="例：1" /></div>
       <div class="field" data-inventory-kind-field="weapon armor accessory"><label for="inventoryFormUpgradeLimit">強化枠上限</label><input id="inventoryFormUpgradeLimit" type="number" min="0" max="9" value="" placeholder="例：2" /></div>
       <div class="field inventory-wide" data-inventory-kind-field="weapon armor accessory item spell">
-        <label>補正値</label>
-        <textarea id="inventoryFormModifiers" class="hidden internal-raw-field" data-inventory-input="1" hidden aria-hidden="true" tabindex="-1" style="display:none!important"></textarea>
-        <div id="inventoryFormModifierRows" data-char-modifier-editor data-modifier-hidden="inventoryFormModifiers" data-modifier-list="inventoryFormModifierRows"></div>
-        <button type="button" class="ghost" data-modifier-add="inventoryFormModifierRows">補正値を追加</button>
-        <div class="small">装備に付く補正を登録します。</div>
+        <label>装備固有の補正値</label>
+        <textarea id="inventoryFormModifiers" class="hidden internal-raw-field" hidden aria-hidden="true" tabindex="-1" style="display:none!important"></textarea>
+        <div id="inventoryFormModifierRows" class="equipment-modifier-preview small">補正なし</div>
+        <div class="small">共通DBまたは登録済み装備の固有値を表示します。プレイヤー側では変更できません。</div>
       </div>
       <div class="field" data-inventory-kind-field="accessory"><label for="inventoryFormSpellSlots">術式／祈祷枠</label><input id="inventoryFormSpellSlots" type="number" min="0" max="99" value="" placeholder="魔印/聖印用" /></div>
       <div class="field" data-inventory-kind-field="weapon item spell"><label for="inventoryFormTarget">対象</label><input id="inventoryFormTarget" type="text" placeholder="例：味方1体 / 敵1体" /></div>
@@ -2255,10 +2254,10 @@ function renderStatic() {
             <summary>補正・強化・説明</summary>
             <div class="equipment-extra-body">
               <div class="field equipment-wide equipment-modifier-field">
-                <label>補正値</label>
-                <textarea id="equip_${slot.key}_modifiers" class="hidden internal-raw-field" data-equipment-input="1" hidden aria-hidden="true" tabindex="-1" style="display:none!important"></textarea>
-                <div id="equip_${slot.key}_modifierRows" data-char-modifier-editor data-modifier-hidden="equip_${slot.key}_modifiers" data-modifier-list="equip_${slot.key}_modifierRows"></div>
-                <button type="button" class="ghost" data-modifier-add="equip_${slot.key}_modifierRows">補正値を追加</button>
+                <label>装備固有の補正値</label>
+                <textarea id="equip_${slot.key}_modifiers" class="hidden internal-raw-field" hidden aria-hidden="true" tabindex="-1" style="display:none!important"></textarea>
+                <div id="equip_${slot.key}_modifierRows" class="equipment-modifier-preview small">補正なし</div>
+                <div class="small">選択中の装備に登録された固有値を自動適用します。</div>
               </div>
               <div class="field equipment-upgrade-limit-field">
                 <label for="equip_${slot.key}_upgradeLimit">強化枠上限</label>
@@ -2484,6 +2483,14 @@ function modifierTargetDisplayName(target='') {
 function modifierDisplayText(value='') {
   return parseModifierRows(value).map(row => `${modifierTargetDisplayName(row.target)} ${signedNumberText(row.value) || row.value}`).filter(Boolean).join(' / ');
 }
+function renderModifierReadOnly(listId, value='') {
+  const list = $(listId);
+  if (!list) return;
+  const rows = parseModifierRows(value);
+  list.innerHTML = rows.length
+    ? rows.map(row => `<span class="pill">${esc(modifierTargetDisplayName(row.target))} ${esc(signedNumberText(row.value) || row.value)}</span>`).join(' ')
+    : '<span class="pill empty">補正なし</span>';
+}
 
 function normalizeModifierRow(row={}) {
   const rawTarget = String(row.target || row.key || row.name || '').trim();
@@ -2521,34 +2528,6 @@ function parseModifierRows(value) {
 function serializeModifierRows(rows) {
   return (rows || []).map(normalizeModifierRow).filter(Boolean).map(r => `${r.target}\t${r.value}`).join('\n');
 }
-function modifierRowHtml(row={}, idx=0) {
-  const r = normalizeModifierRow(row) || {target:'', value:''};
-  return `<div class="equipment-upgrade-row" data-modifier-row>
-    <div class="field"><select aria-label="補正" data-modifier-field="target" data-equipment-input="1" data-inventory-input="1">${modifierTargetOptionsHtml(r.target)}</select></div>
-    <div class="field"><input aria-label="補正値" data-modifier-field="value" data-equipment-input="1" data-inventory-input="1" type="text" value="${esc(r.value)}" placeholder="例：+1 / -1" /></div>
-    <div class="field"><button type="button" class="ghost" data-modifier-remove>削除</button></div>
-  </div>`;
-}
-function renderModifierEditor(listId, value='') {
-  const list = $(listId);
-  if(!list) return;
-  const rows = parseModifierRows(value);
-  list.innerHTML = rows.length ? rows.map((r,i)=>modifierRowHtml(r,i)).join('') : '<div class="small">補正値はまだありません。</div>';
-  syncModifierEditor(list.closest('[data-char-modifier-editor]') || list);
-}
-function readModifierRowsFromEditor(editor) {
-  return Array.from(editor.querySelectorAll('[data-modifier-row]')).map(row=>{
-    const get=f=>row.querySelector(`[data-modifier-field="${f}"]`)?.value || '';
-    return normalizeModifierRow({target:get('target'), value:get('value')});
-  }).filter(Boolean);
-}
-function syncModifierEditor(editor) {
-  if(!editor) return;
-  const hiddenId = editor.dataset.modifierHidden || '';
-  const hidden = hiddenId ? $(hiddenId) : editor.querySelector('textarea');
-  if(hidden) hidden.value = serializeModifierRows(readModifierRowsFromEditor(editor));
-}
-
 function mergeModifierRows(existing=[], legacy=[]){
   const out=[]; const seen=new Set();
   for(const row of [...(existing||[]), ...(legacy||[])]){
@@ -3324,43 +3303,11 @@ function inventoryItemIndexForEquipmentSlot(slotKey=''){
   return inventoryItemIndexForEquipmentKey(selectedKey);
 }
 function syncEquipmentModifiersToInventoryItem(slotKey='', itemKey=''){
-  const selectedKey = String(itemKey || $('equip_' + slotKey + '_itemSelect')?.value || '').trim();
-  const index = inventoryItemIndexForEquipmentKey(selectedKey);
-  if(index < 0) return false;
-  const current = normalizeInventoryItem(inventoryItemsState[index] || {});
-  if(!['武器','防具','装飾品'].includes(current.kind)) return false;
-  const editor = $('equip_' + slotKey + '_modifierRows')?.closest('[data-char-modifier-editor]');
-  if(editor) syncModifierEditor(editor);
-  const exactModifiers = serializeModifierRows(
-    migrateLegacyDefenseActionRows(parseModifierRows($('equip_' + slotKey + '_modifiers')?.value || ''), current)
-  );
-  inventoryItemsState[index] = normalizeInventoryItem({
-    ...inventoryItemsState[index],
-    modifiers: exactModifiers,
-    modifierRows:'',
-    bonuses:'',
-    hit:'', hitMod:'',
-    defense:'', alwaysDefense:'',
-    guard:'', guardValue:'',
-    evade:'', evasionMod:''
-  });
-  return true;
+  // 装備補正は装備固有の読取専用値。プレイヤー側の装備枠から倉庫個体へ書き戻さない。
+  return false;
 }
 function syncAllEquipmentModifiersToInventory(){
-  for(const slot of EQUIPMENT_SLOTS){
-    if(slot.kind !== 'carry') syncEquipmentModifiersToInventoryItem(slot.key);
-  }
-}
-function equipmentSlotKeyFromModifierEditor(editor=null){
-  const hiddenId = String(editor?.dataset?.modifierHidden || '').trim();
-  const match = hiddenId.match(/^equip_(.+)_modifiers$/);
-  return match ? match[1] : '';
-}
-function syncModifierEditorAndInventory(editor=null){
-  if(!editor) return;
-  syncModifierEditor(editor);
-  const slotKey = equipmentSlotKeyFromModifierEditor(editor);
-  if(slotKey) syncEquipmentModifiersToInventoryItem(slotKey);
+  // 装備補正は読取専用のため同期処理なし。
 }
 function syncEquipmentUpgradeToInventoryItem(slotKey='', itemKey=''){
   const selectedKey = String(itemKey || $('equip_' + slotKey + '_itemSelect')?.value || '').trim();
@@ -3372,7 +3319,7 @@ function syncEquipmentUpgradeToInventoryItem(slotKey='', itemKey=''){
   const entries = trimUpgradeEntriesToSlotLimit(collectUpgradeEntries(slotKey),limit).map(normalizeUpgradeEntry);
   inventoryItemsState[index] = normalizeInventoryItem({
     ...inventoryItemsState[index],
-    upgradeLimit: String($('equip_' + slotKey + '_upgradeLimit')?.value || current.upgradeLimit || '').trim(),
+    upgradeLimit: String($('equip_' + slotKey + '_upgradeLimit')?.value || '').trim(),
     upgradeEntries: entries,
     upgradeLines: serializeUpgradeEntries(entries)
   });
@@ -3600,9 +3547,10 @@ function getEquipmentState() {
       base.reloadTurns = isBook ? '' : ($('equip_' + slot.key + '_reloadTurns')?.value?.trim() || '');
       base.target = isBook ? '' : ($('equip_' + slot.key + '_target')?.value?.trim() || '');
       base.checkType = '';
-      const modifierEditor = $('equip_' + slot.key + '_modifierRows')?.closest('[data-char-modifier-editor]');
-      if(modifierEditor) syncModifierEditor(modifierEditor);
-      base.modifiers = $('equip_' + slot.key + '_modifiers')?.value?.trim() || '';
+      const selectedInventoryItem = base.itemId ? findCsItemById(base.itemId) : null;
+      base.modifiers = selectedInventoryItem
+        ? serializeModifierRows(equipmentModifierRows(selectedInventoryItem))
+        : ($('equip_' + slot.key + '_modifiers')?.value?.trim() || '');
       base.upgradeLimit = $('equip_' + slot.key + '_upgradeLimit')?.value?.trim() || '';
       base.upgradeEntries = collectUpgradeEntries(slot.key).slice(0, equipmentUpgradeLimit(slot.key));
       base.upgradeLines = serializeUpgradeEntries(base.upgradeEntries);
@@ -3634,6 +3582,27 @@ function setEquipmentState(equipment={}) {
       let selectedId = item.itemId || findCsItemIdByName(item.name || '');
       selectedRow = selectedId ? findCsItemById(selectedId) : null;
       if (slot.kind === 'carry' && selectedRow && isSpellInventoryItem(selectedRow)) selectedId = '';
+      if (slot.kind !== 'carry' && selectedRow) {
+        // 保存済み装備枠のスナップショットではなく、現在の倉庫装備個体を表示元にする。
+        item = {
+          ...item,
+          itemId: inventoryItemKey(selectedRow),
+          name: selectedRow.name || '',
+          type: selectedRow.category || selectedRow.itemCategory || selectedRow.kind || 'なし',
+          element: selectedRow.element || '',
+          power: selectedRow.power || '',
+          offhand: selectedRow.offhand || '',
+          reloadTurns: selectedRow.reloadTurns || '',
+          target: selectedRow.target || '',
+          modifiers: selectedRow.modifiers || '',
+          upgradeLimit: selectedRow.upgradeLimit || '',
+          upgradeEntries: selectedRow.upgradeEntries || [],
+          upgradeLines: selectedRow.upgradeLines || '',
+          setSpells: selectedRow.setSpells || '',
+          description: selectedRow.description || '',
+          note: selectedRow.effect || selectedRow.note || ''
+        };
+      }
       $('equip_' + slot.key + '_itemSelect').value = selectedId && Array.from($('equip_' + slot.key + '_itemSelect').options).some(o=>o.value===selectedId) ? selectedId : '';
       $('equip_' + slot.key + '_itemSelect').dataset.previousItemKey = $('equip_' + slot.key + '_itemSelect').value || '';
     }
@@ -3659,24 +3628,17 @@ function setEquipmentState(equipment={}) {
       if ($('equip_' + slot.key + '_reloadTurns')) $('equip_' + slot.key + '_reloadTurns').value = item.reloadTurns || '';
       if ($('equip_' + slot.key + '_target')) $('equip_' + slot.key + '_target').value = item.target || '';
       if ($('equip_' + slot.key + '_checkType')) $('equip_' + slot.key + '_checkType').value = (!isBook && !['盾','大盾'].includes(normalizeEquipmentType(item.type || 'なし'))) ? canonicalWeaponUsageSkill({ itemCategory:normalizeEquipmentType(item.type || 'なし') }) : '';
-      // 保存済み装備枠に補正値がある場合は、それを最優先で復元する。
-      // 倉庫個体側が旧状態でも、装備切替や再読込で保存済み補正を消さない。
-      const savedModifierText = migratedModifierTextForItem(item || {});
-      const modifierSourceItem = String(savedModifierText || '').trim()
-        ? { ...item, modifiers:savedModifierText }
-        : (selectedRow || item);
+      // 倉庫から選択した装備は、その装備個体に登録された補正だけを使用する。
+      const modifierSourceItem = selectedRow || item;
       const restoredModifiers = serializeModifierRows(equipmentModifierRows(modifierSourceItem));
       if ($('equip_' + slot.key + '_modifiers')) $('equip_' + slot.key + '_modifiers').value = restoredModifiers;
-      renderModifierEditor('equip_' + slot.key + '_modifierRows', restoredModifiers);
-      if(selectedRow && String(savedModifierText || '').trim()) syncEquipmentModifiersToInventoryItem(slot.key, inventoryItemKey(selectedRow));
-      const inventoryHasUpgradeState = !!(selectedRow && ((selectedRow.upgradeEntries || []).length || String(selectedRow.upgradeLines || '').trim()));
-      const upgradeSource = inventoryHasUpgradeState ? (selectedRow.upgradeEntries || selectedRow.upgradeLines || '') : (item.upgradeEntries || item.upgradeLines || '');
-      const upgradeLimitValue = selectedRow?.upgradeLimit || item.upgradeLimit || '';
+      renderModifierReadOnly('equip_' + slot.key + '_modifierRows', restoredModifiers);
+      // 強化内容も装備個体単位。選択中の倉庫装備がある場合は装備枠の旧値を一切引き継がない。
+      const upgradeSource = selectedRow ? (selectedRow.upgradeEntries || selectedRow.upgradeLines || []) : (item.upgradeEntries || item.upgradeLines || []);
+      const upgradeLimitValue = selectedRow ? (selectedRow.upgradeLimit || '') : (item.upgradeLimit || '');
       if ($('equip_' + slot.key + '_upgradeLimit')) $('equip_' + slot.key + '_upgradeLimit').value = upgradeLimitValue;
       if ($('equip_' + slot.key + '_upgradeLines')) $('equip_' + slot.key + '_upgradeLines').value = serializeUpgradeEntries(parseUpgradeLines(upgradeSource));
       renderEquipmentUpgradeSlots(slot.key, upgradeSource);
-      // 旧保存データが装備枠にだけ強化内容を持っている場合、選択中の装備個体へ移行する。
-      if (selectedRow && !inventoryHasUpgradeState && parseUpgradeLines(upgradeSource).length) syncEquipmentUpgradeToInventoryItem(slot.key);
       if ($('equip_' + slot.key + '_knownSpells')) $('equip_' + slot.key + '_knownSpells').value = '';
       const savedBookSpells = selectedRow?.setSpells || item.setSpells || '';
       setSpellSelectValues(slot.key, savedBookSpells);
@@ -3717,7 +3679,7 @@ function applyEquipmentPreset(slotKey) {
     if (known) known.value = '';
     setSpellSelectValues(slotKey, []);
   }
-  renderModifierEditor('equip_' + slotKey + '_modifierRows', preset.modifiers || '');
+  renderModifierReadOnly('equip_' + slotKey + '_modifierRows', preset.modifiers || '');
   renderEquipmentUpgradeSlots(slotKey);
   updateEquipmentFieldAvailability();
   updateSpellSlotHints();
@@ -3731,7 +3693,7 @@ function clearEquipmentSlotFields(slotKey, {keepSelection=false}={}) {
   }
   const typeEl = $('equip_' + slotKey + '_type');
   if (typeEl) typeEl.value = 'なし';
-  renderModifierEditor('equip_' + slotKey + '_modifierRows', '');
+  renderModifierReadOnly('equip_' + slotKey + '_modifierRows', '');
   renderEquipmentUpgradeSlots(slotKey, []);
   setSpellSelectValues(slotKey, []);
   if (select) select.dataset.previousItemKey = select.value || '';
@@ -4456,7 +4418,12 @@ function normalizeInventoryItem(item={}) {
   if (isQuiverLikeFields({ ...item, kind, category:rawCategory })) kind = '矢筒';
   if (masterIsMaterial || (kind === 'アイテム' && (resolvedMaterialType || resolvedMaterialCategory || /(?:^|[,、\s])素材(?:$|[,、\s])/.test(String(item.tags || item.usageTags || ''))))) kind = '素材';
   const oldDescription = item['fla' + 'vor' + 'Text'];
-  const normalizedUpgradeEntries = parseUpgradeLines(item.upgradeEntries || item.upgradeLines || '');
+  const rawUpgradeLimit = inventoryKindSupportsUpgradeLimit(kind) ? String(item.upgradeLimit || item.upgradeCount || item.upgradeSlots || '').trim() : '';
+  const normalizedUpgradeLimit = clampInt(rawUpgradeLimit || 0, 0, 9);
+  // 強化枠を持たない装備へ、別装備の強化内容を残さない。
+  const normalizedUpgradeEntries = normalizedUpgradeLimit > 0
+    ? trimUpgradeEntriesToSlotLimit(parseUpgradeLines(item.upgradeEntries || item.upgradeLines || ''), normalizedUpgradeLimit)
+    : [];
   const normalizedModifierRows = migrateLegacyDefenseActionRows(parseModifierRows(migratedModifierTextForItem(item)), item);
   const normalizedModifiers = serializeModifierRows(normalizedModifierRows);
   const firstModifierText = target => String(normalizedModifierRows.find(row => row.target === target)?.value || '').trim();
@@ -4492,7 +4459,7 @@ function normalizeInventoryItem(item={}) {
     offhand: String(item.offhand || item.offhandBonus || '').trim(),
     reloadTurns: String(item.reloadTurns || item.reloadTurn || item.reload || '').trim(),
     modifiers: normalizedModifiers,
-    upgradeLimit: inventoryKindSupportsUpgradeLimit(kind) ? String(item.upgradeLimit || item.upgradeCount || item.upgradeSlots || '').trim() : '',
+    upgradeLimit: normalizedUpgradeLimit > 0 ? String(normalizedUpgradeLimit) : '',
     upgradeMaterialMinRank: inventoryKindSupportsUpgradeLimit(kind) ? String(item.upgradeMaterialMinRank || item.rank || '').trim() : '',
     upgradeEntries: normalizedUpgradeEntries,
     upgradeLines: serializeUpgradeEntries(normalizedUpgradeEntries),
@@ -4561,7 +4528,6 @@ function isCarrySlotKey(slotKey) {
   return !!slot && slot.kind === 'carry';
 }
 function getInventoryState() {
-  syncAllEquipmentModifiersToInventory();
   syncAllEquipmentUpgradesToInventory();
   const items = inventoryItemsState.map(item => normalizeInventoryItem(item)).filter(item => item.name || item.category || item.power || item.description || item.effect || item.capacity || item.count > 0);
   return { items, bagId:selectedBagId || '', quiverId:selectedQuiverId || '', quiverAmmoSlots:normalizeQuiverAmmoSlotsState(quiverAmmoSlotsState) };
@@ -4741,7 +4707,7 @@ function openInventoryDialog(index=-1) {
   if ($('inventoryFormOffhand')) $('inventoryFormOffhand').value = item.offhand || '';
   if ($('inventoryFormReloadTurns')) $('inventoryFormReloadTurns').value = item.reloadTurns || '';
   if ($('inventoryFormModifiers')) $('inventoryFormModifiers').value = item.modifiers || '';
-  renderModifierEditor('inventoryFormModifierRows', item.modifiers || '');
+  renderModifierReadOnly('inventoryFormModifierRows', item.modifiers || '');
   if ($('inventoryFormUpgradeLimit')) $('inventoryFormUpgradeLimit').value = item.upgradeLimit || '';
   if ($('inventoryFormSpellSlots')) $('inventoryFormSpellSlots').value = item.spellSlots || '';
   if ($('inventoryFormTarget')) $('inventoryFormTarget').value = item.target || '';
@@ -4824,6 +4790,7 @@ function saveInventoryDialog() {
     item.masterId = previous.masterId || item.masterId || '';
     item.masterSheet = previous.masterSheet || item.masterSheet || '';
     item.masterSync = previous.masterSync || item.masterSync || '';
+    item.modifiers = previous.modifiers || '';
     item.upgradeEntries = previous.upgradeEntries || [];
     item.upgradeLines = previous.upgradeLines || serializeUpgradeEntries(previous.upgradeEntries || []);
     inventoryItemsState[index] = normalizeInventoryItem(item);
@@ -5606,7 +5573,6 @@ function emptyCharacter() {
 }
 function collectData(updateTime=true) {
   const base = currentCharacter || emptyCharacter();
-  syncAllEquipmentModifiersToInventory();
   syncAllEquipmentUpgradesToInventory();
   syncAllEquipmentSpellSetsToInventory();
   const equipment = getEquipmentState();
@@ -6114,6 +6080,12 @@ function applyCsItemToEquipmentSlot(slotKey) {
   if ($('equip_' + slotKey + '_name')) $('equip_' + slotKey + '_name').value = row.name || '';
   setTypeSelectValue(slotKey, typeValue);
   if ($('equip_' + slotKey + '_count')) $('equip_' + slotKey + '_count').value = Math.min(Number(row.count) || 1, 99);
+  // 切替前装備の表示値を先に完全クリアし、選択した装備個体の値だけを読み込む。
+  for (const suffix of ['element','power','offhand','reloadTurns','target','upgradeLimit','upgradeLines']) {
+    const el = $('equip_' + slotKey + '_' + suffix);
+    if (el) el.value = '';
+  }
+  renderEquipmentUpgradeSlots(slotKey, []);
   const map = { element:'element', power:'power', offhand:'offhand', reloadTurns:'reloadTurns', target:'target', upgradeLimit:'upgradeLimit' };
   const selectedItemFallbacks = {};
   for (const [suffix, field] of Object.entries(map)) {
@@ -6126,7 +6098,7 @@ function applyCsItemToEquipmentSlot(slotKey) {
   if(usageSkillEl) usageSkillEl.value = (!spellContainerKind(typeValue) && !['盾','大盾'].includes(typeValue)) ? canonicalWeaponUsageSkill(row) : '';
   const restoredModifiers = serializeModifierRows(equipmentModifierRows(row));
   if ($('equip_' + slotKey + '_modifiers')) $('equip_' + slotKey + '_modifiers').value = restoredModifiers;
-  renderModifierEditor('equip_' + slotKey + '_modifierRows', restoredModifiers);
+  renderModifierReadOnly('equip_' + slotKey + '_modifierRows', restoredModifiers);
   renderEquipmentUpgradeSlots(slotKey, row.upgradeEntries || row.upgradeLines || []);
   const description = row.description || '';
   const effectText = row.effect || '';
@@ -7156,31 +7128,6 @@ function bindEvents() {
   $('shareBtn').addEventListener('click', copyShareData);
   $('actionBarToggleBtn').addEventListener('click', () => setActionBarCollapsed(!$('editorActionBar').classList.contains('collapsed')));
 
-  document.addEventListener('click', e => {
-    const add = e.target.closest('[data-modifier-add]');
-    if (add) {
-      const list = $(add.dataset.modifierAdd);
-      const editor = list?.closest('[data-char-modifier-editor]');
-      if (list) {
-        if (!list.querySelector('[data-modifier-row]')) list.innerHTML = '';
-        const idx = list.querySelectorAll('[data-modifier-row]').length;
-        list.insertAdjacentHTML('beforeend', modifierRowHtml({}, idx));
-        syncModifierEditorAndInventory(editor);
-        updateAll();
-      }
-      return;
-    }
-    const rem = e.target.closest('[data-modifier-remove]');
-    if (rem) {
-      const editor = rem.closest('[data-char-modifier-editor]');
-      rem.closest('[data-modifier-row]')?.remove();
-      const list = editor?.querySelector('[id$="ModifierRows"], [id$="modifierRows"]');
-      if (list && !list.querySelector('[data-modifier-row]')) list.innerHTML = '<div class="small">補正値はまだありません。</div>';
-      syncModifierEditorAndInventory(editor);
-      updateAll();
-      return;
-    }
-  });
   document.querySelectorAll('.editor-tab-btn').forEach(btn => btn.addEventListener('click', () => showEditorTab(btn.dataset.editorTab)));
 
   if ($('addSkillByPublicIdBtn')) $('addSkillByPublicIdBtn').addEventListener('click', addSkillByPublicIds);
@@ -7259,7 +7206,6 @@ function bindEvents() {
       updateSummary();
       return;
     }
-    if (e.target.closest('[data-char-modifier-editor]')) syncModifierEditorAndInventory(e.target.closest('[data-char-modifier-editor]'));
     if (e.target.closest?.('[data-upgrade-row]')) {
       const row = e.target.closest('[data-upgrade-row]');
       const slotRoot = row?.closest('[id$="_upgradeSlots"]');
@@ -7270,11 +7216,10 @@ function bindEvents() {
       return;
     }
     if (e.target.dataset.equipmentInput) { updateAll(); return; }
-    if (e.target.dataset.inventoryInput) { if (e.target.closest('[data-char-modifier-editor]')) syncModifierEditorAndInventory(e.target.closest('[data-char-modifier-editor]')); applyInventoryFilters(); updateSummary(); return; }
+    if (e.target.dataset.inventoryInput) { applyInventoryFilters(); updateSummary(); return; }
     if (e.target.id?.startsWith('stat_') || e.target.dataset.abilityInput || e.target.dataset.skillInput || e.target.id?.startsWith('manualBonus_') || ['currentHp','currentMp','hpBonus','mpBonus','fatigueLevel'].includes(e.target.id)) updateAll();
   });
   document.addEventListener('change', e => {
-    if (e.target.closest?.('[data-char-modifier-editor]')) { syncModifierEditorAndInventory(e.target.closest('[data-char-modifier-editor]')); updateAll(); return; }
     if (e.target.classList?.contains('spell-slot-select')) {
       const slotKey = e.target.dataset.slotKey || '';
       syncSpellSetHidden(slotKey);
