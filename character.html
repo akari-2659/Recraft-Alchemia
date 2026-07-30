@@ -1079,7 +1079,7 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
 .inventory-registration-card>summary{padding:9px 11px!important}
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.311-grimoire3">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.311-perf1">
 </head>
 <body class="ra-app ra-player ra-character">
 <div class="ra-build-info">v90.8.311｜更新：2026年7月30日</div>
@@ -3792,10 +3792,10 @@ function updateEquipmentHandLocks(clearOpposite=true) {
 }
 function showEditorTab(tab) {
   const map = { ability:'tabAbility', skills:'tabSkills', skillCrystal:'tabSkillCrystal', equipment:'tabEquipment', carry:'tabCarry', inventory:'tabInventory' };
-  for (const page of document.querySelectorAll('.editor-tab-page')) page.classList.remove('active');
-  for (const btn of document.querySelectorAll('.editor-tab-btn')) btn.classList.toggle('active', btn.dataset.editorTab === tab);
   const target = $(map[tab] || 'tabAbility');
-  if (target) target.classList.add('active');
+  if (!target || target.classList.contains('active')) return;
+  for (const page of document.querySelectorAll('.editor-tab-page')) page.classList.toggle('active', page === target);
+  for (const btn of document.querySelectorAll('.editor-tab-btn')) btn.classList.toggle('active', btn.dataset.editorTab === tab);
 }
 
 
@@ -7478,9 +7478,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
     document.getElementById('openAllSkillCategoriesBtn')?.addEventListener('click',()=>document.querySelectorAll('#skillArea .skill-category-card:not([hidden])').forEach(x=>x.open=true));
     document.getElementById('closeAllSkillCategoriesBtn')?.addEventListener('click',()=>document.querySelectorAll('#skillArea .skill-category-card').forEach(x=>x.open=false));
     document.getElementById('equipmentArea')?.addEventListener('change',e=>{const card=e.target.closest?.('.equipment-card');if(card)card.open=true;});
-    document.querySelectorAll('.editor-tab-btn').forEach(btn=>btn.addEventListener('click',()=>{
-      requestAnimationFrame(()=>{const tabs=document.querySelector('.editor-tabs');if(tabs&&tabs.getBoundingClientRect().top<0)tabs.scrollIntoView({block:'start'});});
-    }));
   });
 })();
 </script>
