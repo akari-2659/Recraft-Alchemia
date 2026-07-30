@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.316</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.318</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1025,7 +1025,7 @@ details.big-section>summary{
 </style>
 
 <style id="raMaintenanceV287">
-/* v90.8.316 usability maintenance */
+/* v90.8.318 usability maintenance */
 body{padding-bottom:0}
 .ra-build-info{font-size:12px;padding:6px 12px;text-align:right;color:var(--muted);background:rgba(255,253,248,.9);border-bottom:1px solid var(--line)}
 #editorView>section:first-child{padding:10px 12px;margin-bottom:8px}
@@ -1069,7 +1069,7 @@ body{padding-bottom:0}
 }
 @media(max-width:430px){.editor-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}.editor-action-bar{right:8px!important;bottom:max(8px,env(safe-area-inset-bottom))!important;max-width:calc(100vw - 16px)!important}.editor-action-toggle,.editor-action-inner button{padding:6px 8px!important;font-size:.78rem!important}}
 
-/* v90.8.316: 折り畳み表示と操作バーを安定化 */
+/* v90.8.318: 折り畳み表示と操作バーを安定化 */
 details.big-section>summary::before,.skill-category-title::before{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 16px!important;width:16px!important;margin-right:6px!important;transform:rotate(0deg)!important;transform-origin:center!important;transition:transform .14s ease!important}
 details.big-section[open]>summary::before,.skill-category-card[open]>.skill-category-title::before{transform:rotate(90deg)!important}
 #tabEquipment .equipment-card-toggle{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:14px!important;height:18px!important;position:static!important}
@@ -1079,15 +1079,15 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
 .inventory-registration-card>summary{padding:9px 11px!important}
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.316-perf1">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.318-perf1">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.316｜更新：2026年7月30日</div>
+<div class="ra-build-info">v90.8.318｜更新：2026年7月30日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール｜クラウド保存専用｜v90.8.316｜更新：2026年7月30日</div>
+  <div class="subtitle">キャラクター作成ツール｜クラウド保存専用｜v90.8.318｜更新：2026年7月30日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -1586,13 +1586,13 @@ const SKILL_CATEGORIES = [
   { key:'body', name:'体力系', ability:'body', skills:[
     { key:'athletics', name:'運動', desc:'身体行動', detail:'走る、登る、泳ぐ、跳ぶなど、身体を大きく動かす判定に使用します。足場の悪い場所の移動、障害物の突破、落下や転倒を避ける場面でも使います。' },
     { key:'force', name:'力業', desc:'力任せの作業・大振り攻撃', detail:'重い物を動かす、押す、引く、壊す、こじ開けるなど、純粋な力で状況を動かす判定に使用します。戦闘中は近接の代わりに力業で武器攻撃を行えます。命中時、通常の武器ダメージに加えて武器ダメージのダイスを+1個し、対象の防御値の半分（切り捨て）を無視します。無視するのは防御値のみで、防御技能ポイント、防御行動値、追加軽減、耐性は無視しません。ただし追加ダメージに使う技能ポイントは近接を参照します。成否に関わらず、次の自分のターンは行動できず、次の自分のターン開始時まで防御-2を受けます。' },
-    { key:'melee', name:'近接', desc:'近接攻撃', detail:'素手や近接武器で攻撃する時の命中判定に使用します。命中した場合、装備している武器ダメージに、近接へ振り分けたポイント分のダメージを追加します。' },
+    { key:'melee', name:'近接', desc:'近接攻撃', detail:'素手や近接武器で攻撃する時の命中に使用します。命中した場合、装備している武器ダメージに、近接へ振り分けたポイント分のダメージを追加します。' },
     { key:'guard', name:'防御', desc:'常時軽減・防御行動・かばう', detail:'防御技能に振り分けたポイントは、防御行動の有無にかかわらず受けるダメージを減らします。防御行動時は、装備の防御行動値も追加で適用します。かばう判定にも使用します。' },
   ]},
   { key:'dexterity', name:'器用系', ability:'dexterity', skills:[
     { key:'gather', name:'採取', desc:'素材採取・ドロップ補助', detail:'薬草、鉱石、魔物素材などを傷つけずに集める判定に使用します。素材の品質維持、希少部位の回収、採取量の増加に関わります。魔物の討伐時、採取判定に成功することでドロップ判定を+1します。' },
     { key:'craft', name:'細工', desc:'精密作業', detail:'細かな手作業、修理、分解、罠解除、鍵開けなどの判定に使用します。道具や素材を精密に扱う作業に関わります。' },
-    { key:'shoot', name:'射撃', desc:'射撃攻撃', detail:'弓、弩、投擲武器などで攻撃する時の命中判定に使用します。命中した場合、装備している武器ダメージに、射撃へ振り分けたポイント分のダメージを追加します。' },
+    { key:'shoot', name:'射撃', desc:'射撃攻撃', detail:'弓、弩、投擲武器などで攻撃する時の命中に使用します。命中した場合、装備している武器ダメージに、射撃へ振り分けたポイント分のダメージを追加します。' },
     { key:'operate', name:'操作', desc:'装置・道具の扱い', detail:'道具、装置、乗り物、工房設備などを扱う判定に使用します。複雑な機械の起動、調整、操縦、作業設備の使用に関わります。' },
   ]},
   { key:'sense', name:'感覚系', ability:'sense', skills:[
