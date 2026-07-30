@@ -528,7 +528,7 @@ body.ra-app .toast { color: var(--ra-ink); border-color: #9c8048 !important; bac
   }
 }
 
-/* v90.8.315 legibility + compact weapon tree revision */
+/* v90.8.316 legibility + compact weapon tree revision */
 :root {
   --ra-desk: #e6dfd2;
   --ra-desk-2: #f2ece1;
@@ -832,7 +832,7 @@ body.ra-facility .weapon-modal-header h3 { color: #2a414f !important; }
 }
 
 
-/* v90.8.315 UI performance and spacing pass */
+/* v90.8.316 UI performance and spacing pass */
 /* Large disclosures use a paint-only fade instead of intrinsic-height interpolation. */
 body.ra-app details::details-content {
   block-size: auto !important;
@@ -1031,4 +1031,81 @@ body.ra-facility .branch-label-side-toggle {
   border-radius: 0 8px 8px 0 !important;
   font-size: 14px !important;
   line-height: 1 !important;
+}
+
+/* v90.8.316: textured character ledger and reusable alchemy art accents. */
+body.ra-app > main,
+body.ra-character :is(section,.panel,.big-section,.choice-card,.mini-card,.status-box,.list-item,.equipment-card,.inventory-card,.compact-storage-panel) {
+  background-image:
+    linear-gradient(90deg, rgba(112,82,35,.028), transparent 22%, transparent 78%, rgba(112,82,35,.028)),
+    url("assets/ui/paper-texture.webp") !important;
+  background-repeat:no-repeat,repeat !important;
+  background-size:100% 100%,512px 512px !important;
+}
+body.ra-character section,
+body.ra-character .big-section {
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+}
+body.ra-character section > *,
+body.ra-character .big-section > * { position:relative; z-index:1; }
+body.ra-character #homeView section::after,
+body.ra-character #listView section::after {
+  content:"";
+  position:absolute;
+  right:-30px;
+  bottom:-55px;
+  width:265px;
+  height:265px;
+  background:center/contain no-repeat url("assets/ui/alchemy-watermark-1.png");
+  opacity:.065;
+  pointer-events:none;
+  z-index:0;
+}
+body.ra-character .equipment-card {
+  border-left:5px solid #617f91 !important;
+  background-color:rgba(255,252,243,.9) !important;
+  box-shadow:inset 0 1px rgba(255,255,255,.8),0 3px 10px rgba(53,43,28,.11) !important;
+}
+body.ra-character .equipment-card[open] {
+  border-left-color:#9a6d33 !important;
+}
+body.ra-character .equipment-card-summary {
+  min-height:46px;
+  background:
+    linear-gradient(90deg,rgba(97,127,145,.12),transparent 48%),
+    url("assets/ui/paper-texture.webp") !important;
+}
+body.ra-character :is(.pill,.badge,.inventory-badge,.equipment-state) {
+  border:1px solid rgba(121,91,44,.34) !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.88),rgba(225,211,181,.68)) !important;
+  box-shadow:inset 0 1px rgba(255,255,255,.72);
+}
+body.ra-character .status-box {
+  position:relative;
+  overflow:hidden;
+}
+body.ra-character .status-box::after {
+  content:"";
+  position:absolute;
+  right:-16px;
+  bottom:-22px;
+  width:82px;
+  height:82px;
+  background:center/contain no-repeat url("assets/ui/alchemy-watermark-2.png");
+  opacity:.045;
+  pointer-events:none;
+}
+body.ra-character :is(.list:empty,.empty,.empty-state) {
+  min-height:120px;
+  display:grid;
+  place-items:center;
+  text-align:center;
+  padding:28px;
+  border:1px dashed rgba(145,111,54,.55);
+  border-radius:8px;
+  background:
+    center/150px auto no-repeat url("assets/ui/alchemy-watermark-3.png"),
+    rgba(255,252,243,.78) !important;
 }
