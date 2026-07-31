@@ -528,7 +528,7 @@ body.ra-app .toast { color: var(--ra-ink); border-color: #9c8048 !important; bac
   }
 }
 
-/* v90.8.319 legibility + compact weapon tree revision */
+/* v90.8.323 legibility + compact weapon tree revision */
 :root {
   --ra-desk: #e6dfd2;
   --ra-desk-2: #f2ece1;
@@ -832,7 +832,7 @@ body.ra-facility .weapon-modal-header h3 { color: #2a414f !important; }
 }
 
 
-/* v90.8.319 UI performance and spacing pass */
+/* v90.8.323 UI performance and spacing pass */
 /* Large disclosures use a paint-only fade instead of intrinsic-height interpolation. */
 body.ra-app details::details-content {
   block-size: auto !important;
@@ -1033,7 +1033,7 @@ body.ra-facility .branch-label-side-toggle {
   line-height: 1 !important;
 }
 
-/* v90.8.319: textured character ledger and reusable alchemy art accents. */
+/* v90.8.323: textured character ledger and reusable alchemy art accents. */
 body.ra-app > main,
 body.ra-character :is(section,.panel,.big-section,.choice-card,.mini-card,.status-box,.list-item,.equipment-card,.inventory-card,.compact-storage-panel) {
   background-image:
@@ -1097,7 +1097,7 @@ body.ra-character .status-box::after {
   opacity:.045;
   pointer-events:none;
 }
-body.ra-character :is(.list:empty,.empty,.empty-state) {
+body.ra-character :is(.list:empty,.empty-state) {
   min-height:120px;
   display:grid;
   place-items:center;
@@ -1108,4 +1108,16 @@ body.ra-character :is(.list:empty,.empty,.empty-state) {
   background:
     center/150px auto no-repeat url("assets/ui/alchemy-watermark-3.png"),
     rgba(255,252,243,.78) !important;
+}
+
+/* v90.8.323: equipment modifier empty labels stay compact and never receive large watermark art. */
+body.ra-character .equipment-modifier-preview .pill.empty {
+  min-height:0 !important;
+  display:inline-flex !important;
+  place-items:initial !important;
+  width:auto !important;
+  padding:3px 9px !important;
+  text-align:left !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.88),rgba(225,211,181,.68)) !important;
+  background-image:none !important;
 }

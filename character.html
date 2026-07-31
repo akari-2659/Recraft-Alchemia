@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.319</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.323</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1025,7 +1025,7 @@ details.big-section>summary{
 </style>
 
 <style id="raMaintenanceV287">
-/* v90.8.319 usability maintenance */
+/* v90.8.323 usability maintenance */
 body{padding-bottom:0}
 .ra-build-info{font-size:12px;padding:6px 12px;text-align:right;color:var(--muted);background:rgba(255,253,248,.9);border-bottom:1px solid var(--line)}
 #editorView>section:first-child{padding:10px 12px;margin-bottom:8px}
@@ -1069,7 +1069,7 @@ body{padding-bottom:0}
 }
 @media(max-width:430px){.editor-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}.editor-action-bar{right:8px!important;bottom:max(8px,env(safe-area-inset-bottom))!important;max-width:calc(100vw - 16px)!important}.editor-action-toggle,.editor-action-inner button{padding:6px 8px!important;font-size:.78rem!important}}
 
-/* v90.8.319: 折り畳み表示と操作バーを安定化 */
+/* v90.8.323: 折り畳み表示と操作バーを安定化 */
 details.big-section>summary::before,.skill-category-title::before{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 16px!important;width:16px!important;margin-right:6px!important;transform:rotate(0deg)!important;transform-origin:center!important;transition:transform .14s ease!important}
 details.big-section[open]>summary::before,.skill-category-card[open]>.skill-category-title::before{transform:rotate(90deg)!important}
 #tabEquipment .equipment-card-toggle{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:14px!important;height:18px!important;position:static!important}
@@ -1079,15 +1079,15 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
 .inventory-registration-card>summary{padding:9px 11px!important}
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.319-perf1">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.323-perf1">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.319｜更新：2026年7月31日</div>
+<div class="ra-build-info">v90.8.323｜更新：2026年7月31日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール｜クラウド保存専用｜v90.8.319｜更新：2026年7月31日</div>
+  <div class="subtitle">キャラクター作成ツール｜クラウド保存専用｜v90.8.323｜更新：2026年7月31日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -1608,7 +1608,7 @@ const SKILL_CATEGORIES = [
     { key:'design', name:'設計', desc:'罠の仕組みを組む', detail:'罠の構造を考え、作成・調整する判定に使用します。現状、武器作成・武器派生・武器強化には使用せず、それらは細工で判定します。' },
   ]},
   { key:'will', name:'意志系', ability:'will', skills:[
-    { key:'resist', name:'抵抗', desc:'状態異常や精神干渉に耐える', detail:'毒、呪い、恐怖、麻痺、精神干渉、弱体化などに耐える基準です。身体・精神・状態に作用する効果へ使用します。抵抗値 = 5 + 抵抗技能値 + 装備などの抵抗補正。' },
+    { key:'resist', name:'抵抗', desc:'状態異常や精神干渉に耐える', detail:'毒・汚染・呪い・麻痺・睡眠や精神干渉、弱体化などに耐える基準です。身体・精神・状態に作用する効果へ使用します。抵抗値 = 5 + 抵抗技能値 + 装備などの抵抗補正。' },
     { key:'focus', name:'集中', desc:'行動を維持する', detail:'長時間の作業、高難度の調合、儀式、継続的な魔力操作など、精神を乱さずに行動を続ける判定に使用します。戦闘中は、妨害を受けながら術式や特殊な行動を維持する場面でも使います。' },
     { key:'magic', name:'魔法', desc:'魔法術式', detail:'魔法術式を使用する時の判定に使用します。魔法術式でダメージを与える場合、術式ダメージに魔法へ振り分けたポイント分のダメージを追加します。' },
     { key:'prayer', name:'祈祷', desc:'祈祷術式', detail:'祈祷術式を使用する時の判定に使用します。祈祷術式でダメージや回復を行う場合、術式の効果量に祈祷へ振り分けたポイント分を追加します。浄化、加護、回復、精神支援にも関わります。' },
