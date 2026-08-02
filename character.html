@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.363</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.364</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1025,7 +1025,7 @@ details.big-section>summary{
 </style>
 
 <style id="raMaintenanceV287">
-/* v90.8.363 usability maintenance */
+/* v90.8.364 usability maintenance */
 body{padding-bottom:0}
 .ra-build-info{font-size:12px;padding:6px 12px;text-align:right;color:var(--muted);background:rgba(255,253,248,.9);border-bottom:1px solid var(--line)}
 #editorView>section:first-child{padding:10px 12px;margin-bottom:8px}
@@ -1069,7 +1069,7 @@ body{padding-bottom:0}
 }
 @media(max-width:430px){.editor-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}.editor-action-bar{right:8px!important;bottom:max(8px,env(safe-area-inset-bottom))!important;max-width:calc(100vw - 16px)!important}.editor-action-toggle,.editor-action-inner button{padding:6px 8px!important;font-size:.78rem!important}}
 
-/* v90.8.363: 折り畳み表示と操作バーを安定化 */
+/* v90.8.364: 折り畳み表示と操作バーを安定化 */
 details.big-section>summary::before,.skill-category-title::before{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 16px!important;width:16px!important;margin-right:6px!important;transform:rotate(0deg)!important;transform-origin:center!important;transition:transform .14s ease!important}
 details.big-section[open]>summary::before,.skill-category-card[open]>.skill-category-title::before{transform:rotate(90deg)!important}
 #tabEquipment .equipment-card-toggle{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:14px!important;height:18px!important;position:static!important}
@@ -1079,15 +1079,15 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
 .inventory-registration-card>summary{padding:9px 11px!important}
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.363-perf1">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.364-perf1">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.363｜更新：2026年8月2日</div>
+<div class="ra-build-info">v90.8.364｜更新：2026年8月2日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール｜クラウド保存専用｜v90.8.363｜更新：2026年8月2日</div>
+  <div class="subtitle">キャラクター作成ツール｜クラウド保存専用｜v90.8.364｜更新：2026年8月2日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -2420,6 +2420,13 @@ function pushEquipmentSummaryLines(lines, equipment={}) {
     if (item.setSpells) lines.push(`  セット術式: ${String(item.setSpells).replace(/\n/g, '、')}`);
   }
 }
+function inventorySellPriceText(value, withUnit=true){
+  const raw=String(value ?? '').trim();
+  if(!raw) return '';
+  const n=Number(raw);
+  if(Number.isFinite(n)&&n===0) return '売却不可';
+  return withUnit ? `${raw}G` : raw;
+}
 function pushInventorySummaryLines(lines, inventory={}) {
   const items = normalizeInventoryState(inventory).items;
   if (!items.length) return;
@@ -2428,7 +2435,8 @@ function pushInventorySummaryLines(lines, inventory={}) {
   for (const item of items) {
     if (!(item.name || item.category || item.note)) continue;
     lines.push(`${item.name || '未設定'}${item.count !== undefined && item.count !== null ? ' ×' + item.count : ''}${item.location ? ' / ' + item.location : ''}${item.kind ? ' / ' + item.kind : ''}${item.rank ? ' / ' + inventoryRankLabel(item) : ''}${item.element ? ' / 属性:' + item.element : ''}${item.cost ? ' / コスト:' + item.cost : ''}`);
-    if (item.category || item.price) lines.push(`  ${[item.category ? 'カテゴリ:' + item.category : '', item.price ? '価格/売価:' + item.price : ''].filter(Boolean).join(' / ')}`);
+    const sellPriceText=inventorySellPriceText(item.price);
+    if (item.category || sellPriceText) lines.push(`  ${[item.category ? 'カテゴリ:' + item.category : '', sellPriceText ? '売値:' + sellPriceText : ''].filter(Boolean).join(' / ')}`);
     if (item.description) lines.push(`  ${String(item.description).replace(/\n/g, ' ')}`);
     if (item.note) lines.push(`  ${String(item.note).replace(/\n/g, ' ')}`);
   }
@@ -3925,7 +3933,7 @@ let quiverAmmoSlotsState = {};
 let carryWarehouseAllocationState = {};
 
 function defaultInventory() {
-  const basicBag = { id:'bag_simple', masterId:'', masterSheet:'', masterSync:'', name:'簡素なバッグ', kind:'バッグ', itemType:'バッグ', category:'バッグ', itemCategory:'バッグ', count:1, capacity:8, bagCapacity:8, location:'倉庫', rank:1, price:'', equipSlot:'', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', spellSlots:'', target:'', element:'', cost:'', checkType:'', role:'', source:'初期支給 / 鍛冶屋', tags:'バッグ,初期倉庫', setItem:'', description:'冒険に必要な最低限の荷物を入れられる簡素なバッグ。', effect:'所持品枠8。', recipeResult:'', materials:'', note:'' };
+  const basicBag = { id:'bag_simple', masterId:'', masterSheet:'', masterSync:'', name:'簡素なバッグ', kind:'バッグ', itemType:'バッグ', category:'バッグ', itemCategory:'バッグ', count:1, capacity:8, bagCapacity:8, location:'倉庫', rank:1, price:'100', equipSlot:'', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', spellSlots:'', target:'', element:'', cost:'', checkType:'', role:'', source:'初期支給 / 鍛冶屋', tags:'バッグ,初期倉庫', setItem:'', description:'冒険に必要な最低限の荷物を入れられる簡素なバッグ。', effect:'所持品枠8。', recipeResult:'', materials:'', note:'' };
   return { items: [basicBag], bagId:'bag_simple', quiverId:'', quiverAmmoSlots:{} };
 }
 
@@ -3956,7 +3964,7 @@ function ensureDefaultBagItem() {
     bagCapacity:8,
     location:'倉庫',
     rank:1,
-    price:'',
+    price:'100',
     equipSlot:'',
     power:'',
     hit:'',
@@ -4499,7 +4507,7 @@ function normalizeInventoryItem(item={}) {
     compatibleWeaponTypes: String(item.compatibleWeaponTypes || item.compatibleWeapons || '').trim(),
     location: '倉庫',
     rank: String(item.rank || '').trim(),
-    price: String(item.price || '').trim(),
+    price: String(String(item.price ?? '').trim() || String(masterRow?.price ?? '').trim()).trim(),
     equipSlot: inferEquipSlotForInventory({ ...item, kind }),
     skill: kind === '武器' ? canonicalWeaponUsageSkill(item) : String(item.skill || '').trim(),
     power: String(item.power || item.damage || item.damageValue || '').trim(),
@@ -4717,7 +4725,7 @@ function renderInventory() {
         <div class="meta-item"><span class="meta-label">個数</span>${esc(item.count ?? 0)}</div>
         ${bagMeta ? `<div class="meta-item"><span class="meta-label">バッグ容量</span>${esc(item.capacity || 0)}</div>` : ''}
         <div class="meta-item"><span class="meta-label">ランク</span>${esc(inventoryRankLabel(item) || '—')}</div>
-        <div class="meta-item"><span class="meta-label">価格/売価</span>${esc(item.price || '—')}</div>
+        <div class="meta-item"><span class="meta-label">売値</span>${esc(inventorySellPriceText(item.price) || '—')}</div>
         <div class="meta-item meta-wide"><span class="meta-label">装備/使用データ</span><div class="inventory-note">${esc([equipMeta, spellSlotMeta].filter(Boolean).join('\n'))}</div></div>
         ${savedUpgradeMeta ? `<div class="meta-item meta-wide"><span class="meta-label">保存済み強化内容</span><div class="inventory-note">${esc(savedUpgradeMeta)}</div></div>` : ''}
         ${materialUpgradeMeta ? `<div class="meta-item meta-wide"><span class="meta-label">装備強化素材</span><div class="inventory-note">${esc(materialUpgradeMeta)}</div></div>` : ''}
