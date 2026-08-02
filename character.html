@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.344</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.350</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1025,7 +1025,7 @@ details.big-section>summary{
 </style>
 
 <style id="raMaintenanceV287">
-/* v90.8.344 usability maintenance */
+/* v90.8.350 usability maintenance */
 body{padding-bottom:0}
 .ra-build-info{font-size:12px;padding:6px 12px;text-align:right;color:var(--muted);background:rgba(255,253,248,.9);border-bottom:1px solid var(--line)}
 #editorView>section:first-child{padding:10px 12px;margin-bottom:8px}
@@ -1069,7 +1069,7 @@ body{padding-bottom:0}
 }
 @media(max-width:430px){.editor-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}.editor-action-bar{right:8px!important;bottom:max(8px,env(safe-area-inset-bottom))!important;max-width:calc(100vw - 16px)!important}.editor-action-toggle,.editor-action-inner button{padding:6px 8px!important;font-size:.78rem!important}}
 
-/* v90.8.344: 折り畳み表示と操作バーを安定化 */
+/* v90.8.350: 折り畳み表示と操作バーを安定化 */
 details.big-section>summary::before,.skill-category-title::before{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 16px!important;width:16px!important;margin-right:6px!important;transform:rotate(0deg)!important;transform-origin:center!important;transition:transform .14s ease!important}
 details.big-section[open]>summary::before,.skill-category-card[open]>.skill-category-title::before{transform:rotate(90deg)!important}
 #tabEquipment .equipment-card-toggle{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:14px!important;height:18px!important;position:static!important}
@@ -1079,15 +1079,15 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
 .inventory-registration-card>summary{padding:9px 11px!important}
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.344-perf1">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.350-perf1">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.344｜更新：2026年8月2日</div>
+<div class="ra-build-info">v90.8.350｜更新：2026年8月2日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール｜クラウド保存専用｜v90.8.344｜更新：2026年8月2日</div>
+  <div class="subtitle">キャラクター作成ツール｜クラウド保存専用｜v90.8.350｜更新：2026年8月2日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -3297,7 +3297,7 @@ function renderEquipmentUpgradeSlots(slotKey, sourceEntries=null){
     const entry = normalizeUpgradeEntry(entries[i] || {});
     return `<div class="equipment-upgrade-row" data-upgrade-row="${i}">
       <div class="field"><label>強化内容 ${i+1}</label><select data-upgrade-content data-equipment-input="1">${upgradeOptionHtml(entry.content)}</select></div>
-      <div class="field"><label>強化値</label><input data-upgrade-value data-equipment-input="1" type="text" value="${esc(entry.value)}" placeholder="任意入力" /></div><div class="field"><label>消費強化枠</label><select data-upgrade-slot-cost data-equipment-input="1"><option value="1" ${entry.slotCost===1?'selected':''}>1枠</option><option value="2" ${entry.slotCost===2?'selected':''}>2枠</option></select></div>
+      <div class="field"><label>強化値</label><input data-upgrade-value data-equipment-input="1" type="text" value="${esc(entry.value)}" placeholder="任意入力" /></div><div class="field"><label>消費強化枠</label><select data-upgrade-slot-cost data-equipment-input="1"><option value="1" ${entry.slotCost===1?'selected':''}>1枠</option><option value="2" ${entry.slotCost===2?'selected':''}>2枠</option><option value="3" ${entry.slotCost===3?'selected':''}>3枠</option></select></div>
     </div>`;
   }).join('');
   if(hidden) hidden.value = serializeUpgradeEntries(entries.slice(0, limit));
@@ -3526,7 +3526,7 @@ function defaultEquipment() {
   for (const slot of EQUIPMENT_SLOTS) {
     equipment[slot.key] = slot.kind === 'carry'
       ? { itemId:'', name:'', type:'なし', count:1, element:'', description:'', note:'', warehouseAllocated:false, warehouseItemId:'' }
-      : { itemId:'', name:'', type:'なし', element:'', power:'', offhand:'', reloadTurns:'', modifiers:'', upgradeLimit:'', upgradeMaterialMinRank:'', upgradeLines:'', upgradeEntries:[], knownSpells:'', setSpells:'', description:'', target:'', checkType:'', role:'', source:'', tags:'', setItem:'', note:'' };
+      : { itemId:'', name:'', type:'なし', element:'', power:'', offhand:'', reloadTurns:'', modifiers:'', upgradeLimit:'', upgradeMaterialMinRank:'', upgradeLines:'', upgradeEntries:[], equipmentUpgradeEffect:'', equipmentUpgradeValue:'', equipmentUpgradeSlotCost:'', equipmentUpgradeDetail:'', equipmentUpgradeTarget:'', knownSpells:'', setSpells:'', description:'', target:'', checkType:'', role:'', source:'', tags:'', setItem:'', note:'' };
   }
   equipment.memo = '';
   return equipment;
@@ -4356,7 +4356,7 @@ function inventoryManualClassification(kind='', category='') {
 }
 function emptyInventoryItem() {
   const cls = inventoryManualClassification(defaultInventoryKind(), '');
-  return { id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), masterId:'', masterSheet:'', masterSync:'', name:'', kind:cls.kind, itemType:cls.itemType, itemCategory:cls.itemCategory, materialType:cls.materialType, materialCategory:cls.materialCategory, category:'', count:1, capacity:'', location:'倉庫', rank:'', price:'', equipSlot:'', skill:'', power:'', offhand:'', reloadTurns:'', modifiers:'', upgradeLimit:'', upgradeMaterialMinRank:'', upgradeLines:'', upgradeEntries:[], spellSlots:'', setSpells:'', target:'', element:'', enchantTarget:'', enchantEffectType:'', enchantValue:'', enchantDuration:'', enchantRounds:'', enchantStackRule:'', cost:'', checkType:'', role:'', source:'', tags:'', setItem:'', description:'', effect:'', recipeResult:'', materials:'', note:'' };
+  return { id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), masterId:'', masterSheet:'', masterSync:'', name:'', kind:cls.kind, itemType:cls.itemType, itemCategory:cls.itemCategory, materialType:cls.materialType, materialCategory:cls.materialCategory, category:'', count:1, capacity:'', location:'倉庫', rank:'', price:'', equipSlot:'', skill:'', power:'', offhand:'', reloadTurns:'', modifiers:'', upgradeLimit:'', upgradeMaterialMinRank:'', upgradeLines:'', upgradeEntries:[], equipmentUpgradeEffect:'', equipmentUpgradeValue:'', equipmentUpgradeSlotCost:'', equipmentUpgradeDetail:'', equipmentUpgradeTarget:'', spellSlots:'', setSpells:'', target:'', element:'', enchantTarget:'', enchantEffectType:'', enchantValue:'', enchantDuration:'', enchantRounds:'', enchantStackRule:'', cost:'', checkType:'', role:'', source:'', tags:'', setItem:'', description:'', effect:'', recipeResult:'', materials:'', note:'' };
 }
 function inferInventoryItemType(item={}, kind='') {
   const explicit = String(item.itemType || '').trim();
@@ -4504,6 +4504,11 @@ function normalizeInventoryItem(item={}) {
     modifiers: normalizedModifiers,
     upgradeLimit: normalizedUpgradeLimit > 0 ? String(normalizedUpgradeLimit) : '',
     upgradeMaterialMinRank: inventoryKindSupportsUpgradeLimit(kind) ? String(item.upgradeMaterialMinRank || item.rank || '').trim() : '',
+    equipmentUpgradeEffect: String(item.equipmentUpgradeEffect || '').trim(),
+    equipmentUpgradeValue: String(item.equipmentUpgradeValue || '').trim(),
+    equipmentUpgradeSlotCost: String(item.equipmentUpgradeSlotCost || '').trim(),
+    equipmentUpgradeDetail: String(item.equipmentUpgradeDetail || '').trim(),
+    equipmentUpgradeTarget: String(item.equipmentUpgradeTarget || '').trim(),
     upgradeEntries: normalizedUpgradeEntries,
     upgradeLines: serializeUpgradeEntries(normalizedUpgradeEntries),
     spellSlots: kind === 'バッグ' ? '' : String(item.spellSlots || item.slotCount || item.registerSlots || item.maxStack || '').trim(),
@@ -4653,6 +4658,11 @@ function setInventoryFilter(type, value) {
 function inventoryOptions(value, list) {
   return list.map(v => `<option value="${esc(v)}" ${String(value || '') === v ? 'selected' : ''}>${esc(v)}</option>`).join('');
 }
+function characterUpgradeDisplayName(item={}){
+  const effect=String(item.equipmentUpgradeEffect||'').trim();
+  const value=String(item.equipmentUpgradeValue||'').trim();
+  return effect==='特殊効果' ? `特殊効果：${value||'名称未設定'}` : effect;
+}
 function renderInventory() {
   const area = $('inventoryArea');
   if (!area) return;
@@ -4667,13 +4677,21 @@ function renderInventory() {
     const itemUseMeta = ['アイテム','素材','矢筒','バッグ'].includes(item.kind) ? [item.target ? '対象：' + item.target : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : '', item.cost ? 'コスト：' + item.cost : '', item.checkType ? '判定：' + checkExpressionDisplay(item.checkType) : '', item.ammoKind ? '矢弾種別：' + item.ammoKind : '', item.compatibleWeaponTypes ? '対応武器種：' + item.compatibleWeaponTypes : '', item.spellSlots ? '最大スタック数：' + item.spellSlots : '', item.quiverCapacity ? '矢筒収納種類数：' + item.quiverCapacity : '', item.bagCapacity ? 'バッグ容量：' + item.bagCapacity : '', item.source ? '入手先：' + item.source : '', item.tags ? 'タグ：' + item.tags : ''].filter(Boolean).join(' / ') : '';
     const spellSlotMeta = item.spellSlots && ['武器','防具','装飾品','術式'].includes(item.kind) ? `術式枠補正：+${item.spellSlots}` : '';
     const savedUpgradeMeta = serializeUpgradeEntries(item.upgradeEntries || parseUpgradeLines(item.upgradeLines || ''));
+    const materialUpgradeSpecial=String(item.equipmentUpgradeEffect||'').trim()==='特殊効果';
+    const materialUpgradeMeta = item.kind === '素材' && item.equipmentUpgradeEffect ? [
+      `内容：${characterUpgradeDisplayName(item)}`,
+      !materialUpgradeSpecial&&item.equipmentUpgradeValue ? `強化値：${item.equipmentUpgradeValue}` : '',
+      `消費強化枠：${Number(item.equipmentUpgradeSlotCost) || 1}枠`,
+      item.equipmentUpgradeTarget ? `強化対象：${item.equipmentUpgradeTarget}` : '',
+      materialUpgradeSpecial&&item.equipmentUpgradeDetail ? `特殊効果詳細：${item.equipmentUpgradeDetail}` : ''
+    ].filter(Boolean).join('\n') : '';
     const bagMeta = item.kind === 'バッグ' ? `バッグ容量：${clampInt(item.capacity || 0, 0, 99)}` : '';
     const displayType = inventorySmallCategory(item);
     const displayCategory = inventoryInternalCategory(item);
     const categoryDisplay = displayType === '素材'
       ? [item.materialType || '素材', item.materialCategory || item.category || ''].filter(Boolean).join(' / ')
       : (item.category || displayCategory || '—');
-    const searchText = [title, displayType, displayCategory, categoryDisplay, item.itemType, item.itemCategory, item.materialType, item.materialCategory, item.kind, item.category, item.rank, item.price, item.equipSlot, item.skill, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.upgradeLimit, item.upgradeMaterialMinRank, item.spellSlots, item.capacity, item.bagCapacity, item.quiverCapacity, item.ammoKind, item.compatibleWeaponTypes, item.target, item.element, item.enchantTarget, item.enchantEffectType, item.enchantValue, item.enchantDuration, item.enchantRounds, item.enchantStackRule, item.cost, item.power, item.description, item.effect, item.checkType, item.role, item.source, item.tags, item.recipeResult, item.materials, item.upgradeLines].filter(Boolean).join(' ');
+    const searchText = [title, displayType, displayCategory, categoryDisplay, item.itemType, item.itemCategory, item.materialType, item.materialCategory, item.kind, item.category, item.rank, item.price, item.equipSlot, item.skill, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.upgradeLimit, item.upgradeMaterialMinRank, item.equipmentUpgradeEffect, item.equipmentUpgradeValue, item.equipmentUpgradeSlotCost, item.equipmentUpgradeDetail, item.equipmentUpgradeTarget, item.spellSlots, item.capacity, item.bagCapacity, item.quiverCapacity, item.ammoKind, item.compatibleWeaponTypes, item.target, item.element, item.enchantTarget, item.enchantEffectType, item.enchantValue, item.enchantDuration, item.enchantRounds, item.enchantStackRule, item.cost, item.power, item.description, item.effect, item.checkType, item.role, item.source, item.tags, item.recipeResult, item.materials, item.upgradeLines].filter(Boolean).join(' ');
     return `
     <details class="inventory-card" data-inventory-row="${index}" data-inventory-id="${esc(item.id || '')}" data-inventory-location="倉庫" data-inventory-kind="${esc(item.kind || 'アイテム')}" data-inventory-item-type="${esc(displayType)}" data-inventory-category="${esc(displayCategory)}" data-inventory-search="${esc(searchText)}">
       <summary class="inventory-card-head">
@@ -4693,6 +4711,7 @@ function renderInventory() {
         <div class="meta-item"><span class="meta-label">価格/売価</span>${esc(item.price || '—')}</div>
         <div class="meta-item meta-wide"><span class="meta-label">装備/使用データ</span><div class="inventory-note">${esc([equipMeta, spellSlotMeta].filter(Boolean).join('\n'))}</div></div>
         ${savedUpgradeMeta ? `<div class="meta-item meta-wide"><span class="meta-label">保存済み強化内容</span><div class="inventory-note">${esc(savedUpgradeMeta)}</div></div>` : ''}
+        ${materialUpgradeMeta ? `<div class="meta-item meta-wide"><span class="meta-label">装備強化素材</span><div class="inventory-note">${esc(materialUpgradeMeta)}</div></div>` : ''}
         ${itemUseMeta ? `<div class="meta-item meta-wide"><span class="meta-label">使用データ</span><div class="inventory-note">${esc(itemUseMeta)}</div></div>` : ''}
         ${spellMeta ? `<div class="meta-item meta-wide"><span class="meta-label">術式データ</span><div class="inventory-note">${esc(spellMeta)}</div></div>` : ''}
         ${recipeMeta ? `<div class="meta-item meta-wide"><span class="meta-label">レシピ</span><div class="inventory-note">${esc(recipeMeta)}</div></div>` : ''}
@@ -4920,6 +4939,11 @@ function dbItemToInventoryItem(row) {
     offhand: row.offhandBonus || '',
     upgradeLimit: row.upgradeLimit || '',
     upgradeMaterialMinRank: row.upgradeMaterialMinRank || row.rank || '',
+    equipmentUpgradeEffect: row.equipmentUpgradeEffect || '',
+    equipmentUpgradeValue: row.equipmentUpgradeValue || '',
+    equipmentUpgradeSlotCost: row.equipmentUpgradeSlotCost || '',
+    equipmentUpgradeDetail: row.equipmentUpgradeDetail || '',
+    equipmentUpgradeTarget: row.equipmentUpgradeTarget || '',
     spellSlots: ['武器', '防具', '装飾品'].includes(kind) ? (row.spellSlots || '') : (row.maxStack || row.spellSlots || ''),
     target: row.target || '',
     element: row.element || row.attribute || row.attributeType || row.elementName || row['属性'] || row['属性種別'] || row['攻撃属性'] || row['ダメージ属性'] || '',
