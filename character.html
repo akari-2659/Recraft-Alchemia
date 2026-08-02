@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.354</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.356</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1025,7 +1025,7 @@ details.big-section>summary{
 </style>
 
 <style id="raMaintenanceV287">
-/* v90.8.354 usability maintenance */
+/* v90.8.356 usability maintenance */
 body{padding-bottom:0}
 .ra-build-info{font-size:12px;padding:6px 12px;text-align:right;color:var(--muted);background:rgba(255,253,248,.9);border-bottom:1px solid var(--line)}
 #editorView>section:first-child{padding:10px 12px;margin-bottom:8px}
@@ -1069,7 +1069,7 @@ body{padding-bottom:0}
 }
 @media(max-width:430px){.editor-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}.editor-action-bar{right:8px!important;bottom:max(8px,env(safe-area-inset-bottom))!important;max-width:calc(100vw - 16px)!important}.editor-action-toggle,.editor-action-inner button{padding:6px 8px!important;font-size:.78rem!important}}
 
-/* v90.8.354: 折り畳み表示と操作バーを安定化 */
+/* v90.8.356: 折り畳み表示と操作バーを安定化 */
 details.big-section>summary::before,.skill-category-title::before{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 16px!important;width:16px!important;margin-right:6px!important;transform:rotate(0deg)!important;transform-origin:center!important;transition:transform .14s ease!important}
 details.big-section[open]>summary::before,.skill-category-card[open]>.skill-category-title::before{transform:rotate(90deg)!important}
 #tabEquipment .equipment-card-toggle{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:14px!important;height:18px!important;position:static!important}
@@ -1079,15 +1079,15 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
 .inventory-registration-card>summary{padding:9px 11px!important}
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.354-perf1">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.356-perf1">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.354｜更新：2026年8月2日</div>
+<div class="ra-build-info">v90.8.356｜更新：2026年8月2日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール｜クラウド保存専用｜v90.8.354｜更新：2026年8月2日</div>
+  <div class="subtitle">キャラクター作成ツール｜クラウド保存専用｜v90.8.356｜更新：2026年8月2日</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -4463,6 +4463,14 @@ function normalizeInventoryItem(item={}) {
   const oldDescription = item['fla' + 'vor' + 'Text'];
   const rawUpgradeLimit = inventoryKindSupportsUpgradeLimit(kind) ? String(item.upgradeLimit || item.upgradeCount || item.upgradeSlots || '').trim() : '';
   const normalizedUpgradeLimit = clampInt(rawUpgradeLimit || 0, 0, 9);
+  // 魔物素材などの強化定義はマスターDBを正とする。
+  // 旧キャラクターデータや一部の登録経路で強化項目が保存されていなくても、
+  // ID・登録ID・名称のいずれかでマスターを特定できれば最新定義を倉庫表示へ補完する。
+  const masterUpgradeEffect = String(masterRow?.equipmentUpgradeEffect || '').trim();
+  const masterUpgradeValue = String(masterRow?.equipmentUpgradeValue || '').trim();
+  const masterUpgradeSlotCost = String(masterRow?.equipmentUpgradeSlotCost || '').trim();
+  const masterUpgradeDetail = String(masterRow?.equipmentUpgradeDetail || '').trim();
+  const masterUpgradeTarget = String(masterRow?.equipmentUpgradeTarget || '').trim();
   // 強化枠を持たない装備へ、別装備の強化内容を残さない。
   const normalizedUpgradeEntries = normalizedUpgradeLimit > 0
     ? trimUpgradeEntriesToSlotLimit(parseUpgradeLines(item.upgradeEntries || item.upgradeLines || ''), normalizedUpgradeLimit)
@@ -4504,11 +4512,11 @@ function normalizeInventoryItem(item={}) {
     modifiers: normalizedModifiers,
     upgradeLimit: normalizedUpgradeLimit > 0 ? String(normalizedUpgradeLimit) : '',
     upgradeMaterialMinRank: inventoryKindSupportsUpgradeLimit(kind) ? String(item.upgradeMaterialMinRank || item.rank || '').trim() : '',
-    equipmentUpgradeEffect: String(item.equipmentUpgradeEffect || '').trim(),
-    equipmentUpgradeValue: String(item.equipmentUpgradeValue || '').trim(),
-    equipmentUpgradeSlotCost: String(item.equipmentUpgradeSlotCost || '').trim(),
-    equipmentUpgradeDetail: String(item.equipmentUpgradeDetail || '').trim(),
-    equipmentUpgradeTarget: String(item.equipmentUpgradeTarget || '').trim(),
+    equipmentUpgradeEffect: masterIsMaterial ? (masterUpgradeEffect || String(item.equipmentUpgradeEffect || '').trim()) : String(item.equipmentUpgradeEffect || '').trim(),
+    equipmentUpgradeValue: masterIsMaterial ? (masterUpgradeValue || String(item.equipmentUpgradeValue || '').trim()) : String(item.equipmentUpgradeValue || '').trim(),
+    equipmentUpgradeSlotCost: masterIsMaterial ? (masterUpgradeSlotCost || String(item.equipmentUpgradeSlotCost || '').trim()) : String(item.equipmentUpgradeSlotCost || '').trim(),
+    equipmentUpgradeDetail: masterIsMaterial ? (masterUpgradeDetail || String(item.equipmentUpgradeDetail || '').trim()) : String(item.equipmentUpgradeDetail || '').trim(),
+    equipmentUpgradeTarget: masterIsMaterial ? (masterUpgradeTarget || String(item.equipmentUpgradeTarget || '').trim()) : String(item.equipmentUpgradeTarget || '').trim(),
     upgradeEntries: normalizedUpgradeEntries,
     upgradeLines: serializeUpgradeEntries(normalizedUpgradeEntries),
     spellSlots: kind === 'バッグ' ? '' : String(item.spellSlots || item.slotCount || item.registerSlots || item.maxStack || '').trim(),
@@ -5280,7 +5288,7 @@ function mergeMasterPresetIntoInventoryItem(existing={}, preset={}) {
 function isSameInventoryCore(a={}, b={}) {
   const aa = normalizeInventoryItem(a);
   const bb = normalizeInventoryItem(b);
-  const keys = ['publicId','masterId','masterSheet','masterSync','name','kind','itemType','itemCategory','materialType','materialCategory','category','rank','price','equipSlot','skill','power','hit','defense','guard','evade','offhand','upgradeLimit','upgradeMaterialMinRank','spellSlots','setSpells','target','element','cost','description','effect','checkType','role','source','tags','setItem','recipeResult','materials'];
+  const keys = ['publicId','masterId','masterSheet','masterSync','name','kind','itemType','itemCategory','materialType','materialCategory','category','rank','price','equipSlot','skill','power','hit','defense','guard','evade','offhand','upgradeLimit','upgradeMaterialMinRank','equipmentUpgradeEffect','equipmentUpgradeValue','equipmentUpgradeSlotCost','equipmentUpgradeDetail','equipmentUpgradeTarget','spellSlots','setSpells','target','element','cost','description','effect','checkType','role','source','tags','setItem','recipeResult','materials'];
   return keys.every(k => String(aa[k] ?? '') === String(bb[k] ?? '')) && Number(aa.count || 0) === Number(bb.count || 0);
 }
 
