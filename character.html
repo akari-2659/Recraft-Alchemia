@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.371</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.372</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1025,7 +1025,7 @@ details.big-section>summary{
 </style>
 
 <style id="raMaintenanceV287">
-/* v90.8.371 usability maintenance */
+/* v90.8.372 usability maintenance */
 body{padding-bottom:0}
 .ra-build-info{font-size:12px;padding:6px 12px;text-align:right;color:var(--muted);background:rgba(255,253,248,.9);border-bottom:1px solid var(--line)}
 #editorView>section:first-child{padding:10px 12px;margin-bottom:8px}
@@ -1069,7 +1069,7 @@ body{padding-bottom:0}
 }
 @media(max-width:430px){.editor-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}.editor-action-bar{right:8px!important;bottom:max(8px,env(safe-area-inset-bottom))!important;max-width:calc(100vw - 16px)!important}.editor-action-toggle,.editor-action-inner button{padding:6px 8px!important;font-size:.78rem!important}}
 
-/* v90.8.371: 折り畳み表示と操作バーを安定化 */
+/* v90.8.372: 折り畳み表示と操作バーを安定化 */
 details.big-section>summary::before,.skill-category-title::before{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 16px!important;width:16px!important;margin-right:6px!important;transform:rotate(0deg)!important;transform-origin:center!important;transition:transform .14s ease!important}
 details.big-section[open]>summary::before,.skill-category-card[open]>.skill-category-title::before{transform:rotate(90deg)!important}
 #tabEquipment .equipment-card-toggle{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:14px!important;height:18px!important;position:static!important}
@@ -1079,15 +1079,15 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
 .inventory-registration-card>summary{padding:9px 11px!important}
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.371-perf1">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.372-perf1">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.371｜更新：2026年8月3日</div>
+<div class="ra-build-info">v90.8.372｜更新：2026年8月3日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
   <h1>リクラフト・アルケミア</h1>
-  <div class="subtitle">キャラクター作成ツール｜クラウド保存専用｜v90.8.371｜更新：2026年8月3日</div>
+  <div class="subtitle">キャラクター作成ツール｜クラウド保存専用</div>
 </header>
 <main>
   <div id="homeView" class="view active">
@@ -5036,8 +5036,21 @@ function dbRecipeToInventoryItem(row) {
 }
 const GITHUB_COMMON_DB_BASE =
   'https://akari-2659.github.io/Recraft-Alchemia-Manager/data/public/';
-const GITHUB_COMMON_DB_MANIFEST_URL = GITHUB_COMMON_DB_BASE + 'manifest.json';
 let githubCharacterSheetMasterPromise = null;
+function characterGithubBaseCandidates(){
+  const bases=[];
+  try{bases.push(new URL('./data/public/',window.location.href).toString());}catch(_e){}
+  bases.push(GITHUB_COMMON_DB_BASE);
+  return [...new Set(bases.filter(Boolean))];
+}
+function characterManifestMasterInfo(manifest={}){
+  const nested=manifest&&manifest.files&&manifest.files.master;
+  const nestedObject=nested&&typeof nested==='object'?nested:{};
+  return{
+    file:String(manifest.master||nestedObject.path||(typeof nested==='string'?nested:'')||'').trim(),
+    sha256:String(manifest.sha256||nestedObject.sha256||'').trim()
+  };
+}
 let lastCharacterSheetMasterResult = null;
 
 function setCharacterSheetMasterSourceStatus(res=null, options={}) {
@@ -5099,7 +5112,7 @@ function buildCharacterSheetMasterFromGithub(masterDocument={}, manifest={}) {
       ...buildEquipmentCategoryLocalMeta(equipmentRows),
       source: 'github',
       version: String(manifest.version || masterDocument.version || ''),
-      masterFile: String(manifest.master || '')
+      masterFile: characterManifestMasterInfo(manifest).file
     },
     cs_items: csItems,
     recipes: enabledRows('recipes'),
@@ -5107,7 +5120,7 @@ function buildCharacterSheetMasterFromGithub(masterDocument={}, manifest={}) {
     skills: enabledRows('skills'),
     __source: 'github',
     __version: String(manifest.version || masterDocument.version || ''),
-    __masterFile: String(manifest.master || '')
+    __masterFile: characterManifestMasterInfo(manifest).file
   };
 }
 function characterGithubDelay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
@@ -5127,52 +5140,44 @@ function characterGithubMasterResult(masterDocument, manifest={}) {
 }
 async function fetchGithubCharacterSheetMaster({force=false}={}) {
   if (githubCharacterSheetMasterPromise && !force) return githubCharacterSheetMasterPromise;
-
   const task = (async () => {
-    let lastError = null;
-    let usableMismatch = null;
-    for (let attempt = 0; attempt < 4; attempt++) {
-      const token = `${Date.now()}_${attempt}_${Math.random().toString(36).slice(2)}`;
-      try {
-        const manifestUrl = new URL(GITHUB_COMMON_DB_MANIFEST_URL);
-        manifestUrl.searchParams.set('_ra', token);
-        const manifest = await characterFetchGithubJson(manifestUrl.toString());
-        const masterFile = String(manifest.master || '').trim();
-        if (!masterFile || masterFile.includes('..') || masterFile.includes('\\')) {
-          throw new Error('GitHub共通DBのmanifestに有効なmasterファイル名がありません。');
-        }
-        const masterUrlObject = new URL(masterFile, GITHUB_COMMON_DB_BASE);
-        masterUrlObject.searchParams.set('_ra', `${String(manifest.sha256 || manifest.version || 'master')}_${token}`);
-        const masterDocument = await characterFetchGithubJson(masterUrlObject.toString());
-        const result = characterGithubMasterResult(masterDocument, manifest);
-        if (!result.__versionWarning) return result;
-        usableMismatch = result;
-        lastError = new Error(`GitHub共通DBの更新反映待ちです（${result.__versionWarning}）。`);
-      } catch (error) {
-        lastError = error;
+    const errors=[];
+    let usableMismatch=null;
+    for(const base of characterGithubBaseCandidates()){
+      let lastError=null;
+      for(let attempt=0;attempt<3;attempt++){
+        const token=`${Date.now()}_${attempt}_${Math.random().toString(36).slice(2)}`;
+        try{
+          const manifestUrl=new URL('manifest.json',base);
+          manifestUrl.searchParams.set('_ra',token);
+          const manifest=await characterFetchGithubJson(manifestUrl.toString());
+          const info=characterManifestMasterInfo(manifest);
+          if(!info.file||info.file.includes('..')||info.file.includes('\\'))throw new Error('GitHub共通DBのmanifestに有効なmasterファイル名がありません。');
+          const masterUrlObject=new URL(info.file,base);
+          masterUrlObject.searchParams.set('_ra',`${info.sha256||String(manifest.version||'master')}_${token}`);
+          const result=characterGithubMasterResult(await characterFetchGithubJson(masterUrlObject.toString()),manifest);
+          if(!result.__versionWarning)return result;
+          usableMismatch=result;
+          lastError=new Error(`GitHub共通DBの更新反映待ちです（${result.__versionWarning}）。`);
+        }catch(error){lastError=error;}
+        if(attempt<2)await characterGithubDelay(250*(attempt+1));
       }
-      if (attempt < 3) await characterGithubDelay(350 * (attempt + 1));
+      try{
+        const directUrl=new URL('recraft_alchemia_master.json',base);
+        directUrl.searchParams.set('_ra',`${Date.now()}_direct_${Math.random().toString(36).slice(2)}`);
+        return characterGithubMasterResult(await characterFetchGithubJson(directUrl.toString()),{master:'recraft_alchemia_master.json'});
+      }catch(directError){
+        errors.push(`${base}: ${[lastError&&lastError.message,directError&&directError.message].filter(Boolean).join(' / ')}`);
+      }
     }
-    // manifestの反映だけが遅れている場合は、固定名のmasterを直接確認してGitHub側を継続利用する。
-    try {
-      const directUrl = new URL('recraft_alchemia_master.json', GITHUB_COMMON_DB_BASE);
-      directUrl.searchParams.set('_ra', `${Date.now()}_direct_${Math.random().toString(36).slice(2)}`);
-      const masterDocument = await characterFetchGithubJson(directUrl.toString());
-      return characterGithubMasterResult(masterDocument, {master:'recraft_alchemia_master.json'});
-    } catch (directError) {
-      if (usableMismatch) return usableMismatch;
-      throw new Error([lastError && lastError.message, directError && directError.message].filter(Boolean).join(' / ') || 'GitHub共通DBを取得できませんでした。');
-    }
+    if(usableMismatch)return usableMismatch;
+    throw new Error(errors.join(' / ')||'GitHub共通DBを取得できませんでした。');
   })();
-
-  githubCharacterSheetMasterPromise = task;
-  try {
-    return await task;
-  } catch (error) {
-    if (githubCharacterSheetMasterPromise === task) githubCharacterSheetMasterPromise = null;
-    throw error;
-  }
+  githubCharacterSheetMasterPromise=task;
+  try{return await task;}
+  catch(error){if(githubCharacterSheetMasterPromise===task)githubCharacterSheetMasterPromise=null;throw error;}
 }
+
 async function loadCharacterSheetMasterWithFallback({force=false}={}) {
   setCharacterSheetMasterSourceStatus(null, {loading:true});
   try {
