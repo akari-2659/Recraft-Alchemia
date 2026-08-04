@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.384</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.394</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -522,7 +522,9 @@
   }
   .equipment-wide { grid-column: 1 / -1; }
   .equipment-upgrade-list{display:grid;gap:8px}
-  .equipment-upgrade-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(120px,.55fr);gap:8px;align-items:end;border:1px solid var(--line);background:rgba(255,255,255,.68);border-radius:12px;padding:8px}
+  .equipment-upgrade-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(110px,.48fr);gap:8px;align-items:end;border:1px solid var(--line);background:rgba(255,255,255,.68);border-radius:12px;padding:8px}
+  .equipment-upgrade-special-detail{grid-column:1/-1;border:1px solid var(--line);border-radius:10px;background:rgba(249,245,235,.82);padding:8px 10px;font-size:.82rem;line-height:1.55;white-space:pre-wrap}
+  .equipment-upgrade-special-detail:empty{display:none}
   .equipment-upgrade-row label{font-size:.78rem}
   @media(max-width:620px){.equipment-upgrade-row{grid-template-columns:1fr}}
 
@@ -677,6 +679,19 @@ details.spellbook-fields>.spellbook-fields-body{padding-top:8px}
 .equipped-skill-view{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:9px}
 .inventory-skill-card .inventory-title{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 
+
+/* v90.8.392: 装備強化は効果名と効果説明で管理し、独立した数値項目を廃止 */
+.equipment-selection-only{grid-template-columns:minmax(0,1fr)!important}
+.equipment-readonly-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:8px}
+.equipment-readonly-card{min-width:0;border:1px solid var(--line);border-radius:11px;background:rgba(255,255,255,.68);padding:8px 10px;display:grid;gap:3px;align-content:start}
+.equipment-readonly-card[hidden]{display:none!important}
+.equipment-readonly-label{font-size:.72rem;color:var(--muted);font-weight:800}
+.equipment-readonly-value{font-size:.94rem;font-weight:900;line-height:1.45;overflow-wrap:anywhere}
+.equipment-readonly-note{font-size:.73rem;color:var(--muted);line-height:1.45;overflow-wrap:anywhere}
+.equipment-damage-card{grid-column:1/-1;background:linear-gradient(135deg,rgba(255,253,247,.94),rgba(246,237,220,.84))}
+.equipment-damage-formula{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:1.08rem;letter-spacing:.01em}
+.equipment-upgrade-effect-detail{grid-column:1/-1;border:1px solid var(--line);border-radius:10px;background:rgba(249,245,235,.82);padding:8px 10px;font-size:.82rem;line-height:1.55;white-space:pre-wrap}
+.equipment-upgrade-effect-detail:empty{display:none}
 </style>
 
 <style id="raBuildInfoStyle">
@@ -1025,7 +1040,8 @@ details.big-section>summary{
 </style>
 
 <style id="raMaintenanceV287">
-/* v90.8.384 usability maintenance */
+
+/* v90.8.392 usability maintenance */
 body{padding-bottom:0}
 .ra-build-info{font-size:12px;padding:6px 12px;text-align:right;color:var(--muted);background:rgba(255,253,248,.9);border-bottom:1px solid var(--line)}
 #editorView>section:first-child{padding:10px 12px;margin-bottom:8px}
@@ -1069,7 +1085,7 @@ body{padding-bottom:0}
 }
 @media(max-width:430px){.editor-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}.editor-action-bar{right:8px!important;bottom:max(8px,env(safe-area-inset-bottom))!important;max-width:calc(100vw - 16px)!important}.editor-action-toggle,.editor-action-inner button{padding:6px 8px!important;font-size:.78rem!important}}
 
-/* v90.8.384: 折り畳み表示と操作バーを安定化 */
+/* v90.8.392: 折り畳み表示と操作バーを安定化 */
 details.big-section>summary::before,.skill-category-title::before{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 16px!important;width:16px!important;margin-right:6px!important;transform:rotate(0deg)!important;transform-origin:center!important;transition:transform .14s ease!important}
 details.big-section[open]>summary::before,.skill-category-card[open]>.skill-category-title::before{transform:rotate(90deg)!important}
 #tabEquipment .equipment-card-toggle{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:14px!important;height:18px!important;position:static!important}
@@ -1079,10 +1095,10 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
 .inventory-registration-card>summary{padding:9px 11px!important}
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.384-perf1">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.394-removal-admin1">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.384｜更新：2026年8月4日</div>
+<div class="ra-build-info">v90.8.394｜更新：2026年8月5日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -2210,47 +2226,55 @@ function renderStatic() {
           <span class="equipment-summary" id="equip_${slot.key}_summary">未設定</span>
         </summary>
         <div class="equipment-slot-body">
-          <div class="equipment-primary-grid">
-            <div class="field equipment-select-field">
+          <div class="equipment-primary-grid equipment-selection-only">
+            <div class="field equipment-select-field equipment-wide">
               <label for="equip_${slot.key}_itemSelect">倉庫から選択</label>
-              <select id="equip_${slot.key}_itemSelect" data-equipment-input="1"><option value="">手入力</option></select>
+              <select id="equip_${slot.key}_itemSelect" data-equipment-input="1"><option value="">未選択</option></select>
             </div>
-            <div class="field equipment-name-field">
-              <label for="equip_${slot.key}_name">装備名</label>
-              <input id="equip_${slot.key}_name" data-equipment-input="1" type="text" placeholder="例：鉄の片手剣" />
+            <input id="equip_${slot.key}_name" data-equipment-input="1" type="hidden" value="" />
+            <select id="equip_${slot.key}_type" data-equipment-input="1" hidden aria-hidden="true" tabindex="-1">${options}</select>
+            <select id="equip_${slot.key}_element" data-equipment-input="1" hidden aria-hidden="true" tabindex="-1">${elementSelectOptions()}</select>
+          </div>
+
+          <div class="equipment-readonly-grid">
+            <div class="equipment-readonly-card" data-equipment-field="type">
+              <span class="equipment-readonly-label">種類</span>
+              <strong id="equip_${slot.key}_typeDisplay" class="equipment-readonly-value">—</strong>
             </div>
-            <div class="field equipment-type-field">
-              <label for="equip_${slot.key}_type">種類</label>
-              <select id="equip_${slot.key}_type" data-equipment-input="1">${options}</select>
-            </div>
-            <div class="field equipment-element-field" data-equipment-field="element">
-              <label for="equip_${slot.key}_element">属性</label>
-              <select id="equip_${slot.key}_element" data-equipment-input="1">${elementSelectOptions()}</select>
+            <div class="equipment-readonly-card" data-equipment-field="element">
+              <span class="equipment-readonly-label">属性</span>
+              <strong id="equip_${slot.key}_elementDisplay" class="equipment-readonly-value">—</strong>
             </div>
           </div>
 
-          <div class="equipment-combat-grid" data-equipment-combat-group="${slot.key}">
-            <div class="field" data-equipment-field="power">
-              <label for="equip_${slot.key}_power">威力</label>
-              <input id="equip_${slot.key}_power" data-equipment-input="1" type="text" placeholder="例：1D6+1" />
+          <div class="equipment-readonly-grid equipment-combat-grid" data-equipment-combat-group="${slot.key}">
+            <div class="equipment-readonly-card equipment-damage-card" data-equipment-field="power">
+              <span class="equipment-readonly-label">武器ダメージ</span>
+              <strong id="equip_${slot.key}_powerDisplay" class="equipment-readonly-value equipment-damage-formula">—</strong>
+              <span id="equip_${slot.key}_powerBreakdown" class="equipment-readonly-note"></span>
             </div>
-            <div class="field" data-equipment-field="offhand">
-              <label for="equip_${slot.key}_offhand">副手追撃値</label>
-              <input id="equip_${slot.key}_offhand" data-equipment-input="1" type="text" placeholder="例：+2" />
+            <div class="equipment-readonly-card" data-equipment-field="offhand">
+              <span class="equipment-readonly-label">副手追撃値</span>
+              <strong id="equip_${slot.key}_offhandDisplay" class="equipment-readonly-value">—</strong>
             </div>
-            <div class="field" data-equipment-field="reload">
-              <label for="equip_${slot.key}_reloadTurns">装填ターン</label>
-              <input id="equip_${slot.key}_reloadTurns" data-equipment-input="1" type="number" min="0" max="9" placeholder="例：1" />
+            <div class="equipment-readonly-card" data-equipment-field="reload">
+              <span class="equipment-readonly-label">装填ターン</span>
+              <strong id="equip_${slot.key}_reloadTurnsDisplay" class="equipment-readonly-value">—</strong>
             </div>
-            <div class="field" data-equipment-field="target">
-              <label for="equip_${slot.key}_target">対象</label>
-              <input id="equip_${slot.key}_target" data-equipment-input="1" type="text" placeholder="例：敵1体" />
+            <div class="equipment-readonly-card" data-equipment-field="target">
+              <span class="equipment-readonly-label">対象</span>
+              <strong id="equip_${slot.key}_targetDisplay" class="equipment-readonly-value">—</strong>
             </div>
-            <div class="field" data-equipment-field="check">
-              <label for="equip_${slot.key}_checkType">使用技能</label>
-              <input id="equip_${slot.key}_checkType" data-equipment-input="1" type="text" readonly placeholder="武器種から自動設定" />
+            <div class="equipment-readonly-card" data-equipment-field="check">
+              <span class="equipment-readonly-label">使用技能</span>
+              <strong id="equip_${slot.key}_checkTypeDisplay" class="equipment-readonly-value">—</strong>
             </div>
           </div>
+          <input id="equip_${slot.key}_power" data-equipment-input="1" type="hidden" value="" />
+          <input id="equip_${slot.key}_offhand" data-equipment-input="1" type="hidden" value="" />
+          <input id="equip_${slot.key}_reloadTurns" data-equipment-input="1" type="hidden" value="" />
+          <input id="equip_${slot.key}_target" data-equipment-input="1" type="hidden" value="" />
+          <input id="equip_${slot.key}_checkType" data-equipment-input="1" type="hidden" value="" />
 
           <details class="equipment-extra-details">
             <summary>補正・強化・説明</summary>
@@ -2270,7 +2294,7 @@ function renderStatic() {
                 <div id="equip_${slot.key}_upgradeUsage" class="small"></div>
                 <div id="equip_${slot.key}_upgradeSlots" class="equipment-upgrade-list" data-equipment-input="1"></div>
                 <input id="equip_${slot.key}_upgradeLines" data-equipment-input="1" type="hidden" value="" />
-                <div class="small">強化枠上限に応じて入力欄を表示します。</div>
+                <div class="small">倉庫内にある対象素材だけを候補に表示します。装備の「強化素材最低ランク」未満の素材は表示しません。</div>
               </details>
               <div class="field equipment-description-field">
                 <label for="equip_${slot.key}_description">説明</label>
@@ -2579,7 +2603,7 @@ function equipmentModifierIsBoundToInventoryItem(item={}) {
 function itemModifierTextWithPresetFallback(item={}) {
   const own = migratedModifierTextForItem(item || {});
   // 倉庫の装備個体や、倉庫から選択中の装備では、空欄もその装備固有の設定として扱う。
-  // 手入力で武器種だけを選んだ場合は、従来どおりカテゴリプリセットを使用する。
+  // 旧保存データで装備個体が特定できない場合だけカテゴリプリセットを使用する。
   if (equipmentModifierIsBoundToInventoryItem(item || {})) return own;
   if(String(own || '').trim()) return own;
   return presetModifierTextForType(item.type || item.category || item.kind || item.itemCategory || '');
@@ -2620,22 +2644,10 @@ function sumModifierRows(rows=[], predicate=()=>false) {
   return rows.reduce((sum,row)=> predicate(row) ? sum + modifierValue(row) : sum, 0);
 }
 function upgradeEntryModifierRow(entry={}) {
-  const content = String(entry.content || '').trim();
-  const value = String(entry.value || '').trim();
-  if(!content || !value || isZeroModifierText(value)) return null;
-  const aliases = {
-    '命中':'hit', '命中補正':'hit',
-    '防御':'combat:defense', '防御値':'combat:defense', '常時防御':'combat:defense', '常時防御値':'combat:defense',
-    '回避値':'combat:evasion', '抵抗値':'combat:resistance', '抵抗補正':'combat:resistance',
-    '回避':'skill:evade', '回避補正':'skill:evade',
-    '防御行動':'combat:guardAction', '防御行動値':'combat:guardAction',
-    'HP':'resource:maxHp', '最大HP':'resource:maxHp',
-    'MP':'resource:maxMp', '最大MP':'resource:maxMp',
-    '体力':'ability:body', '器用':'ability:dexterity', '感覚':'ability:sense', '知性':'ability:intellect', '意志':'ability:will', '魅力':'ability:charm'
-  };
-  const target = aliases[content] || normalizeModifierRow({target:content, value})?.target || '';
-  if(!target || target === content) return null;
-  return normalizeModifierRow({target, value});
+  const e=normalizeUpgradeEntry(entry),content=e.content,value=String(upgradeEffectAmount(e)||'').trim();
+  if(!content||!value||isZeroModifierText(value))return null;
+  const aliases={'命中強化':'hit','防御強化':'combat:defense','回避強化':'skill:evade','防御行動強化':'combat:guardAction','HP強化':'resource:maxHp','MP強化':'resource:maxMp','力業補助':'skill:force','魔法補助':'skill:magic','祈祷補助':'skill:prayer'};
+  const target=aliases[content]||'';return target?normalizeModifierRow({target,value}):null;
 }
 function equipmentUpgradeModifierRows(item={}) {
   return parseUpgradeLines(item.upgradeLines || item.upgradeEntries || '').map(upgradeEntryModifierRow).filter(Boolean);
@@ -3209,107 +3221,375 @@ function syncAllEquipmentSpellSetsToInventory() {
     if (slot.kind !== 'carry') syncEquippedSpellSetToInventoryItem(slot.key);
   }
 }
-const EQUIPMENT_UPGRADE_OPTIONS = ['','威力','命中補正','防御貫通','防御値','防御行動値','回避補正','副手追撃値','術式枠','消費コスト軽減','回復量','最大スタック数','HP','MP','属性効果','特殊効果','その他'];
-
-function normalizeUpgradeEntry(entry={}){
-  let content = String(entry.content || entry.type || entry.name || entry.label || '').trim();
-  let value = String(entry.value || entry.amount || entry.detail || '').trim();
-  let rank = String(entry.rank || entry.materialRank || '').trim();
-  const strongSlotEffect=/防御値|消費コスト|回復量/.test(content);
-  let slotCost = strongSlotEffect ? 2 : Math.max(1, Number(entry.slotCost || entry.upgradeSlotCost || 0) || 1);
-  const slotPattern=/(?:\s*(?:\/|／|\||｜)\s*)?(?:消費枠|slotCost)\s*[：:=]\s*(\d+)/i;
-  const slotMatch=value.match(slotPattern)||content.match(slotPattern);
-  if(slotMatch){slotCost=Math.max(1,Number(slotMatch[1])||1);value=value.replace(slotMatch[0],'').trim();content=content.replace(slotMatch[0],'').trim();}
-  const rankPattern = /(?:\s*(?:\/|／|\||｜)\s*)?(?:素材ランク|ランク|rank)\s*[：:=]\s*([^\/／\|｜\n]+)/i;
-  const valueRank = value.match(rankPattern);
-  if(valueRank){
-    if(!rank) rank = String(valueRank[1] || '').trim();
-    value = value.replace(valueRank[0], '').trim();
-  }
-  const contentRank = content.match(rankPattern);
-  if(contentRank){
-    if(!rank) rank = String(contentRank[1] || '').trim();
-    content = content.replace(contentRank[0], '').trim();
-  }
-  return { content, value, rank, slotCost };
+const EQUIPMENT_UPGRADE_OPTIONS = ['','威力強化','威力固定強化','命中強化','防御強化','防御行動強化','回避強化','副手追撃強化','術式枠拡張','術式省力化','回復量強化','回復量固定強化','最大スタック拡張','HP強化','MP強化','力業補助','魔法補助','祈祷補助','素材固有効果'];
+const EQUIPMENT_UPGRADE_OPTION_LABELS = {'素材固有効果':'特殊効果'};
+const EQUIPMENT_UPGRADE_DEFINITIONS={
+  '威力強化':{amount:1,slotCost:1,detail:'同じ装備に付与された威力強化の段階に応じて、この装備による武器攻撃・魔法・祈祷のダメージへ追加する。1段階は+1、2段階は+1D2、3段階は+1D3、以後同様。'},
+  '威力固定強化':{amount:1,slotCost:2,detail:'同じ装備に付与された威力固定強化の段階に応じて、この装備による武器攻撃・魔法・祈祷のダメージへ固定値を追加する。1段階は+1、2段階は+2、3段階は+3、以後同様。'},
+  '命中強化':{amount:1,slotCost:1,detail:'この武器を使用する攻撃判定+1。'},
+  '防御強化':{amount:1,slotCost:2,detail:'防御値+1。'},
+  '防御行動強化':{amount:1,slotCost:1,detail:'防御行動中のみ防御行動値+1。'},
+  '回避強化':{amount:1,slotCost:1,detail:'回避値+1。'},
+  '副手追撃強化':{amount:1,slotCost:1,detail:'副手追撃値+1。'},
+  '術式枠拡張':{amount:1,slotCost:2,detail:'この魔導書・祈祷書の術式枠+1。'},
+  '術式省力化':{amount:1,slotCost:2,detail:'この装備から使用する術式の消費MPを1点軽減する（最低1）。'},
+  '回復量強化':{amount:1,slotCost:1,detail:'同じ装備に付与された回復量強化の段階に応じて、この装備から使用する魔法・祈祷のHP回復量へ追加する。1段階は+1、2段階は+1D2、3段階は+1D3、以後同様。'},
+  '回復量固定強化':{amount:1,slotCost:2,detail:'同じ装備に付与された回復量固定強化の段階に応じて、この装備から使用する魔法・祈祷のHP回復量へ固定値を追加する。1段階は+1、2段階は+2、3段階は+3、以後同様。'},
+  '最大スタック拡張':{amount:1,slotCost:1,detail:'最大スタック数+1。'},
+  'HP強化':{amount:1,slotCost:1,detail:'最大HP+1。'},
+  'MP強化':{amount:1,slotCost:1,detail:'最大MP+1。'},
+  '力業補助':{amount:1,slotCost:2,detail:'この武器を使用する力業判定+1。'},
+  '魔法補助':{amount:1,slotCost:2,detail:'この装備から使用する魔法判定+1。'},
+  '祈祷補助':{amount:1,slotCost:2,detail:'この装備から使用する祈祷判定+1。'}
+};
+const LEGACY_UPGRADE_NAME_MAP={
+  '威力':'威力強化','威力+1':'威力強化','武器威力':'威力強化','命中':'命中強化','命中補正':'命中強化',
+  '防御貫通':'威力固定強化','装甲貫通':'威力固定強化','雷脈貫通':'威力固定強化','天雷貫通':'威力固定強化',
+  '防御':'防御強化','防御値':'防御強化','防御行動':'防御行動強化','防御行動値':'防御行動強化',
+  '回避':'回避強化','回避補正':'回避強化','副手追撃値':'副手追撃強化','術式枠':'術式枠拡張',
+  '消費コスト軽減':'術式省力化','コスト軽減':'術式省力化','回復量':'回復量固定強化','回復強化':'回復量固定強化',
+  '最大スタック数':'最大スタック拡張','HP':'HP強化','最大HP':'HP強化','MP':'MP強化','最大MP':'MP強化',
+  '力業':'力業補助','魔法':'魔法補助','祈祷':'祈祷補助'
+};
+function isStandardUpgradeEffectName(content=''){return !!EQUIPMENT_UPGRADE_DEFINITIONS[String(content||'').trim()];}
+function normalizeUpgradeContentName(content='',legacyValue=''){
+  const raw=String(content||'').trim();
+  if(!raw)return '';
+  if(raw==='特殊効果'||raw==='属性効果'||raw==='その他'||raw==='素材固有効果')return '素材固有効果';
+  if(raw.startsWith('特殊効果：')||raw.startsWith('特殊効果:')||raw.startsWith('属性効果：')||raw.startsWith('属性効果:')||raw.startsWith('素材固有効果：')||raw.startsWith('素材固有効果:'))return '素材固有効果';
+  return LEGACY_UPGRADE_NAME_MAP[raw]||raw;
 }
+function upgradeDefaultSlotCost(content=''){return Math.max(1,Number(EQUIPMENT_UPGRADE_DEFINITIONS[normalizeUpgradeContentName(content)]?.slotCost)||1);}
+function legacyUpgradeMagnitude(value='',fallback=0){
+  const match=String(value||'').trim().match(/[+-]?\d+(?:\.\d+)?/);
+  const n=match?Math.abs(Number(match[0])):0;
+  return Number.isFinite(n)&&n>0?n:fallback;
+}
+function standardUpgradeDetailForAmount(content='',amount=1){
+  const name=normalizeUpgradeContentName(content),n=Math.max(1,Number(amount)||1);
+  switch(name){
+    case '威力強化':return `威力強化${n}として扱う。ダメージへの追加は、1段階なら+1、2段階なら+1D2、3段階なら+1D3、以後同様。`;
+    case '威力固定強化':return `威力固定強化${n}として扱い、この装備による武器攻撃・魔法・祈祷のダメージ+${n}。`;
+    case '命中強化':return `この武器を使用する攻撃判定+${n}。`;
+    case '防御強化':return `防御値+${n}。`;
+    case '防御行動強化':return `防御行動中のみ防御行動値+${n}。`;
+    case '回避強化':return `回避値+${n}。`;
+    case '副手追撃強化':return `副手追撃値+${n}。`;
+    case '術式枠拡張':return `この魔導書・祈祷書の術式枠+${n}。`;
+    case '術式省力化':return `この装備から使用する術式の消費MPを${n}点軽減する（最低1）。`;
+    case '回復量強化':return `回復量強化${n}として扱う。HP回復量への追加は、1段階なら+1、2段階なら+1D2、3段階なら+1D3、以後同様。`;
+    case '回復量固定強化':return `回復量固定強化${n}として扱い、この装備から使用する魔法・祈祷のHP回復量+${n}。`;
+    case '最大スタック拡張':return `最大スタック数+${n}。`;
+    case 'HP強化':return `最大HP+${n}。`;
+    case 'MP強化':return `最大MP+${n}。`;
+    case '力業補助':return `この武器を使用する力業判定+${n}。`;
+    case '魔法補助':return `この装備から使用する魔法判定+${n}。`;
+    case '祈祷補助':return `この装備から使用する祈祷判定+${n}。`;
+    default:return String(EQUIPMENT_UPGRADE_DEFINITIONS[name]?.detail||'');
+  }
+}
+function upgradeEffectAmount(entry={}){
+  const e=typeof entry==='string'?{content:entry}:entry;
+  const inherited=Math.max(0,Number(e.legacyEffectAmount||0)||0);
+  return inherited||Number(EQUIPMENT_UPGRADE_DEFINITIONS[normalizeUpgradeContentName(e.content)]?.amount)||0;
+}
+function standardUpgradeDetailText(entry={}){
+  const e=typeof entry==='string'?{content:entry}:entry;
+  const inheritedDetail=String(e.legacyEffectDetail||'').trim();
+  if(inheritedDetail&&!/防御貫通|装甲貫通/.test(inheritedDetail))return inheritedDetail;
+  return standardUpgradeDetailForAmount(e.content,upgradeEffectAmount(e)||1);
+}
+function normalizeUpgradeEntry(entry={}){
+  let rawContent=String(entry.content||entry.type||entry.name||entry.label||'').trim();
+  let legacyValue=String(entry.value||entry.amount||'').trim();
+  let rank=String(entry.rank||entry.materialRank||'').trim();
+  let specialEffectName=String(entry.specialEffectName||entry.effectName||'').trim();
+  let specialEffectDetail=String(entry.specialEffectDetail||entry.effectDetail||entry.abilityDetail||'').trim();
+  let sourceMaterialId=String(entry.sourceMaterialId||entry.materialId||'').trim();
+  let sourceMaterialPublicId=String(entry.sourceMaterialPublicId||entry.materialPublicId||'').trim();
+  let sourceMaterialName=String(entry.sourceMaterialName||entry.materialName||'').trim();
+  let sourceMaterialTarget=String(entry.sourceMaterialTarget||entry.materialTarget||'').trim();
+  let legacyEffectAmount=Math.max(0,Number(entry.legacyEffectAmount||entry.resolvedAmount||0)||0);
+  let legacyEffectDetail=String(entry.legacyEffectDetail||entry.effectDetailOverride||'').trim();
+  let slotCost=Math.max(0,Number(entry.slotCost||entry.upgradeSlotCost||0)||0);
+  const slotPattern=/(?:\s*(?:\/|／|\||｜)\s*)?(?:消費枠|slotCost)\s*[：:=]\s*(\d+)/i;
+  const legacyAmountPattern=/(?:\s*(?:\/|／|\||｜)\s*)?(?:引継量|旧効果量|legacyAmount)\s*[：:=]\s*([+-]?\d+(?:\.\d+)?)/i;
+  const rankPattern=/(?:\s*(?:\/|／|\||｜)\s*)?(?:素材ランク|ランク|rank)\s*[：:=]\s*([^\/／\|｜\n]+)/i;
+  const stripMeta=(text='')=>{
+    let cleaned=String(text||'').trim(),m=cleaned.match(slotPattern);
+    if(m){if(!slotCost)slotCost=Math.max(1,Number(m[1])||1);cleaned=cleaned.replace(m[0],' ').trim();}
+    m=cleaned.match(rankPattern);
+    if(m){if(!rank)rank=String(m[1]||'').trim();cleaned=cleaned.replace(m[0],' ').trim();}
+    m=cleaned.match(legacyAmountPattern);
+    if(m){if(!legacyEffectAmount)legacyEffectAmount=Math.max(0,Math.abs(Number(m[1])||0));cleaned=cleaned.replace(m[0],' ').trim();}
+    return cleaned.replace(/\s*(?:\/|／|\||｜)\s*$/,'').trim();
+  };
+  rawContent=stripMeta(rawContent);legacyValue=stripMeta(legacyValue);
+  let explicitSpecial=rawContent.match(/^(?:特殊効果|属性効果|素材固有効果)(?:[：:]\s*(.+))?$/);
+  if(!explicitSpecial){
+    const pair=rawContent.match(/^([^：:]+)[：:]\s*(.+)$/);
+    if(pair){
+      const left=String(pair[1]||'').trim(),right=String(pair[2]||'').trim(),normalizedLeft=normalizeUpgradeContentName(left,right);
+      if(isStandardUpgradeEffectName(normalizedLeft)||['特殊効果','属性効果','素材固有効果','その他'].includes(left)){
+        rawContent=left;if(!legacyValue)legacyValue=right;
+      }
+    }
+    explicitSpecial=rawContent.match(/^(?:特殊効果|属性効果|素材固有効果)(?:[：:]\s*(.+))?$/);
+  }
+  if(explicitSpecial&&!specialEffectName)specialEffectName=String(explicitSpecial[1]||legacyValue||'').trim();
+  const legacyPenetrationName=['防御貫通','装甲貫通','雷脈貫通','天雷貫通'].includes(rawContent);
+  let content=normalizeUpgradeContentName(rawContent,legacyValue);
+  const legacyPenetrationSpecial=content==='素材固有効果'&&(LEGACY_UPGRADE_NAME_MAP[specialEffectName]==='威力固定強化'||/防御貫通|装甲貫通/.test(specialEffectDetail));
+  if(legacyPenetrationSpecial){content='威力固定強化';slotCost=2;specialEffectName='';specialEffectDetail='';sourceMaterialId='';sourceMaterialPublicId='';sourceMaterialName='';sourceMaterialTarget='';legacyEffectDetail='';}
+  if(legacyPenetrationName&&content==='威力固定強化')slotCost=2;
+  if(content&&!isStandardUpgradeEffectName(content)&&content!=='素材固有効果'){
+    if(!specialEffectName)specialEffectName=content;
+    content='素材固有効果';
+  }
+  if(!slotCost)slotCost=upgradeDefaultSlotCost(content);
+  if(['威力固定強化','回復量固定強化'].includes(content)&&slotCost<2)slotCost=2;
+  if(content==='威力固定強化'&&/防御貫通|装甲貫通/.test(legacyEffectDetail))legacyEffectDetail='';
+  if(content==='素材固有効果'){
+    if(!specialEffectName)specialEffectName=legacyValue;
+    if(slotCost===1)slotCost=2;
+    legacyEffectAmount=0;legacyEffectDetail='';
+  }else{
+    const defaultAmount=Number(EQUIPMENT_UPGRADE_DEFINITIONS[content]?.amount)||0;
+    const parsedLegacyAmount=legacyUpgradeMagnitude(legacyValue,0);
+    if(!legacyEffectAmount&&parsedLegacyAmount>0&&parsedLegacyAmount!==defaultAmount)legacyEffectAmount=parsedLegacyAmount;
+    if(legacyEffectAmount===defaultAmount)legacyEffectAmount=0;
+    if(legacyEffectAmount&&!legacyEffectDetail)legacyEffectDetail=standardUpgradeDetailForAmount(content,legacyEffectAmount);
+    specialEffectName='';specialEffectDetail='';sourceMaterialId='';sourceMaterialPublicId='';sourceMaterialName='';sourceMaterialTarget='';
+  }
+  return {content,rank,slotCost,specialEffectName,specialEffectDetail,sourceMaterialId,sourceMaterialPublicId,sourceMaterialName,sourceMaterialTarget,legacyEffectAmount,legacyEffectDetail};
+}
+function upgradeEntryForStorage(entry={}){const e=normalizeUpgradeEntry(entry);return {...e};}
 function parseUpgradeLines(value=''){
-  if(Array.isArray(value)) return value.map(normalizeUpgradeEntry).filter(e=>e.content || e.value || e.rank);
-  const rawText = String(value || '').trim();
-  if(!rawText) return [];
-  try {
-    const parsed = JSON.parse(rawText);
-    if(Array.isArray(parsed)) return parsed.map(normalizeUpgradeEntry).filter(e=>e.content || e.value || e.rank);
-  } catch(_) {}
-  return rawText.split(/\n+/).map(line=>{
-    const raw = line.trim();
-    if(!raw) return null;
-    const parts = raw.split(/[：:]/);
-    if(parts.length >= 2) return normalizeUpgradeEntry({content:parts.shift(), value:parts.join('：')});
-    return normalizeUpgradeEntry({content:'その他', value:raw});
-  }).filter(Boolean);
+  if(Array.isArray(value))return value.map(normalizeUpgradeEntry).filter(e=>e.content||e.specialEffectName||e.rank);
+  const rawText=String(value||'').trim();if(!rawText)return [];
+  try{const parsed=JSON.parse(rawText);if(Array.isArray(parsed))return parsed.map(normalizeUpgradeEntry).filter(e=>e.content||e.specialEffectName||e.rank);}catch(_){}
+  return rawText.split(/\n+/).map(line=>normalizeUpgradeEntry({content:String(line||'').trim()})).filter(e=>e.content||e.specialEffectName||e.rank);
 }
 function serializeUpgradeEntries(entries=[]){
-  return (entries || []).map(normalizeUpgradeEntry).filter(e=>e.content || e.value || e.rank).map(e=>{
-    const rankPart = e.rank ? ` / ランク：${characterPlayerRankLabel(e.rank)}` : '';
-    const slotPart = ` / 消費枠：${e.slotCost||1}`;
-    if(e.content && e.value) return `${e.content}：${e.value}${rankPart}${slotPart}`;
-    if(e.content) return `${e.content}${rankPart}${slotPart}`;
-    if(e.value) return `その他：${e.value}${rankPart}${slotPart}`;
-    return `ランク：${characterPlayerRankLabel(e.rank)}`;
+  return (entries||[]).map(normalizeUpgradeEntry).filter(e=>e.content||e.specialEffectName||e.rank).map(e=>{
+    const rankPart=e.rank?` / ランク：${characterPlayerRankLabel(e.rank)}`:'';
+    const slotPart=` / 消費枠：${e.slotCost||1}`;
+    const legacyPart=e.legacyEffectAmount?` / 引継量：${e.legacyEffectAmount}`:'';
+    if(e.content==='素材固有効果')return `素材固有効果：${e.specialEffectName||'名称未設定'}${rankPart}${slotPart}`;
+    return `${e.content||'未設定'}${rankPart}${slotPart}${legacyPart}`;
   }).join('\n');
 }
 function collectUpgradeEntries(slotKey){
-  const list = $('equip_' + slotKey + '_upgradeSlots');
-  if(!list) return parseUpgradeLines($('equip_' + slotKey + '_upgradeLines')?.value || '');
+  const list=$('equip_'+slotKey+'_upgradeSlots');
+  if(!list)return parseUpgradeLines($('equip_'+slotKey+'_upgradeLines')?.value||'');
   return Array.from(list.querySelectorAll('[data-upgrade-row]')).map(row=>normalizeUpgradeEntry({
-    content: row.querySelector('[data-upgrade-content]')?.value || '',
-    value: row.querySelector('[data-upgrade-value]')?.value || '',
-    slotCost: row.querySelector('[data-upgrade-slot-cost]')?.value || ''
-  })).filter(e=>e.content || e.value || e.rank);
+    content:row.querySelector('[data-upgrade-content]')?.value||'',
+    slotCost:row.querySelector('[data-upgrade-slot-cost]')?.value||'',
+    specialEffectName:row.querySelector('[data-upgrade-special-name-value]')?.value||'',
+    specialEffectDetail:row.querySelector('[data-upgrade-special-detail-value]')?.value||'',
+    sourceMaterialId:row.querySelector('[data-upgrade-special-material-id]')?.value||'',
+    sourceMaterialPublicId:row.querySelector('[data-upgrade-special-material-public-id]')?.value||'',
+    sourceMaterialName:row.querySelector('[data-upgrade-special-material-name]')?.value||'',
+    sourceMaterialTarget:row.querySelector('[data-upgrade-special-material-target]')?.value||'',
+    legacyEffectAmount:row.querySelector('[data-upgrade-legacy-amount]')?.value||'',
+    legacyEffectDetail:row.querySelector('[data-upgrade-legacy-detail]')?.value||''
+  })).filter(e=>e.content||e.specialEffectName||e.rank);
 }
 function equipmentUpgradeLimit(slotKey){
   return clampInt($('equip_' + slotKey + '_upgradeLimit')?.value || 0, 0, 9);
 }
 function equipmentUpgradeUsedSlots(entries=[]){return parseUpgradeLines(entries).reduce((sum,e)=>sum+Math.max(1,Number(e.slotCost)||1),0);}
-function trimUpgradeEntriesToSlotLimit(entries=[],limit=0){const out=[];let used=0;for(const raw of parseUpgradeLines(entries)){const e=normalizeUpgradeEntry(raw);const cost=Math.max(1,Number(e.slotCost)||1);if(used+cost>limit)break;out.push(e);used+=cost;}return out;}
-function upgradeOptionHtml(selected=''){
-  const current = String(selected || '').trim();
-  const base = EQUIPMENT_UPGRADE_OPTIONS.slice();
-  if(current && !base.includes(current)) base.push(current);
-  return base.map(v=>`<option value="${esc(v)}" ${v===current?'selected':''}>${esc(v || '未選択')}</option>`).join('');
-}
-
-
-
-
-
-
-function renderEquipmentUpgradeSlots(slotKey, sourceEntries=null){
-  const list = $('equip_' + slotKey + '_upgradeSlots');
-  const hidden = $('equip_' + slotKey + '_upgradeLines');
-  const details = $('equip_' + slotKey + '_upgradeDetails');
-  if(!list) return;
-  const limit = equipmentUpgradeLimit(slotKey);
-  const rawEntries = sourceEntries !== null ? parseUpgradeLines(sourceEntries) : collectUpgradeEntries(slotKey);
-  const entries=trimUpgradeEntriesToSlotLimit(rawEntries,limit);
-  const usage=$('equip_' + slotKey + '_upgradeUsage');
-  if(usage)usage.textContent=`使用済み強化枠：${equipmentUpgradeUsedSlots(entries)} / ${limit}`;
-  if(details) details.style.display = limit > 0 ? '' : 'none';
-  if(limit <= 0){
-    list.innerHTML = '<div class="small">この装備は強化できません。</div>';
-    if(hidden) hidden.value = '';
-    return;
+function trimUpgradeEntriesToSlotLimit(entries=[],limit=0){
+  const out=[],seenSpecialEffects=new Set();let used=0;
+  for(const raw of parseUpgradeLines(entries)){
+    const e=normalizeUpgradeEntry(raw),cost=Math.max(1,Number(e.slotCost)||1);
+    if(e.content==='素材固有効果'&&e.specialEffectName){
+      const effectName=String(e.specialEffectName||'').trim();
+      if(seenSpecialEffects.has(effectName))continue;
+      seenSpecialEffects.add(effectName);
+    }
+    if(used+cost>limit)break;
+    out.push(e);used+=cost;
   }
-  list.innerHTML = Array.from({length:limit}, (_,i)=>{
-    const entry = normalizeUpgradeEntry(entries[i] || {});
-    return `<div class="equipment-upgrade-row" data-upgrade-row="${i}">
-      <div class="field"><label>強化内容 ${i+1}</label><select data-upgrade-content data-equipment-input="1">${upgradeOptionHtml(entry.content)}</select></div>
-      <div class="field"><label>強化値</label><input data-upgrade-value data-equipment-input="1" type="text" value="${esc(entry.value)}" placeholder="任意入力" /></div><div class="field"><label>消費強化枠</label><select data-upgrade-slot-cost data-equipment-input="1"><option value="1" ${entry.slotCost===1?'selected':''}>1枠</option><option value="2" ${entry.slotCost===2?'selected':''}>2枠</option><option value="3" ${entry.slotCost===3?'selected':''}>3枠</option></select></div>
-    </div>`;
+  return out;
+}
+function upgradeOptionHtml(slotKey='',selected=''){
+  const current=normalizeUpgradeContentName(selected||'');
+  const standardEffects=new Set(standardUpgradeMaterialCandidates(slotKey).map(c=>c.effectName));
+  const hasSpecial=specialUpgradeMaterialCandidates(slotKey).length>0;
+  const base=[''].concat(EQUIPMENT_UPGRADE_OPTIONS.filter(v=>v&&((v==='素材固有効果'&&hasSpecial)||standardEffects.has(v))));
+  const options=base.map(v=>{
+    let label=EQUIPMENT_UPGRADE_OPTION_LABELS[v]||v||'未選択';
+    if(v&&v!=='素材固有効果'){
+      const candidates=standardUpgradeMaterialCandidates(slotKey,v);
+      const names=[...new Set(candidates.map(c=>c.materialName).filter(Boolean))];
+      if(names.length)label+=`（${names[0]}${names.length>1?` ほか${names.length-1}種`:''}）`;
+    }else if(v==='素材固有効果'){
+      const count=specialUpgradeMaterialCandidates(slotKey).length;
+      if(count)label+=`（${count}件）`;
+    }
+    return `<option value="${esc(v)}" ${v===current?'selected':''}>${esc(label)}</option>`;
+  });
+  if(current&&!base.includes(current)){
+    const label=(EQUIPMENT_UPGRADE_OPTION_LABELS[current]||current)+`（保存済み・現在の所持素材では選択不可）`;
+    options.push(`<option value="${esc(current)}" selected disabled>${esc(label)}</option>`);
+  }
+  return options.join('');
+}
+function specialUpgradeTargetTokensForSlot(slotKey=''){
+  const index=inventoryItemIndexForEquipmentSlot(slotKey);
+  const item=index>=0?normalizeInventoryItem(inventoryItemsState[index]||{}):null;
+  const type=normalizeEquipmentType(item?.itemCategory||item?.category||$('equip_'+slotKey+'_type')?.value||'なし');
+  const kind=String(item?.kind||'').trim();
+  const tokens=new Set();
+  if(['盾','大盾'].includes(type)||String(item?.itemType||'')==='盾')tokens.add('盾');
+  else if(kind==='防具'||slotKey==='armor')tokens.add('防具');
+  else if(kind==='装飾品'||/^accessory/.test(slotKey))tokens.add('装飾品');
+  else if(spellContainerKind(type)){
+    if(/祈祷/.test(type))tokens.add('祈祷書');
+    else tokens.add('魔導書');
+  }else if(type&&type!=='なし'){
+    tokens.add('武器');tokens.add(type);
+    if(type==='クロスボウ')tokens.add('弩');
+    if(type==='ヘヴィクロスボウ')tokens.add('大型弩');
+  }
+  return tokens;
+}
+function specialUpgradeTargetMatches(target='',tokens=new Set()){
+  const parts=String(target||'').split(/[・、,，\/／\s]+/u).map(v=>v.trim()).filter(Boolean);
+  return !parts.length||parts.some(part=>tokens.has(part));
+}
+function selectedEquipmentInventoryItemForUpgrade(slotKey=''){
+  const index=inventoryItemIndexForEquipmentSlot(slotKey);
+  return index>=0?normalizeInventoryItem(inventoryItemsState[index]||{}):null;
+}
+function equipmentUpgradeMaterialMinimumRank(slotKey=''){
+  const item=selectedEquipmentInventoryItemForUpgrade(slotKey);
+  return Math.max(0,Number(characterNumericRankValue(item?.upgradeMaterialMinRank||item?.rank,0))||0);
+}
+function equipmentUpgradeMaterialRankEligible(item={},slotKey=''){
+  const minRank=equipmentUpgradeMaterialMinimumRank(slotKey);
+  if(minRank<=0)return true;
+  const materialRank=Number(characterNumericRankValue(item.rank,0))||0;
+  return materialRank>=minRank;
+}
+function equipmentUpgradeInventoryMaterialCandidates(slotKey=''){
+  const tokens=specialUpgradeTargetTokensForSlot(slotKey);
+  return (inventoryItemsState||[]).map(raw=>normalizeInventoryItem(raw)).filter(item=>{
+    if(item.kind!=='素材'||Number(item.count||0)<=0)return false;
+    if(!equipmentUpgradeMaterialRankEligible(item,slotKey))return false;
+    return specialUpgradeTargetMatches(item.equipmentUpgradeTarget,tokens);
+  });
+}
+function standardUpgradeMaterialCandidates(slotKey='',effectName=''){
+  const requested=normalizeUpgradeContentName(effectName||'');
+  return equipmentUpgradeInventoryMaterialCandidates(slotKey).filter(item=>{
+    const effect=normalizeUpgradeContentName(item.equipmentUpgradeEffect||'');
+    return isStandardUpgradeEffectName(effect)&&(!requested||effect===requested);
+  }).map(item=>({
+    key:String(item.id||item.masterId||item.publicId||item.name||''),
+    effectName:normalizeUpgradeContentName(item.equipmentUpgradeEffect||''),
+    detail:String(item.equipmentUpgradeDetail||'').trim()||standardUpgradeDetailText({content:item.equipmentUpgradeEffect}),
+    materialId:String(item.id||item.masterId||'').trim(),materialPublicId:String(item.publicId||'').trim(),
+    materialName:String(item.name||'').trim(),target:String(item.equipmentUpgradeTarget||'').trim(),
+    rank:characterPlayerRankLabel(item.rank),slotCost:Math.max(1,Math.min(3,Number(item.equipmentUpgradeSlotCost)||upgradeDefaultSlotCost(item.equipmentUpgradeEffect)))
+  })).sort((a,b)=>a.effectName.localeCompare(b.effectName,'ja')||characterNumericRankValue(a.rank,9999)-characterNumericRankValue(b.rank,9999)||a.materialName.localeCompare(b.materialName,'ja'));
+}
+function standardUpgradeSlotCostForSelection(slotKey='',effectName=''){
+  return Number(standardUpgradeMaterialCandidates(slotKey,effectName)[0]?.slotCost)||upgradeDefaultSlotCost(effectName);
+}
+function standardUpgradeAvailabilityText(slotKey='',entry={}){
+  const e=normalizeUpgradeEntry(entry),candidates=standardUpgradeMaterialCandidates(slotKey,e.content);
+  const detail=String(candidates[0]?.detail||standardUpgradeDetailText(e)||'').trim();
+  const materials=[...new Map(candidates.map(c=>[`${c.materialName}::${c.rank}`,`${c.materialName}${c.rank?`（${c.rank}）`:''}`])).values()];
+  const minRank=equipmentUpgradeMaterialMinimumRank(slotKey);
+  const lines=[detail?`能力詳細：${detail}`:''];
+  if(materials.length)lines.push(`対応素材：${materials.join('、')}`);
+  else lines.push(`対応素材：倉庫内に${minRank?`★${minRank}以上で`:''}使用可能な素材がありません。`);
+  return lines.filter(Boolean).join('\n');
+}
+function specialUpgradeEffectNameForMaterial(item={}){
+  const effect=String(item.equipmentUpgradeEffect||'').trim();
+  return effect&&!isStandardUpgradeEffectName(effect)?effect:'';
+}
+function specialUpgradeMaterialCandidates(slotKey='',blockedEffectNames=null){
+  const blocked=blockedEffectNames instanceof Set?blockedEffectNames:new Set(blockedEffectNames||[]);
+  return equipmentUpgradeInventoryMaterialCandidates(slotKey).filter(item=>{
+    const effectName=specialUpgradeEffectNameForMaterial(item);
+    return !!effectName&&!blocked.has(effectName);
+  }).map(item=>({
+    key:String(item.id||item.masterId||item.publicId||item.name||''),effectName:specialUpgradeEffectNameForMaterial(item),
+    detail:String(item.equipmentUpgradeDetail||'').trim(),materialId:String(item.id||item.masterId||'').trim(),
+    materialPublicId:String(item.publicId||'').trim(),materialName:String(item.name||'').trim(),target:String(item.equipmentUpgradeTarget||'').trim(),
+    rank:characterPlayerRankLabel(item.rank),slotCost:Math.max(1,Math.min(3,Number(item.equipmentUpgradeSlotCost)||2))
+  })).sort((a,b)=>a.effectName.localeCompare(b.effectName,'ja')||characterNumericRankValue(a.rank,9999)-characterNumericRankValue(b.rank,9999)||a.materialName.localeCompare(b.materialName,'ja'));
+}
+function specialUpgradeBlockedEffectNames(entries=[],currentIndex=-1){
+  const blocked=new Set();
+  parseUpgradeLines(entries).forEach((raw,index)=>{
+    if(index===currentIndex)return;
+    const entry=normalizeUpgradeEntry(raw);
+    if(entry.content==='素材固有効果'&&entry.specialEffectName)blocked.add(String(entry.specialEffectName).trim());
+  });
+  return blocked;
+}
+function specialUpgradeEffectNamesInOtherRows(slotKey='',currentRow=null){
+  const list=$('equip_'+slotKey+'_upgradeSlots'),blocked=new Set();if(!list)return blocked;
+  list.querySelectorAll('[data-upgrade-row]').forEach(row=>{
+    if(row===currentRow)return;
+    const name=String(row.querySelector('[data-upgrade-special-name-value]')?.value||'').trim();
+    if(name)blocked.add(name);
+  });
+  return blocked;
+}
+function specialUpgradeCandidateForEntry(slotKey='',entry={}){
+  const e=normalizeUpgradeEntry(entry),candidates=specialUpgradeMaterialCandidates(slotKey);
+  return candidates.find(c=>e.sourceMaterialId&&(c.materialId===e.sourceMaterialId||c.key===e.sourceMaterialId))
+    ||candidates.find(c=>e.sourceMaterialPublicId&&c.materialPublicId===e.sourceMaterialPublicId)
+    ||candidates.find(c=>c.effectName===e.specialEffectName&&(!e.specialEffectDetail||c.detail===e.specialEffectDetail))||null;
+}
+function specialUpgradeCandidateByKey(slotKey='',key=''){return specialUpgradeMaterialCandidates(slotKey).find(c=>c.key===String(key||''))||null;}
+function specialUpgradeDetailText(candidate=null,entry={}){
+  const e=normalizeUpgradeEntry(entry),name=String(candidate?.effectName||e.specialEffectName||'').trim(),detail=String(candidate?.detail||e.specialEffectDetail||'').trim(),material=String(candidate?.materialName||e.sourceMaterialName||'').trim(),target=String(candidate?.target||e.sourceMaterialTarget||'').trim();
+  return [name?`効果名：${name}`:'',detail?`能力詳細：${detail}`:'',material?`付与素材：${material}`:'',target?`強化対象：${target}`:''].filter(Boolean).join('\n');
+}
+function specialUpgradeSelectorHtml(slotKey='',entry={},blockedEffectNames=null){
+  const e=normalizeUpgradeEntry(entry),selected=specialUpgradeCandidateForEntry(slotKey,e),selectedKey=selected?.key||'',blocked=blockedEffectNames instanceof Set?blockedEffectNames:new Set(blockedEffectNames||[]),candidates=specialUpgradeMaterialCandidates(slotKey,blocked),hasSaved=!!e.specialEffectName&&!selected;
+  const options=[`<option value="">特殊効果を選択</option>`].concat(candidates.map(c=>`<option value="${esc(c.key)}" ${c.key===selectedKey?'selected':''}>${esc(c.effectName)}（${esc(c.materialName)}${c.rank?` / ${esc(c.rank)}`:''} / ${c.slotCost}枠）</option>`));
+  if(hasSaved)options.push(`<option value="__saved__" selected>${esc(e.specialEffectName)}（保存済み）</option>`);
+  const resolved=selected||null,effectName=resolved?.effectName||e.specialEffectName||'',detail=resolved?.detail||e.specialEffectDetail||'',materialId=resolved?.materialId||e.sourceMaterialId||'',materialPublicId=resolved?.materialPublicId||e.sourceMaterialPublicId||'',materialName=resolved?.materialName||e.sourceMaterialName||'',target=resolved?.target||e.sourceMaterialTarget||'';
+  return `<div class="field"><label>特殊効果名</label><select data-upgrade-special-select data-equipment-input="1">${options.join('')}</select>
+    <input type="hidden" data-upgrade-special-name-value value="${esc(effectName)}" /><input type="hidden" data-upgrade-special-detail-value value="${esc(detail)}" />
+    <input type="hidden" data-upgrade-special-material-id value="${esc(materialId)}" /><input type="hidden" data-upgrade-special-material-public-id value="${esc(materialPublicId)}" />
+    <input type="hidden" data-upgrade-special-material-name value="${esc(materialName)}" /><input type="hidden" data-upgrade-special-material-target value="${esc(target)}" />
+  </div>`;
+}
+function applySpecialUpgradeSelection(row,slotKey=''){
+  const select=row?.querySelector('[data-upgrade-special-select]');if(!select)return;
+  let candidate=select.value&&select.value!=='__saved__'?specialUpgradeCandidateByKey(slotKey,select.value):null;
+  const blocked=specialUpgradeEffectNamesInOtherRows(slotKey,row);
+  if(candidate&&blocked.has(candidate.effectName)){
+    select.value='';candidate=null;
+    if(typeof showToast==='function')showToast('同じ特殊効果は同一装備へ重複して付与できません。','error');
+  }
+  const set=(selector,value)=>{const el=row.querySelector(selector);if(el)el.value=String(value||'');};
+  if(candidate){set('[data-upgrade-special-name-value]',candidate.effectName);set('[data-upgrade-special-detail-value]',candidate.detail);set('[data-upgrade-special-material-id]',candidate.materialId);set('[data-upgrade-special-material-public-id]',candidate.materialPublicId);set('[data-upgrade-special-material-name]',candidate.materialName);set('[data-upgrade-special-material-target]',candidate.target);const slot=row.querySelector('[data-upgrade-slot-cost]');if(slot)slot.value=String(candidate.slotCost);}
+  else if(!select.value){['[data-upgrade-special-name-value]','[data-upgrade-special-detail-value]','[data-upgrade-special-material-id]','[data-upgrade-special-material-public-id]','[data-upgrade-special-material-name]','[data-upgrade-special-material-target]'].forEach(s=>set(s,''));}
+  const entry=normalizeUpgradeEntry({content:'素材固有効果',slotCost:row.querySelector('[data-upgrade-slot-cost]')?.value||'',specialEffectName:row.querySelector('[data-upgrade-special-name-value]')?.value||'',specialEffectDetail:row.querySelector('[data-upgrade-special-detail-value]')?.value||'',sourceMaterialName:row.querySelector('[data-upgrade-special-material-name]')?.value||'',sourceMaterialTarget:row.querySelector('[data-upgrade-special-material-target]')?.value||''});
+  const view=row.querySelector('[data-upgrade-special-detail-view]');if(view)view.textContent=specialUpgradeDetailText(candidate,entry)||'倉庫にある、対象装備へ使用可能な特殊効果から選択してください。';
+}
+function renderEquipmentUpgradeSlots(slotKey, sourceEntries=null){
+  const list=$('equip_'+slotKey+'_upgradeSlots'),hidden=$('equip_'+slotKey+'_upgradeLines'),details=$('equip_'+slotKey+'_upgradeDetails');if(!list)return;
+  const limit=equipmentUpgradeLimit(slotKey),rawEntries=sourceEntries!==null?parseUpgradeLines(sourceEntries):collectUpgradeEntries(slotKey),entries=trimUpgradeEntriesToSlotLimit(rawEntries,limit),usage=$('equip_'+slotKey+'_upgradeUsage');
+  if(usage)usage.textContent=`使用済み強化枠：${equipmentUpgradeUsedSlots(entries)} / ${limit}`;if(details)details.style.display=limit>0?'':'none';
+  if(limit<=0){list.innerHTML='<div class="small">この装備は強化できません。</div>';if(hidden)hidden.value='';return;}
+  list.innerHTML=Array.from({length:limit},(_,i)=>{
+    const entry=normalizeUpgradeEntry(entries[i]||{}),special=entry.content==='素材固有効果',blockedSpecialEffects=specialUpgradeBlockedEffectNames(entries,i);
+    const effectField=special?specialUpgradeSelectorHtml(slotKey,entry,blockedSpecialEffects):`<input type="hidden" data-upgrade-legacy-amount value="${esc(entry.legacyEffectAmount||'')}" /><input type="hidden" data-upgrade-legacy-detail value="${esc(entry.legacyEffectDetail||'')}" /><div class="equipment-upgrade-effect-detail" data-upgrade-effect-detail>${esc(entry.content?standardUpgradeAvailabilityText(slotKey,entry):'倉庫内にある、対象装備へ使用可能な強化素材から選択してください。')}</div>`;
+    const specialDetail=special?specialUpgradeDetailText(specialUpgradeCandidateForEntry(slotKey,entry),entry):'';
+    return `<div class="equipment-upgrade-row" data-upgrade-row="${i}"><div class="field"><label>強化内容 ${i+1}</label><select data-upgrade-content data-equipment-input="1">${upgradeOptionHtml(slotKey,entry.content)}</select></div>${effectField}<div class="field"><label>消費強化枠</label><select data-upgrade-slot-cost data-equipment-input="1"><option value="1" ${entry.slotCost===1?'selected':''}>1枠</option><option value="2" ${entry.slotCost===2?'selected':''}>2枠</option><option value="3" ${entry.slotCost===3?'selected':''}>3枠</option></select></div>${special?`<div class="equipment-upgrade-special-detail" data-upgrade-special-detail-view>${esc(specialDetail||'倉庫にある、対象装備へ使用可能な特殊効果から選択してください。')}</div>`:''}</div>`;
   }).join('');
-  if(hidden) hidden.value = serializeUpgradeEntries(entries.slice(0, limit));
-  if(typeof updateEquipmentFieldAvailability === 'function') updateEquipmentFieldAvailability();
+  if(hidden)hidden.value=serializeUpgradeEntries(entries.slice(0,limit));if(typeof updateEquipmentFieldAvailability==='function')updateEquipmentFieldAvailability();
 }
 function inventoryItemIndexForEquipmentKey(itemKey=''){
   const selectedKey = String(itemKey || '').trim();
@@ -3334,7 +3614,7 @@ function syncEquipmentUpgradeToInventoryItem(slotKey='', itemKey=''){
   const current = normalizeInventoryItem(inventoryItemsState[index] || {});
   if(!['武器','防具','装飾品'].includes(current.kind)) return false;
   const limit = equipmentUpgradeLimit(slotKey);
-  const entries = trimUpgradeEntriesToSlotLimit(collectUpgradeEntries(slotKey),limit).map(normalizeUpgradeEntry);
+  const entries = trimUpgradeEntriesToSlotLimit(collectUpgradeEntries(slotKey),limit).map(upgradeEntryForStorage);
   inventoryItemsState[index] = normalizeInventoryItem({
     ...inventoryItemsState[index],
     upgradeLimit: String($('equip_' + slotKey + '_upgradeLimit')?.value || '').trim(),
@@ -3496,6 +3776,90 @@ function updateSpellSlotHints() {
   }
   updateEquipmentFieldAvailability();
 }
+function equipmentUpgradeEntriesForStage(item={}){
+  const entries=Array.isArray(item?.upgradeEntries)&&item.upgradeEntries.length
+    ? item.upgradeEntries
+    : (item?.upgradeLines||item?.upgradeEntries||'');
+  return parseUpgradeLines(entries);
+}
+function equipmentUpgradeStage(item={},patterns=[]){
+  return equipmentUpgradeEntriesForStage(item).reduce((sum,e)=>{
+    if(!patterns.some(p=>p.test(String(e.content||''))))return sum;
+    const inherited=Math.max(0,Math.floor(Number(e.legacyEffectAmount)||0));
+    return sum+(inherited||1);
+  },0);
+}
+function equipmentUpgradeStageFromSources(patterns=[],...sources){
+  for(const source of sources){
+    if(!source)continue;
+    const entries=equipmentUpgradeEntriesForStage(source);
+    if(!entries.length)continue;
+    return entries.reduce((sum,e)=>{
+      if(!patterns.some(p=>p.test(String(e.content||''))))return sum;
+      const inherited=Math.max(0,Math.floor(Number(e.legacyEffectAmount)||0));
+      return sum+(inherited||1);
+    },0);
+  }
+  return 0;
+}
+function stagedDiceUpgradeFormula(stage=0){
+  const n=Math.max(0,Math.floor(Number(stage)||0));
+  if(!n)return '';
+  return n===1?'1':`1D${n}`;
+}
+function fixedUpgradeFormula(stage=0){
+  const n=Math.max(0,Math.floor(Number(stage)||0));
+  return n?String(n):'';
+}
+function formulaWithSeparatedTerms(formula='',terms=[]){
+  const base=normalizePaletteFormula(formula);if(!base)return '';
+  const clean=(terms||[]).map(v=>String(v??'').trim()).filter(v=>v&&v!=='0'&&v!=='+0'&&v!=='-0');
+  if(!clean.length)return base;
+  const repeated=base.match(/^(.+?)([×xX*]\s*\d+\s*回)$/);
+  const combine=parts=>parts.join('+').replace(/\+\-/g,'-');
+  if(repeated)return `(${combine([repeated[1],...clean])})${repeated[2]}`;
+  return combine([base,...clean]);
+}
+function equipmentDamageDisplayInfo(slotKey='',equipment=getEquipmentState(),alloc=getSkillAlloc()){
+  const eq=equipment?.[slotKey]||{},source=findCsItemById(eq.itemId||'');
+  const item=normalizeInventoryItem({...(source||{}),...(eq||{}),type:eq.type||source?.itemCategory||source?.category||''});
+  const type=normalizeEquipmentType(eq.type||item.itemCategory||item.category||'なし');
+  if(!eq.name||spellContainerKind(type)||['盾','大盾'].includes(type))return {formula:'',breakdown:''};
+  const base=normalizePaletteFormula(eq.power||item.power||'');if(!base)return {formula:'',breakdown:''};
+  const skillKey=paletteDamageSkillKeyForItem({...item,type},slotKey);
+  const skillName=skillKey==='shoot'?'射撃':skillKey==='melee'?'近接':'';
+  const skillBonus=skillKey?allocatedSkillPoints(skillKey,alloc):0;
+  const powerStage=equipmentUpgradeStageFromSources([/^威力強化$/],source,eq,item);
+  const fixedPowerStage=equipmentUpgradeStageFromSources([/^威力固定強化$/],source,eq,item);
+  const powerTerm=stagedDiceUpgradeFormula(powerStage),fixedPowerTerm=fixedUpgradeFormula(fixedPowerStage);
+  let offhandBonus=0;
+  const twoHand=isPaletteTwoHandEquipment({...item,type},source);
+  if(!twoHand&&HAND_SLOT_KEYS.includes(slotKey)){
+    const otherKey=slotKey==='rightHand'?'leftHand':'rightHand',other=equipment?.[otherKey]||{},otherSource=findCsItemById(other.itemId||'');
+    const otherMerged=normalizeInventoryItem({...(otherSource||{}),...(other||{}),type:other.type||otherSource?.itemCategory||otherSource?.category||''});
+    if(canUseAsDualWeapon(otherMerged)&&!isPaletteTwoHandEquipment(otherMerged,otherSource))offhandBonus=paletteOffhandBonusForItem(otherMerged,otherSource);
+  }
+  const formula=formulaWithSeparatedTerms(base,[skillBonus||'',powerTerm,fixedPowerTerm,offhandBonus||'']);
+  const breakdown=[`武器ダメージ ${base}`,skillName&&skillBonus?`${skillName} +${skillBonus}`:'',powerTerm?`威力強化${powerStage} +${powerTerm}`:'',fixedPowerTerm?`威力固定強化${fixedPowerStage} +${fixedPowerTerm}`:'',offhandBonus?`副手追撃 ${signedNumberText(offhandBonus)}`:''].filter(Boolean).join(' / ');
+  return {formula,breakdown};
+}
+function setEquipmentDisplayText(id,value='—'){const el=$(id);if(el)el.textContent=(value===undefined||value===null)?'—':String(value);}
+function updateEquipmentReadOnlyDisplays(){
+  const equipment=getEquipmentState(),alloc=getSkillAlloc();
+  for(const slot of EQUIPMENT_SLOTS){
+    if(slot.kind==='carry')continue;
+    const eq=equipment[slot.key]||{},type=normalizeEquipmentType(eq.type||'なし');
+    setEquipmentDisplayText('equip_'+slot.key+'_typeDisplay',type&&type!=='なし'?type:'—');
+    setEquipmentDisplayText('equip_'+slot.key+'_elementDisplay',eq.element||'—');
+    setEquipmentDisplayText('equip_'+slot.key+'_offhandDisplay',eq.offhand||'—');
+    setEquipmentDisplayText('equip_'+slot.key+'_reloadTurnsDisplay',eq.reloadTurns!==''?`${eq.reloadTurns}ターン`:'—');
+    setEquipmentDisplayText('equip_'+slot.key+'_targetDisplay',eq.target||'—');
+    setEquipmentDisplayText('equip_'+slot.key+'_checkTypeDisplay',eq.checkType||canonicalWeaponUsageSkill({itemCategory:type})||'—');
+    const damage=equipmentDamageDisplayInfo(slot.key,equipment,alloc);
+    setEquipmentDisplayText('equip_'+slot.key+'_powerDisplay',damage.formula||'—');
+    setEquipmentDisplayText('equip_'+slot.key+'_powerBreakdown',damage.breakdown||'');
+  }
+}
 function updateEquipmentSummaries() {
   for (const slot of EQUIPMENT_SLOTS) {
     const el = $('equip_' + slot.key + '_summary');
@@ -3528,13 +3892,14 @@ function updateEquipmentSummaries() {
     if (spellCount) parts.push('術式' + spellCount + '件');
     el.textContent = parts.length ? parts.join(' / ') : '未設定';
   }
+  updateEquipmentReadOnlyDisplays();
 }
 function defaultEquipment() {
   const equipment = {};
   for (const slot of EQUIPMENT_SLOTS) {
     equipment[slot.key] = slot.kind === 'carry'
       ? { itemId:'', name:'', type:'なし', count:1, element:'', description:'', note:'', warehouseAllocated:false, warehouseItemId:'' }
-      : { itemId:'', name:'', type:'なし', element:'', power:'', offhand:'', reloadTurns:'', modifiers:'', upgradeLimit:'', upgradeMaterialMinRank:'', upgradeLines:'', upgradeEntries:[], equipmentUpgradeEffect:'', equipmentUpgradeValue:'', equipmentUpgradeSlotCost:'', equipmentUpgradeDetail:'', equipmentUpgradeTarget:'', knownSpells:'', setSpells:'', description:'', target:'', checkType:'', role:'', source:'', tags:'', setItem:'', note:'' };
+      : { itemId:'', name:'', type:'なし', element:'', power:'', offhand:'', reloadTurns:'', modifiers:'', upgradeLimit:'', upgradeMaterialMinRank:'', upgradeLines:'', upgradeEntries:[], equipmentUpgradeEffect:'', equipmentUpgradeSlotCost:'', equipmentUpgradeDetail:'', equipmentUpgradeTarget:'', knownSpells:'', setSpells:'', description:'', target:'', checkType:'', role:'', source:'', tags:'', setItem:'', note:'' };
   }
   equipment.memo = '';
   return equipment;
@@ -3570,7 +3935,7 @@ function getEquipmentState() {
         ? serializeModifierRows(equipmentModifierRows(selectedInventoryItem))
         : ($('equip_' + slot.key + '_modifiers')?.value?.trim() || '');
       base.upgradeLimit = $('equip_' + slot.key + '_upgradeLimit')?.value?.trim() || '';
-      base.upgradeEntries = collectUpgradeEntries(slot.key).slice(0, equipmentUpgradeLimit(slot.key));
+      base.upgradeEntries = collectUpgradeEntries(slot.key).slice(0, equipmentUpgradeLimit(slot.key)).map(upgradeEntryForStorage);
       base.upgradeLines = serializeUpgradeEntries(base.upgradeEntries);
       if (spellContainerKind(base.type)) {
         base.knownSpells = '';
@@ -3583,6 +3948,30 @@ function getEquipmentState() {
   }
   equipment.memo = $('equipmentMemo')?.value || '';
   return equipment;
+}
+let legacyEquipmentUpgradeMigrationCount=0;
+function migrateLegacyEquippedUpgradesToInventoryItem(selectedId='',equipmentItem={}){
+  const key=String(selectedId||'').trim();
+  if(!key)return null;
+  const index=inventoryItemIndexForEquipmentKey(key);
+  if(index<0)return null;
+  const current=normalizeInventoryItem(inventoryItemsState[index]||{});
+  const currentEntries=parseUpgradeLines(current.upgradeEntries||current.upgradeLines||'');
+  const legacyEntries=parseUpgradeLines(equipmentItem.upgradeEntries||equipmentItem.upgradeLines||'').map(upgradeEntryForStorage);
+  if(currentEntries.length||!legacyEntries.length)return current;
+  const requiredLimit=equipmentUpgradeUsedSlots(legacyEntries);
+  const targetLimit=clampInt(Math.max(Number(current.upgradeLimit||0)||0,Number(equipmentItem.upgradeLimit||0)||0,requiredLimit),0,9);
+  if(targetLimit<=0)return current;
+  const migrated=trimUpgradeEntriesToSlotLimit(legacyEntries,targetLimit).map(upgradeEntryForStorage);
+  if(!migrated.length)return current;
+  inventoryItemsState[index]=normalizeInventoryItem({
+    ...inventoryItemsState[index],
+    upgradeLimit:String(targetLimit),
+    upgradeEntries:migrated,
+    upgradeLines:serializeUpgradeEntries(migrated)
+  });
+  legacyEquipmentUpgradeMigrationCount+=migrated.length;
+  return normalizeInventoryItem(inventoryItemsState[index]);
 }
 function setEquipmentState(equipment={}) {
   refreshEquipmentTypeSelects();
@@ -3599,6 +3988,9 @@ function setEquipmentState(equipment={}) {
     if ($('equip_' + slot.key + '_itemSelect')) {
       let selectedId = item.itemId || findCsItemIdByName(item.name || '');
       selectedRow = selectedId ? findCsItemById(selectedId) : null;
+      if(slot.kind!=='carry'&&selectedRow){
+        selectedRow=migrateLegacyEquippedUpgradesToInventoryItem(selectedId,item)||selectedRow;
+      }
       if (slot.kind === 'carry' && selectedRow && isSpellInventoryItem(selectedRow)) selectedId = '';
       if (slot.kind !== 'carry' && selectedRow) {
         // 保存済み装備枠のスナップショットではなく、現在の倉庫装備個体を表示元にする。
@@ -3756,6 +4148,7 @@ function updateEquipmentFieldAvailability() {
     const reloadWeapon = type==='弩' || type==='大型弩';
     const offhandWeapon = weapon && !TWO_HAND_TYPES.has(type);
 
+    setEquipmentFieldVisible(card,'type',type!=='なし');
     setEquipmentFieldVisible(card,'element',weapon);
     setEquipmentFieldVisible(card,'power',weapon);
     setEquipmentFieldVisible(card,'offhand',offhandWeapon);
@@ -4364,7 +4757,7 @@ function inventoryManualClassification(kind='', category='') {
 }
 function emptyInventoryItem() {
   const cls = inventoryManualClassification(defaultInventoryKind(), '');
-  return { id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), masterId:'', masterSheet:'', masterSync:'', name:'', kind:cls.kind, itemType:cls.itemType, itemCategory:cls.itemCategory, materialType:cls.materialType, materialCategory:cls.materialCategory, category:'', count:1, capacity:'', location:'倉庫', rank:'', price:'', equipSlot:'', skill:'', power:'', offhand:'', reloadTurns:'', modifiers:'', upgradeLimit:'', upgradeMaterialMinRank:'', upgradeLines:'', upgradeEntries:[], equipmentUpgradeEffect:'', equipmentUpgradeValue:'', equipmentUpgradeSlotCost:'', equipmentUpgradeDetail:'', equipmentUpgradeTarget:'', spellSlots:'', setSpells:'', target:'', element:'', enchantTarget:'', enchantEffectType:'', enchantValue:'', enchantDuration:'', enchantRounds:'', enchantStackRule:'', cost:'', checkType:'', role:'', source:'', tags:'', setItem:'', description:'', effect:'', recipeResult:'', materials:'', note:'' };
+  return { id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), masterId:'', masterSheet:'', masterSync:'', name:'', kind:cls.kind, itemType:cls.itemType, itemCategory:cls.itemCategory, materialType:cls.materialType, materialCategory:cls.materialCategory, category:'', count:1, capacity:'', location:'倉庫', rank:'', price:'', equipSlot:'', skill:'', power:'', offhand:'', reloadTurns:'', modifiers:'', upgradeLimit:'', upgradeMaterialMinRank:'', upgradeLines:'', upgradeEntries:[], equipmentUpgradeEffect:'', equipmentUpgradeSlotCost:'', equipmentUpgradeDetail:'', equipmentUpgradeTarget:'', spellSlots:'', setSpells:'', target:'', element:'', enchantTarget:'', enchantEffectType:'', enchantValue:'', enchantDuration:'', enchantRounds:'', enchantStackRule:'', cost:'', checkType:'', role:'', source:'', tags:'', setItem:'', description:'', effect:'', recipeResult:'', materials:'', note:'' };
 }
 function inferInventoryItemType(item={}, kind='') {
   const explicit = String(item.itemType || '').trim();
@@ -4470,18 +4863,19 @@ function normalizeInventoryItem(item={}) {
   if (masterIsMaterial || (kind === 'アイテム' && (resolvedMaterialType || resolvedMaterialCategory || /(?:^|[,、\s])素材(?:$|[,、\s])/.test(String(item.tags || item.usageTags || ''))))) kind = '素材';
   const oldDescription = item['fla' + 'vor' + 'Text'];
   const rawUpgradeLimit = inventoryKindSupportsUpgradeLimit(kind) ? String(item.upgradeLimit || item.upgradeCount || item.upgradeSlots || '').trim() : '';
-  const normalizedUpgradeLimit = clampInt(rawUpgradeLimit || 0, 0, 9);
+  const rawSavedUpgradeEntries = inventoryKindSupportsUpgradeLimit(kind) ? parseUpgradeLines(item.upgradeEntries || item.upgradeLines || '') : [];
+  const inferredUpgradeLimit = rawSavedUpgradeEntries.length ? equipmentUpgradeUsedSlots(rawSavedUpgradeEntries) : 0;
+  const normalizedUpgradeLimit = clampInt(rawUpgradeLimit || inferredUpgradeLimit || 0, 0, 9);
   // 魔物素材などの強化定義はマスターDBを正とする。
   // 旧キャラクターデータや一部の登録経路で強化項目が保存されていなくても、
   // ID・登録ID・名称のいずれかでマスターを特定できれば最新定義を倉庫表示へ補完する。
   const masterUpgradeEffect = String(masterRow?.equipmentUpgradeEffect || '').trim();
-  const masterUpgradeValue = String(masterRow?.equipmentUpgradeValue || '').trim();
-  const masterUpgradeSlotCost = String(masterRow?.equipmentUpgradeSlotCost || '').trim();
+    const masterUpgradeSlotCost = String(masterRow?.equipmentUpgradeSlotCost || '').trim();
   const masterUpgradeDetail = String(masterRow?.equipmentUpgradeDetail || '').trim();
   const masterUpgradeTarget = String(masterRow?.equipmentUpgradeTarget || '').trim();
   // 強化枠を持たない装備へ、別装備の強化内容を残さない。
   const normalizedUpgradeEntries = normalizedUpgradeLimit > 0
-    ? trimUpgradeEntriesToSlotLimit(parseUpgradeLines(item.upgradeEntries || item.upgradeLines || ''), normalizedUpgradeLimit)
+    ? trimUpgradeEntriesToSlotLimit(rawSavedUpgradeEntries, normalizedUpgradeLimit).map(upgradeEntryForStorage)
     : [];
   const normalizedModifierRows = migrateLegacyDefenseActionRows(parseModifierRows(migratedModifierTextForItem(item)), item);
   const normalizedModifiers = serializeModifierRows(normalizedModifierRows);
@@ -4521,7 +4915,6 @@ function normalizeInventoryItem(item={}) {
     upgradeLimit: normalizedUpgradeLimit > 0 ? String(normalizedUpgradeLimit) : '',
     upgradeMaterialMinRank: inventoryKindSupportsUpgradeLimit(kind) ? String(item.upgradeMaterialMinRank || item.rank || '').trim() : '',
     equipmentUpgradeEffect: masterIsMaterial ? (masterUpgradeEffect || String(item.equipmentUpgradeEffect || '').trim()) : String(item.equipmentUpgradeEffect || '').trim(),
-    equipmentUpgradeValue: masterIsMaterial ? (masterUpgradeValue || String(item.equipmentUpgradeValue || '').trim()) : String(item.equipmentUpgradeValue || '').trim(),
     equipmentUpgradeSlotCost: masterIsMaterial ? (masterUpgradeSlotCost || String(item.equipmentUpgradeSlotCost || '').trim()) : String(item.equipmentUpgradeSlotCost || '').trim(),
     equipmentUpgradeDetail: masterIsMaterial ? (masterUpgradeDetail || String(item.equipmentUpgradeDetail || '').trim()) : String(item.equipmentUpgradeDetail || '').trim(),
     equipmentUpgradeTarget: masterIsMaterial ? (masterUpgradeTarget || String(item.equipmentUpgradeTarget || '').trim()) : String(item.equipmentUpgradeTarget || '').trim(),
@@ -4675,10 +5068,7 @@ function inventoryOptions(value, list) {
   return list.map(v => `<option value="${esc(v)}" ${String(value || '') === v ? 'selected' : ''}>${esc(v)}</option>`).join('');
 }
 function characterUpgradeDisplayName(item={}){
-  const effect=String(item.equipmentUpgradeEffect||'').trim();
-  const value=String(item.equipmentUpgradeValue||'').trim();
-  if(effect.startsWith('特殊効果：'))return effect;
-  return effect==='特殊効果' ? `特殊効果：${value||'名称未設定'}` : effect;
+  return String(item.equipmentUpgradeEffect||'').trim();
 }
 function renderInventory() {
   const area = $('inventoryArea');
@@ -4693,14 +5083,14 @@ function renderInventory() {
     const recipeMeta = item.kind === 'レシピ' ? [item.recipeResult ? '完成品：' + item.recipeResult : '', item.materials ? '必要素材：' + item.materials : ''].filter(Boolean).join('\n') : '';
     const itemUseMeta = ['アイテム','素材','矢筒','バッグ'].includes(item.kind) ? [item.target ? '対象：' + item.target : '', item.element ? '属性：' + item.element : '', item.power ? '威力：' + item.power : '', item.cost ? 'コスト：' + item.cost : '', item.checkType ? '判定：' + checkExpressionDisplay(item.checkType) : '', item.ammoKind ? '矢弾種別：' + item.ammoKind : '', item.compatibleWeaponTypes ? '対応武器種：' + item.compatibleWeaponTypes : '', item.spellSlots ? '最大スタック数：' + item.spellSlots : '', item.quiverCapacity ? '矢筒収納種類数：' + item.quiverCapacity : '', item.bagCapacity ? 'バッグ容量：' + item.bagCapacity : '', item.source ? '入手先：' + item.source : '', item.tags ? 'タグ：' + item.tags : ''].filter(Boolean).join(' / ') : '';
     const spellSlotMeta = item.spellSlots && ['武器','防具','装飾品','術式'].includes(item.kind) ? `術式枠補正：+${item.spellSlots}` : '';
-    const savedUpgradeMeta = serializeUpgradeEntries(item.upgradeEntries || parseUpgradeLines(item.upgradeLines || ''));
-    const materialUpgradeSpecial=/^特殊効果(?:：|$)/.test(String(item.equipmentUpgradeEffect||'').trim());
+    const savedUpgradeEntries = parseUpgradeLines(item.upgradeEntries || item.upgradeLines || '');
+    const savedUpgradeMeta = serializeUpgradeEntries(savedUpgradeEntries);
+    const materialUpgradeDetail=String(item.equipmentUpgradeDetail||standardUpgradeDetailText({content:item.equipmentUpgradeEffect})).trim();
     const materialUpgradeMeta = item.kind === '素材' && item.equipmentUpgradeEffect ? [
       `内容：${characterUpgradeDisplayName(item)}`,
-      !materialUpgradeSpecial&&item.equipmentUpgradeValue ? `強化値：${item.equipmentUpgradeValue}` : '',
       `消費強化枠：${Number(item.equipmentUpgradeSlotCost) || 1}枠`,
       item.equipmentUpgradeTarget ? `強化対象：${item.equipmentUpgradeTarget}` : '',
-      materialUpgradeSpecial&&item.equipmentUpgradeDetail ? `特殊効果詳細：${item.equipmentUpgradeDetail}` : ''
+      materialUpgradeDetail ? `効果説明：${materialUpgradeDetail}` : ''
     ].filter(Boolean).join('\n') : '';
     const bagMeta = item.kind === 'バッグ' ? `バッグ容量：${clampInt(item.capacity || 0, 0, 99)}` : '';
     const displayType = inventorySmallCategory(item);
@@ -4708,7 +5098,7 @@ function renderInventory() {
     const categoryDisplay = displayType === '素材'
       ? [item.materialType || '素材', item.materialCategory || item.category || ''].filter(Boolean).join(' / ')
       : (item.category || displayCategory || '—');
-    const searchText = [title, displayType, displayCategory, categoryDisplay, item.itemType, item.itemCategory, item.materialType, item.materialCategory, item.kind, item.category, item.rank, item.price, item.equipSlot, item.skill, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.upgradeLimit, item.upgradeMaterialMinRank, item.equipmentUpgradeEffect, item.equipmentUpgradeValue, item.equipmentUpgradeSlotCost, item.equipmentUpgradeDetail, item.equipmentUpgradeTarget, item.spellSlots, item.capacity, item.bagCapacity, item.quiverCapacity, item.ammoKind, item.compatibleWeaponTypes, item.target, item.element, item.enchantTarget, item.enchantEffectType, item.enchantValue, item.enchantDuration, item.enchantRounds, item.enchantStackRule, item.cost, item.power, item.description, item.effect, item.checkType, item.role, item.source, item.tags, item.recipeResult, item.materials, item.upgradeLines].filter(Boolean).join(' ');
+    const searchText = [title, displayType, displayCategory, categoryDisplay, item.itemType, item.itemCategory, item.materialType, item.materialCategory, item.kind, item.category, item.rank, item.price, item.equipSlot, item.skill, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.upgradeLimit, item.upgradeMaterialMinRank, item.equipmentUpgradeEffect, item.equipmentUpgradeSlotCost, item.equipmentUpgradeDetail, item.equipmentUpgradeTarget, item.spellSlots, item.capacity, item.bagCapacity, item.quiverCapacity, item.ammoKind, item.compatibleWeaponTypes, item.target, item.element, item.enchantTarget, item.enchantEffectType, item.enchantValue, item.enchantDuration, item.enchantRounds, item.enchantStackRule, item.cost, item.power, item.description, item.effect, item.checkType, item.role, item.source, item.tags, item.recipeResult, item.materials, item.upgradeLines].filter(Boolean).join(' ');
     return `
     <details class="inventory-card" data-inventory-row="${index}" data-inventory-id="${esc(item.id || '')}" data-inventory-location="倉庫" data-inventory-kind="${esc(item.kind || 'アイテム')}" data-inventory-item-type="${esc(displayType)}" data-inventory-category="${esc(displayCategory)}" data-inventory-search="${esc(searchText)}">
       <summary class="inventory-card-head">
@@ -4957,7 +5347,6 @@ function dbItemToInventoryItem(row) {
     upgradeLimit: row.upgradeLimit || '',
     upgradeMaterialMinRank: row.upgradeMaterialMinRank || row.rank || '',
     equipmentUpgradeEffect: row.equipmentUpgradeEffect || '',
-    equipmentUpgradeValue: row.equipmentUpgradeValue || '',
     equipmentUpgradeSlotCost: row.equipmentUpgradeSlotCost || '',
     equipmentUpgradeDetail: row.equipmentUpgradeDetail || '',
     equipmentUpgradeTarget: row.equipmentUpgradeTarget || '',
@@ -5301,7 +5690,7 @@ function mergeMasterPresetIntoInventoryItem(existing={}, preset={}) {
 function isSameInventoryCore(a={}, b={}) {
   const aa = normalizeInventoryItem(a);
   const bb = normalizeInventoryItem(b);
-  const keys = ['publicId','masterId','masterSheet','masterSync','name','kind','itemType','itemCategory','materialType','materialCategory','category','rank','price','equipSlot','skill','power','hit','defense','guard','evade','offhand','upgradeLimit','upgradeMaterialMinRank','equipmentUpgradeEffect','equipmentUpgradeValue','equipmentUpgradeSlotCost','equipmentUpgradeDetail','equipmentUpgradeTarget','spellSlots','setSpells','target','element','cost','description','effect','checkType','role','source','tags','setItem','recipeResult','materials'];
+  const keys = ['publicId','masterId','masterSheet','masterSync','name','kind','itemType','itemCategory','materialType','materialCategory','category','rank','price','equipSlot','skill','power','hit','defense','guard','evade','offhand','upgradeLimit','upgradeMaterialMinRank','equipmentUpgradeEffect','equipmentUpgradeSlotCost','equipmentUpgradeDetail','equipmentUpgradeTarget','spellSlots','setSpells','target','element','cost','description','effect','checkType','role','source','tags','setItem','recipeResult','materials'];
   return keys.every(k => String(aa[k] ?? '') === String(bb[k] ?? '')) && Number(aa.count || 0) === Number(bb.count || 0);
 }
 
@@ -5704,9 +6093,13 @@ function applyData(data) {
   setSkillAlloc(currentCharacter.skills || {});
   setManualCategoryBonuses(currentCharacter.manualCategoryBonuses || {});
   setResourceState(currentCharacter.resources || {});
+  legacyEquipmentUpgradeMigrationCount=0;
   setInventoryState(currentCharacter.inventory || {});
   setEquipmentState(currentCharacter.equipment || {});
   setSkillGachaState(currentCharacter.skillGacha || {});
+  if(legacyEquipmentUpgradeMigrationCount>0){
+    setTimeout(()=>showToast(`旧形式の装備強化${legacyEquipmentUpgradeMigrationCount}件を新形式へ引き継ぎました。次回保存時に確定します。`,'ok'),0);
+  }
   renderBagSelect();
   applyBagCapacityToEquipmentSlots();
   $('charMemo').value = currentCharacter.memo || '';
@@ -6040,7 +6433,7 @@ function refreshEquipmentItemSelects() {
     if (!select) continue;
     const current = select.value || '';
     const items = equipmentCandidateRows().filter(row => itemMatchesEquipmentSlot(row, slot));
-    const options = [`<option value="">${slot.kind === 'carry' ? '未選択（倉庫へ戻す）' : '手入力'}</option>`].concat(items.map(row => {
+    const options = [`<option value="">${slot.kind === 'carry' ? '未選択（倉庫へ戻す）' : '未選択'}</option>`].concat(items.map(row => {
       const key = inventoryItemKey(row);
       const label = [row.name, row.kind, row.category, slot.kind === 'carry' ? '倉庫:' + row.count : '', row.element ? '属性:' + row.element : ''].filter(Boolean).join(' / ');
       return `<option value="${esc(key)}">${esc(label)}</option>`;
@@ -6156,8 +6549,8 @@ function applyCsItemToEquipmentSlot(slotKey) {
     return;
   }
   if (!row) {
-    // 倉庫装備を外したときは、旧武器の表示値・補正値・強化値を装備枠へ残さない。
-    // 手入力装備は、最初から未選択の状態で各項目を直接入力した場合だけ使用できる。
+    // 倉庫装備を外したときは、旧武器の表示値・補正値・強化内容を装備枠へ残さない。
+    // 装備枠の表示値は倉庫で選択した装備からのみ読み込む。
     if (previousItemKey) clearEquipmentSlotFields(slotKey, {keepSelection:true});
     if(select) select.dataset.previousItemKey='';
     updateEquipmentHandLocks(true);
@@ -6734,13 +7127,8 @@ function paletteOffhandBonusForItem(item={}, source=null) {
   const preset = EQUIPMENT_PRESETS[type] || {};
   return parseFlatBonus(item.offhand || source?.offhandBonus || source?.offhand || preset.offhand || '');
 }
-function paletteDamageFormulaWithBonus(formula='', skillBonus=0, offhandBonus=0) {
-  const base = normalizePaletteFormula(formula);
-  if (!base) return '';
-  const skill = Number(skillBonus) || 0;
-  const offhand = Number(offhandBonus) || 0;
-  if (!skill && !offhand) return base;
-  return `${base}+(${skill}${offhand ? signedNumberText(offhand) : ''})`;
+function paletteDamageFormulaWithBonus(formula='', skillBonus=0, offhandBonus=0, powerTerm='', fixedPowerTerm='') {
+  return formulaWithSeparatedTerms(formula,[Number(skillBonus)||'',powerTerm,fixedPowerTerm,Number(offhandBonus)||'']);
 }
 
 function collectWeaponDamagePaletteLines(data={}, totals={}) {
@@ -6770,9 +7158,10 @@ function collectWeaponDamagePaletteLines(data={}, totals={}) {
         offhandBonus = paletteOffhandBonusForItem(otherMerged, otherSource);
       }
     }
-    const powerBonus = equipmentUpgradeNumericBonus(merged,[/^威力$/, /^威力\+1$/, /^武器威力$/]);
+    const powerStage=equipmentUpgradeStageFromSources([/^威力強化$/],source,item,merged);
+    const fixedPowerStage=equipmentUpgradeStageFromSources([/^威力固定強化$/],source,item,merged);
     const effectiveElement = merged.element||source?.element||item.element||'物';
-    const formula = paletteDamageFormulaWithBonus(power, skillBonus + powerBonus, offhandBonus);
+    const formula = paletteDamageFormulaWithBonus(power, skillBonus, offhandBonus, stagedDiceUpgradeFormula(powerStage), fixedUpgradeFormula(fixedPowerStage));
     if (!formula) continue;
     const skillLabel = skillKey === 'shoot' ? '射撃' : (skillKey === 'melee' ? '近接' : '');
     const elementLabel = effectiveElement ? ` / ${effectiveElement}` : '';
@@ -6794,11 +7183,13 @@ function findPaletteSpellByName(items=[], name='') {
   const dbSpell = (DB_INITIAL_SPELL_MASTER || []).map(row => dbSpellToInventoryItem(row)).find(row => String(row.name || '').trim() === target);
   return dbSpell || null;
 }
-function equipmentUpgradeNumericBonus(item={}, patterns=[]){return parseUpgradeLines(item.upgradeLines||item.upgradeEntries||'').reduce((sum,e)=>patterns.some(p=>p.test(String(e.content||'')))?sum+parseFlatBonus(e.value||1):sum,0);}
-function spellBookPowerBonus(item={}){return equipmentUpgradeNumericBonus(item,[/^威力$/, /^威力\+1$/, /術式威力/, /祈祷威力/]);}
-function spellBookHitBonus(item={}){return equipmentUpgradeNumericBonus(item,[/^命中$/, /^命中補正$/]);}
-function spellBookCostReduction(item={}){return equipmentUpgradeNumericBonus(item,[/消費コスト/, /コスト軽減/]);}
-function spellBookHealBonus(item={}){return equipmentUpgradeNumericBonus(item,[/回復量/]);}
+function equipmentUpgradeNumericBonus(item={}, patterns=[]){return parseUpgradeLines(item.upgradeLines||item.upgradeEntries||'').reduce((sum,e)=>patterns.some(p=>p.test(String(e.content||'')))?sum+upgradeEffectAmount(e):sum,0);}
+function spellBookPowerStage(item={}){return equipmentUpgradeStage(item,[/^威力強化$/]);}
+function spellBookFixedPowerStage(item={}){return equipmentUpgradeStage(item,[/^威力固定強化$/]);}
+function spellBookHitBonus(item={}){return equipmentUpgradeNumericBonus(item,[/^命中強化$/]);}
+function spellBookCostReduction(item={}){return equipmentUpgradeNumericBonus(item,[/^術式省力化$/]);}
+function spellBookHealStage(item={}){return equipmentUpgradeStage(item,[/^回復量強化$/]);}
+function spellBookFixedHealStage(item={}){return equipmentUpgradeStage(item,[/^回復量固定強化$/]);}
 function paletteSpellPointKey(spell={}, containerType='') {
   const text = [spell.category, spell.kind, spell.tags, spell.checkType, containerType]
     .map(v => String(v || ''))
@@ -6821,13 +7212,8 @@ function paletteSpellIsHealing(spell={}) {
     .join('/');
   return /回復|HP/.test(text) && !/ダメージ/.test(text);
 }
-function paletteSpellFormulaWithFlatBonus(formula='', bonus=0) {
-  const base = normalizePaletteFormula(formula);
-  const n = Number(bonus) || 0;
-  if (!base || !n) return base;
-  const repeated = base.match(/^(.+?)([×xX*]\s*\d+\s*回)$/);
-  if (repeated) return `(${repeated[1]}${signedNumberText(n)})${repeated[2]}`;
-  return `${base}${signedNumberText(n)}`;
+function paletteSpellFormulaWithSeparatedBonuses(formula='', skillBonus=0, variableTerm='', fixedTerm='') {
+  return formulaWithSeparatedTerms(formula,[Number(skillBonus)||'',variableTerm,fixedTerm]);
 }
 function paletteSpellCostText(spell={}, container={}) {
   const raw = formatMpCost(spell.cost || spell.mpCost || '');
@@ -6868,10 +7254,10 @@ function collectSetSpellDamagePaletteLines(data={}) {
       const scalable = paletteSpellHasScalablePower(spell, rawFormula);
       const pointKey = paletteSpellPointKey(spell, type);
       const skillPointBonus = scalable && pointKey ? allocatedSkillPoints(pointKey, alloc) : 0;
-      const bookBonus = scalable
-        ? (paletteSpellIsHealing(spell) ? spellBookHealBonus(item) : spellBookPowerBonus(item))
-        : 0;
-      const formula = paletteSpellFormulaWithFlatBonus(rawFormula, skillPointBonus + bookBonus);
+      const healing=paletteSpellIsHealing(spell);
+      const variableStage=scalable?(healing?spellBookHealStage(item):spellBookPowerStage(item)):0;
+      const fixedStage=scalable?(healing?spellBookFixedHealStage(item):spellBookFixedPowerStage(item)):0;
+      const formula = paletteSpellFormulaWithSeparatedBonuses(rawFormula, skillPointBonus, stagedDiceUpgradeFormula(variableStage), fixedUpgradeFormula(fixedStage));
       const label = String(spell.name || name).trim();
       const key = label + '::' + formula;
       if (used.has(key)) continue;
@@ -7015,6 +7401,55 @@ function collectCheckPaletteLines(data={}, totals={}) {
   return result;
 }
 
+function resolvePaletteSpecialUpgradeDetail(entry={},items=[]){
+  const e=normalizeUpgradeEntry(entry);if(e.specialEffectDetail)return e.specialEffectDetail;
+  const name=String(e.specialEffectName||'').trim();if(!name)return '';
+  const rows=(items||[]).concat((DB_INITIAL_ITEM_MASTER||[])).map(row=>normalizeInventoryItem(row));
+  const found=rows.find(item=>item.kind==='素材'&&specialUpgradeEffectNameForMaterial(item)===name&&String(item.equipmentUpgradeDetail||'').trim());
+  return String(found?.equipmentUpgradeDetail||'').trim();
+}
+function collectEquipmentEffectPaletteLines(data={}){
+  const equipment=data.equipment||{},items=paletteInventoryItems(data),result=[],seen=new Set();
+  for(const slot of EQUIPMENT_SLOTS){
+    if(slot.kind==='carry')continue;
+    const eq=equipment[slot.key]||{},source=findPaletteInventoryItem(items,eq);
+    const merged=normalizeInventoryItem({...(source||{}),...(eq||{})});
+    const name=String(merged.name||eq.name||'').trim();if(!name)continue;
+    const type=normalizeEquipmentType(merged.itemCategory||merged.category||eq.type||'なし');
+    const identity=String(source?inventoryItemKey(source):eq.itemId||`${slot.key}:${name}`);
+    if(seen.has(identity))continue;seen.add(identity);
+    const isShield=['盾','大盾'].includes(type)||String(merged.itemType||'')==='盾';
+    const category=merged.kind==='装飾品'?'装飾品':(merged.kind==='防具'||isShield?'防具':'武器');
+    const baseEffect=String(source?.effect||merged.effect||eq.note||'').trim();
+    const upgrades=parseUpgradeLines(source?.upgradeEntries||eq.upgradeEntries||source?.upgradeLines||eq.upgradeLines||'').filter(entry=>normalizeUpgradeEntry(entry).content==='素材固有効果');
+    if(!baseEffect&&!upgrades.length)continue;
+    const block=[`// 【${category}・${slot.label}：${name}】`];
+    if(baseEffect)block.push(`// ${category==='武器'?'追加効果':category==='防具'?'特殊効果':'効果'}：${baseEffect}`);
+    const seenUpgradeSpecialEffects=new Set();
+    upgrades.forEach(raw=>{
+      const entry=normalizeUpgradeEntry(raw),effectName=entry.specialEffectName||'名称未設定';
+      if(seenUpgradeSpecialEffects.has(effectName))return;
+      seenUpgradeSpecialEffects.add(effectName);
+      block.push(`// 強化特殊効果：${effectName}`);
+      const detail=resolvePaletteSpecialUpgradeDetail(entry,items);if(detail)block.push(`// 能力詳細：${detail}`);
+      if(entry.sourceMaterialName)block.push(`// 付与素材：${entry.sourceMaterialName}`);
+    });
+    appendPaletteBlock(result,block);
+  }
+  return result;
+}
+function collectSkillCrystalPaletteLines(data={}){
+  const state=normalizeSkillGachaState(data.skillGacha||{}),result=[];
+  state.equippedSkillIds.forEach(id=>{
+    const skill=characterSkillById(id);if(!skill)return;
+    const block=[`// 【${skill.name}】`];
+    if(skill.timing)block.push(`// タイミング：${skill.timing}`);
+    const resource=[skill.cost?`消費：${skill.cost}`:'',skill.ct?`CT：${skill.ct}`:''].filter(Boolean).join(' / ');if(resource)block.push(`// ${resource}`);
+    if(skill.effect)block.push(`// 効果：${skill.effect}`);else if(skill.description)block.push(`// 効果：${skill.description}`);
+    appendPaletteBlock(result,block);
+  });
+  return result;
+}
 function generatePaletteExport(data=collectData(false)) {
   const abilities = resolveAbilities(data);
   const totals = skillTotals(abilities, data.skills || defaultSkillAlloc(), data.equipment || {});
@@ -7038,6 +7473,16 @@ function generatePaletteExport(data=collectData(false)) {
     lines.push('');
     lines.push(`// 常時軽減：防御値${combat.defenseValue}＋防御技能${combat.defenseSkillPoints}＝${combat.constantDamageReduction}`);
     lines.push(`${combat.guardActionValue} 【防御行動値】`);
+  }
+  const equipmentEffectLines=collectEquipmentEffectPaletteLines(data);
+  if(equipmentEffectLines.length){
+    lines.push('');
+    lines.push(...equipmentEffectLines);
+  }
+  const crystalSkillLines=collectSkillCrystalPaletteLines(data);
+  if(crystalSkillLines.length){
+    lines.push('');
+    lines.push(...crystalSkillLines);
   }
   const damageLines = collectWeaponDamagePaletteLines(data, totals).concat(collectSetSpellDamagePaletteLines(data));
   if (damageLines.length) {
@@ -7301,9 +7746,21 @@ function bindEvents() {
       const row = e.target.closest('[data-upgrade-row]');
       const slotRoot = row?.closest('[id$="_upgradeSlots"]');
       const slotKey = slotRoot ? slotRoot.id.replace(/^equip_/, '').replace(/_upgradeSlots$/, '') : '';
+      if(e.target.matches('[data-upgrade-content]')&&slotKey){
+        const index=Number(row.dataset.upgradeRow||0);
+        const entries=collectUpgradeEntries(slotKey);
+        const next=normalizeUpgradeEntry(entries[index]||{});
+        next.content=normalizeUpgradeContentName(e.target.value||'');
+        next.slotCost=next.content==='素材固有効果'?2:standardUpgradeSlotCostForSelection(slotKey,next.content);
+        next.specialEffectName='';next.specialEffectDetail='';next.sourceMaterialId='';next.sourceMaterialPublicId='';next.sourceMaterialName='';next.sourceMaterialTarget='';next.legacyEffectAmount=0;next.legacyEffectDetail='';
+        entries[index]=next;
+        renderEquipmentUpgradeSlots(slotKey,entries);
+      }else if(e.target.matches('[data-upgrade-special-select]')&&slotKey){
+        applySpecialUpgradeSelection(row,slotKey);
+        renderEquipmentUpgradeSlots(slotKey,collectUpgradeEntries(slotKey));
+      }
       if(slotKey) syncEquipmentUpgradeHidden(slotKey);
-      updateEquipmentSummaries();
-      updateSummary();
+      updateAll();
       return;
     }
     if (e.target.dataset.equipmentInput) { updateAll(); return; }
