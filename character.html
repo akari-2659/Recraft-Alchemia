@@ -4033,8 +4033,18 @@ function setEquipmentState(equipment={}) {
       item = { ...defaults[slot.key] };
     }
     if ($('equip_' + slot.key + '_itemSelect')) {
-      let selectedId = item.itemId || findCsItemIdByName(item.name || '');
+      // 保存済みの装備IDが倉庫側の再保存・移行で変わっていても、名称から現在の個体を再照合する。
+      // 旧IDが残っているだけで未選択へ落とすと、ダメージ式などのスナップショットだけが残るため、
+      // ID照合に失敗した場合に限って名称フォールバックを行う。
+      let selectedId = String(item.itemId || '').trim();
       selectedRow = selectedId ? findCsItemById(selectedId) : null;
+      if (!selectedRow && item.name) {
+        const fallbackId = findCsItemIdByName(item.name || '');
+        if (fallbackId) {
+          selectedId = fallbackId;
+          selectedRow = findCsItemById(fallbackId);
+        }
+      }
       if(slot.kind!=='carry'&&selectedRow){
         selectedRow=migrateLegacyEquippedUpgradesToInventoryItem(selectedId,item)||selectedRow;
       }
@@ -4062,6 +4072,9 @@ function setEquipmentState(equipment={}) {
       }
       $('equip_' + slot.key + '_itemSelect').value = selectedId && Array.from($('equip_' + slot.key + '_itemSelect').options).some(o=>o.value===selectedId) ? selectedId : '';
       $('equip_' + slot.key + '_itemSelect').dataset.previousItemKey = $('equip_' + slot.key + '_itemSelect').value || '';
+      if (typeof window.raSyncEquipmentPickerTrigger === 'function') {
+        window.raSyncEquipmentPickerTrigger($('equip_' + slot.key + '_itemSelect'));
+      }
     }
     if ($('equip_' + slot.key + '_name')) $('equip_' + slot.key + '_name').value = item.name || '';
     if ($('equip_' + slot.key + '_type')) $('equip_' + slot.key + '_type').value = normalizeEquipmentType(item.type || 'なし');
@@ -6495,6 +6508,9 @@ function refreshEquipmentItemSelects() {
     select.value = nextValue && Array.from(select.options).some(o=>o.value===nextValue) ? nextValue : '';
     // 候補再描画だけで切替前キーを上書きしない。実際の装備反映後に更新する。
     if(!String(select.dataset.previousItemKey || '').trim()) select.dataset.previousItemKey = select.value || '';
+    if (typeof window.raSyncEquipmentPickerTrigger === 'function') {
+      window.raSyncEquipmentPickerTrigger(select);
+    }
   }
 }
 function setTypeSelectValue(slotKey, value) {
@@ -8110,8 +8126,17 @@ function run(){
     if(!target)return[];
     return [...target.options].filter(o=>o.value).map((option,index)=>{const item=itemForOption(option)||{};return{key:String(option.value),option,item,index,name:txt(item.name)||txt(option.textContent),category:categoryOf(item,option)}});
   }
-  function currentLabel(){if(!target)return'装備を選択';const opt=target.selectedOptions?.[0];return target.value&&opt?txt(opt.textContent):'未選択';}
-  function updateTrigger(){if(!target)return;const btn=target.parentElement?.querySelector('.ra-picker-trigger');if(btn)btn.querySelector('[data-ra-picker-label]').textContent=currentLabel()}
+  function labelFor(select){if(!select)return'装備を選択';const opt=select.selectedOptions?.[0];return select.value&&opt?txt(opt.textContent):'未選択';}
+  function syncTrigger(select){
+    if(!select)return;
+    const btn=select.parentElement?.querySelector('.ra-picker-trigger');
+    const label=btn?.querySelector('[data-ra-picker-label]');
+    if(label){const next=labelFor(select);if(label.textContent!==next)label.textContent=next;}
+  }
+  function currentLabel(){return labelFor(target);}
+  function updateTrigger(){syncTrigger(target)}
+  window.raSyncEquipmentPickerTrigger=syncTrigger;
+  window.raSyncAllEquipmentPickerTriggers=()=>document.querySelectorAll('select[id^="equip_"][id$="_itemSelect"]').forEach(syncTrigger);
   function choose(candidate){
     if(!target||!candidate)return;
     target.value=candidate.key;
