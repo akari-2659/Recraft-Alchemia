@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.395</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.398</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1098,10 +1098,10 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
 .inventory-registration-card>summary{padding:9px 11px!important}
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.395-equipment-readonly1">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.398-equipment-readonly1">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.395｜更新：2026年8月5日</div>
+<div class="ra-build-info">v90.8.398｜更新：2026年8月5日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -3994,6 +3994,32 @@ function migrateLegacyEquippedUpgradesToInventoryItem(selectedId='',equipmentIte
   legacyEquipmentUpgradeMigrationCount+=migrated.length;
   return normalizeInventoryItem(inventoryItemsState[index]);
 }
+function resolvedEquipmentUpgradeLimit(item={}) {
+  const own=String(item&&item.upgradeLimit||'').trim();
+  const same=(a,b)=>String(a??'').trim()&&String(a??'').trim()===String(b??'').trim();
+  let master=typeof inventoryMasterRowForClassification==='function'?inventoryMasterRowForClassification(item):null;
+  if(!master){
+    const pools=[];
+    try{if(Array.isArray(DB_INITIAL_ITEM_MASTER))pools.push(...DB_INITIAL_ITEM_MASTER)}catch(_){}
+    try{if(Array.isArray(CS_ITEM_MASTER))pools.push(...CS_ITEM_MASTER)}catch(_){}
+    master=pools.find(row=>same(row?.id,item?.masterId)||same(row?.id,item?.id)||same(row?.publicId,item?.publicId)||same(row?.name,item?.name))||null;
+  }
+  // 装備個体に残った空欄・旧値より、現在の共通DBマスターを優先する。
+  const masterValue=String(master&&(master.upgradeLimit||master.upgradeSlotLimit||master.upgradeSlots)||'').trim();
+  const value=masterValue||own;
+  if(masterValue&&item&&typeof item==='object'&&own!==masterValue){
+    item.upgradeLimit=masterValue;
+    try{
+      const key=typeof inventoryItemKey==='function'?String(inventoryItemKey(item)||''):'';
+      const index=(inventoryItemsState||[]).findIndex(raw=>{
+        const row=normalizeInventoryItem(raw||{});
+        return (key&&String(inventoryItemKey(row)||'')===key)||same(row.id,item.id)||same(row.masterId,item.masterId)||same(row.publicId,item.publicId)||same(row.name,item.name);
+      });
+      if(index>=0)inventoryItemsState[index]=normalizeInventoryItem({...inventoryItemsState[index],upgradeLimit:masterValue});
+    }catch(_){}
+  }
+  return value;
+}
 function setEquipmentState(equipment={}) {
   refreshEquipmentTypeSelects();
   refreshEquipmentItemSelects();
@@ -4026,7 +4052,7 @@ function setEquipmentState(equipment={}) {
           reloadTurns: selectedRow.reloadTurns || '',
           target: selectedRow.target || '',
           modifiers: selectedRow.modifiers || '',
-          upgradeLimit: selectedRow.upgradeLimit || '',
+          upgradeLimit: resolvedEquipmentUpgradeLimit(selectedRow),
           upgradeEntries: selectedRow.upgradeEntries || [],
           upgradeLines: selectedRow.upgradeLines || '',
           setSpells: selectedRow.setSpells || '',
@@ -4066,7 +4092,7 @@ function setEquipmentState(equipment={}) {
       renderModifierReadOnly('equip_' + slot.key + '_modifierRows', restoredModifiers);
       // 強化内容も装備個体単位。選択中の倉庫装備がある場合は装備枠の旧値を一切引き継がない。
       const upgradeSource = selectedRow ? (selectedRow.upgradeEntries || selectedRow.upgradeLines || []) : (item.upgradeEntries || item.upgradeLines || []);
-      const upgradeLimitValue = selectedRow ? (selectedRow.upgradeLimit || '') : (item.upgradeLimit || '');
+      const upgradeLimitValue = selectedRow ? resolvedEquipmentUpgradeLimit(selectedRow) : (item.upgradeLimit || '');
       if ($('equip_' + slot.key + '_upgradeLimit')) $('equip_' + slot.key + '_upgradeLimit').value = upgradeLimitValue;
       if ($('equip_' + slot.key + '_upgradeLines')) $('equip_' + slot.key + '_upgradeLines').value = serializeUpgradeEntries(parseUpgradeLines(upgradeSource));
       renderEquipmentUpgradeSlots(slot.key, upgradeSource);
@@ -6600,7 +6626,7 @@ function applyCsItemToEquipmentSlot(slotKey) {
   for (const [suffix, field] of Object.entries(map)) {
     const el = $('equip_' + slotKey + '_' + suffix);
     if (!el) continue;
-    const value = row[field];
+    const value = field==='upgradeLimit' ? resolvedEquipmentUpgradeLimit(row) : row[field];
     el.value = value !== undefined && value !== null && String(value).trim() !== '' ? value : (selectedItemFallbacks[field] || '');
   }
   const usageSkillEl=$('equip_' + slotKey + '_checkType');
@@ -7293,6 +7319,54 @@ function collectSetSpellDamagePaletteLines(data={}) {
   return result;
 }
 
+function collectSetSpellPaletteLines(data={}, totals={}) {
+  const equipment = data.equipment || {};
+  const alloc = data.skills || defaultSkillAlloc();
+  const items = paletteInventoryItems(data);
+  const globalMod = fatiguePenaltyForData(data);
+  const result = [];
+  const used = new Set();
+  for (const slot of EQUIPMENT_SLOTS) {
+    if (slot.kind === 'carry') continue;
+    const container = equipment[slot.key] || {};
+    const type = normalizeEquipmentType(container.type || 'なし');
+    if (!spellContainerKind(type)) continue;
+    const names = splitFormulaList(container.setSpells || container.knownSpells || '');
+    for (const name of names) {
+      const spell = findPaletteSpellByName(items, name) || normalizeInventoryItem({ name, kind:'術式' });
+      const label = String(spell.name || name).trim();
+      if (!label || used.has(label)) continue;
+      used.add(label);
+      const block = [paletteSpellMetaLine(spell, container)];
+      const effectLine = paletteSpellEffectLine(spell);
+      if (effectLine) block.push(effectLine);
+      const spellKind = String(spell.category || spell.kind || type || '').trim();
+      const defaultSkill = /祈祷|聖|神/.test(spellKind) ? '祈祷' : '魔法';
+      const checkLine = paletteCheckLineFromExpression(
+        checkTypeOrDefault(spell, defaultSkill, defaultSkill === '魔法' ? '回避値' : '目標値'),
+        label,
+        totals,
+        signedNumberText(spellBookHitBonus(container)),
+        globalMod
+      );
+      if (checkLine) block.push(checkLine);
+      const rawFormula = normalizePaletteFormula(spell.power || spell.damage || '');
+      if (rawFormula) {
+        const scalable = paletteSpellHasScalablePower(spell, rawFormula);
+        const pointKey = paletteSpellPointKey(spell, type);
+        const skillPointBonus = scalable && pointKey ? allocatedSkillPoints(pointKey, alloc) : 0;
+        const healing = paletteSpellIsHealing(spell);
+        const variableStage = scalable ? (healing ? spellBookHealStage(container) : spellBookPowerStage(container)) : 0;
+        const fixedStage = scalable ? (healing ? spellBookFixedHealStage(container) : spellBookFixedPowerStage(container)) : 0;
+        const formula = paletteSpellFormulaWithSeparatedBonuses(rawFormula, skillPointBonus, stagedDiceUpgradeFormula(variableStage), fixedUpgradeFormula(fixedStage));
+        if (formula) block.push(`${formula} 【${label}】`);
+      }
+      appendPaletteBlock(result, block);
+    }
+  }
+  return result;
+}
+
 function signedModForPalette(value) {
   const raw = String(value || '').trim();
   if (!raw || raw === '0') return '';
@@ -7332,14 +7406,6 @@ function collectCheckPaletteLines(data={}, totals={}) {
   const items = paletteInventoryItems(data);
   const result = [];
   const used = new Set();
-  const usedSpellMeta = new Set();
-  const pushLine = (checkType, label, extraMod='') => {
-    const line = paletteCheckLineFromExpression(checkType, label, totals, extraMod, globalMod);
-    if (!line || used.has(line)) return '';
-    used.add(line);
-    result.push(line);
-    return line;
-  };
   const pushWeaponLine = (checkType, handLabel, hitMod=0) => {
     const line = paletteWeaponCheckLineFromExpression(checkType, handLabel, totals, hitMod, globalMod);
     if (!line || used.has(line)) return;
@@ -7364,65 +7430,19 @@ function collectCheckPaletteLines(data={}, totals={}) {
     if (isPaletteTwoHandEquipment(merged, source)) break;
   }
 
-  for (const slot of EQUIPMENT_SLOTS) {
-    if (slot.kind === 'carry') continue;
-    const eq = equipment[slot.key] || {};
-    const type = normalizeEquipmentType(eq.type || 'なし');
-    if (!spellContainerKind(type)) continue;
-    const names = splitFormulaList(eq.setSpells || eq.knownSpells || '');
-    for (const name of names) {
-      const spell = findPaletteSpellByName(items, name) || normalizeInventoryItem({ name, kind:'術式' });
-      const spellKind = String(spell.category || spell.kind || type || '').trim();
-      const defaultSkill = /祈祷|聖|神/.test(spellKind) ? '祈祷' : '魔法';
-      const block = [];
-      const metaLine = paletteSpellMetaLine(spell, eq);
-      if (metaLine && !usedSpellMeta.has(metaLine)) {
-        usedSpellMeta.add(metaLine);
-        block.push(metaLine);
-        const effectLine = paletteSpellEffectLine(spell);
-        if (effectLine) block.push(effectLine);
-      }
-      const checkLine = paletteCheckLineFromExpression(
-        checkTypeOrDefault(spell, defaultSkill, defaultSkill === '魔法' ? '回避値' : '目標値'),
-        String(spell.name || name).trim(),
-        totals,
-        signedNumberText(spellBookHitBonus(eq)),
-        globalMod
-      );
-      if (checkLine && !used.has(checkLine)) {
-        used.add(checkLine);
-        block.push(checkLine);
-      }
-      appendPaletteBlock(result, block);
-    }
-  }
-
-  let inventorySectionStarted = false;
   for (const item of items) {
     const row = normalizeInventoryItem(item);
     if (!row.checkType || row.checkType === 'なし') continue;
-    if (row.kind === '術式') continue;
-    if (row.kind === '武器') continue;
-    if (isNonWeaponEquipmentPaletteItem(row)) continue;
+    if (row.kind === '術式' || row.kind === '武器' || isNonWeaponEquipmentPaletteItem(row)) continue;
     const label = row.name || row.category || '判定';
     const forcedSkill = /祈祷|聖|神/.test(String(row.category || row.kind || ''))
       ? '祈祷'
       : (/魔法|魔導/.test(String(row.category || row.kind || '')) ? '魔法' : '');
-    const line = paletteCheckLineFromExpression(
-      checkTypeOrDefault(row, forcedSkill, '目標値'),
-      label,
-      totals,
-      '',
-      globalMod
-    );
+    const line = paletteCheckLineFromExpression(checkTypeOrDefault(row, forcedSkill, '目標値'), label, totals, '', globalMod);
     if (!line || used.has(line)) continue;
-    if (!inventorySectionStarted && result.length && result[result.length - 1] !== '') result.push('');
-    inventorySectionStarted = true;
     used.add(line);
     result.push(line);
   }
-
-  while (result.length && result[result.length - 1] === '') result.pop();
   return result;
 }
 
@@ -7457,7 +7477,6 @@ function collectEquipmentEffectPaletteLines(data={}){
       seenUpgradeSpecialEffects.add(effectName);
       block.push(`// 強化特殊効果：${effectName}`);
       const detail=resolvePaletteSpecialUpgradeDetail(entry,items);if(detail)block.push(`// 能力詳細：${detail}`);
-      if(entry.sourceMaterialName)block.push(`// 付与素材：${entry.sourceMaterialName}`);
     });
     appendPaletteBlock(result,block);
   }
@@ -7478,44 +7497,45 @@ function collectSkillCrystalPaletteLines(data={}){
 function generatePaletteExport(data=collectData(false)) {
   const abilities = resolveAbilities(data);
   const totals = skillTotals(abilities, data.skills || defaultSkillAlloc(), data.equipment || {});
-  const baseTotals = skillTotals(abilities, data.skills || defaultSkillAlloc(), null);
   const lines = [];
+  const explanationLines = [];
   const fatiguePenalty=fatiguePenaltyForData(data);
-  if(fatiguePenalty) lines.push(`// 疲労度${Math.max(0,Number(data?.resources?.fatigue)||0)}：すべての判定${fatiguePenalty}`);
+
   for (const cat of SKILL_CATEGORIES) {
     for (const sk of cat.skills) {
       const v = totals[sk.key]?.total || 0;
       lines.push(`2D6+${checkFormulaValue(v,[signedNumberText(fatiguePenalty)])}>=目標値 【${sk.name}】`);
     }
   }
+
   const checkLines = collectCheckPaletteLines(data, totals);
-  if (checkLines.length) {
-    lines.push('');
-    lines.push(...checkLines);
-  }
+  if (checkLines.length) appendPaletteBlock(lines, checkLines);
+
   const combat = computeCombatStats(abilities, data.skills || defaultSkillAlloc(), data.equipment || {});
   if (combat.guardActionValue && combat.guardActionValue !== '0') {
-    lines.push('');
-    lines.push(`// 常時軽減：防御値${combat.defenseValue}＋防御技能${combat.defenseSkillPoints}＝${combat.constantDamageReduction}`);
-    lines.push(`${combat.guardActionValue} 【防御行動値】`);
+    appendPaletteBlock(lines, [`${combat.guardActionValue} 【防御行動値】`]);
+    explanationLines.push(`// 常時軽減：防御値${combat.defenseValue}＋防御技能${combat.defenseSkillPoints}＝${combat.constantDamageReduction}`);
   }
+
+  const weaponDamageLines = collectWeaponDamagePaletteLines(data, totals);
+  if (weaponDamageLines.length) appendPaletteBlock(lines, weaponDamageLines);
+
+  const spellLines = collectSetSpellPaletteLines(data, totals);
+  if (spellLines.length) appendPaletteBlock(lines, spellLines);
+
+  if (fatiguePenalty) explanationLines.unshift(`// 疲労度${Math.max(0,Number(data?.resources?.fatigue)||0)}：すべての判定${fatiguePenalty}`);
   const equipmentEffectLines=collectEquipmentEffectPaletteLines(data);
-  if(equipmentEffectLines.length){
-    lines.push('');
-    lines.push(...equipmentEffectLines);
-  }
   const crystalSkillLines=collectSkillCrystalPaletteLines(data);
-  if(crystalSkillLines.length){
-    lines.push('');
-    lines.push(...crystalSkillLines);
-  }
-  const damageLines = collectWeaponDamagePaletteLines(data, totals).concat(collectSetSpellDamagePaletteLines(data));
-  if (damageLines.length) {
-    lines.push('');
-    lines.push(...damageLines);
-  }
+  const bottom=[];
+  if(explanationLines.length)appendPaletteBlock(bottom,explanationLines);
+  if(equipmentEffectLines.length)appendPaletteBlock(bottom,equipmentEffectLines);
+  if(crystalSkillLines.length)appendPaletteBlock(bottom,crystalSkillLines);
+  if(bottom.length)appendPaletteBlock(lines,bottom);
+
+  while(lines.length&&lines[lines.length-1]==='')lines.pop();
   return lines.join('\n');
 }
+
 function getOutputPayload(kind, data=outputTargetData || collectData(false)) {
   if (kind === 'token') {
     return { text: generateTokenExport(data), label: '駒出力' };
@@ -8025,6 +8045,136 @@ document.addEventListener('DOMContentLoaded', ()=>{
     document.getElementById('closeAllSkillCategoriesBtn')?.addEventListener('click',()=>document.querySelectorAll('#skillArea .skill-category-card').forEach(x=>x.open=false));
     document.getElementById('equipmentArea')?.addEventListener('change',e=>{const card=e.target.closest?.('.equipment-card');if(card)card.open=true;});
   });
+})();
+</script>
+
+<!-- RA_PATCH_CHARACTER_EQUIPMENT_PICKER_V90_8_398 -->
+<style>
+.ra-picker-trigger{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:11px;background:var(--paper2);color:var(--ink);box-shadow:none;text-align:left;padding:9px 11px}
+.ra-picker-trigger:hover{transform:none;border-color:var(--accent)}
+.ra-picker-native{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;white-space:nowrap!important;opacity:0!important;pointer-events:none!important}
+.ra-picker-dialog{width:min(980px,calc(100vw - 24px));max-height:min(88vh,880px);border:1px solid var(--line);border-radius:20px;background:var(--paper);color:var(--ink);padding:0;box-shadow:0 24px 70px rgba(46,31,18,.35)}
+.ra-picker-dialog::backdrop{background:rgba(35,22,12,.48)}
+.ra-picker-shell{display:grid;grid-template-rows:auto auto auto minmax(0,1fr);max-height:min(88vh,880px)}
+.ra-picker-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 17px;border-bottom:1px solid var(--line)}
+.ra-picker-head h3{margin:0;color:var(--accent2)}
+.ra-picker-close{min-width:42px;padding:8px 12px}
+.ra-picker-search{padding:12px 16px 0}
+.ra-picker-tabs{display:flex;gap:7px;overflow-x:auto;padding:11px 16px;scrollbar-width:thin}
+.ra-picker-tabs button{flex:0 0 auto;background:transparent;color:var(--accent2);border:1px solid var(--line);box-shadow:none;padding:7px 11px}
+.ra-picker-tabs button.active{background:var(--accent);color:white;border-color:transparent}
+.ra-picker-body{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(300px,.8fr);min-height:0;border-top:1px solid rgba(221,203,176,.7)}
+.ra-picker-list{overflow:auto;padding:12px;display:grid;align-content:start;gap:9px}
+.ra-picker-card{border:1px solid var(--line);border-radius:14px;background:var(--paper2);padding:11px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
+.ra-picker-card.current{border-color:var(--accent);box-shadow:0 0 0 2px rgba(184,119,56,.14)}
+.ra-picker-name{font-weight:900;color:var(--accent2)}
+.ra-picker-meta{font-size:.82rem;color:var(--muted)}
+.ra-picker-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.ra-picker-actions button{padding:7px 10px;font-size:.84rem}
+.ra-picker-detail{overflow:auto;border-left:1px solid var(--line);padding:15px;background:rgba(255,253,248,.65)}
+.ra-picker-detail h4{font-size:1.1rem;color:var(--accent2)}
+.ra-picker-detail-grid{display:grid;grid-template-columns:auto 1fr;gap:7px 10px;font-size:.9rem;margin:12px 0}
+.ra-picker-detail-grid dt{color:var(--muted);font-weight:800}.ra-picker-detail-grid dd{margin:0;white-space:pre-wrap}
+.ra-picker-empty{padding:25px;text-align:center;color:var(--muted)}
+@media(max-width:720px){.ra-picker-body{grid-template-columns:1fr}.ra-picker-detail{border-left:0;border-top:1px solid var(--line);max-height:42vh}.ra-picker-card{grid-template-columns:1fr}.ra-picker-actions{justify-content:flex-start}}
+</style>
+<script>
+(()=>{
+'use strict';
+const PATCH_MARK='RA_PATCH_CHARACTER_EQUIPMENT_PICKER_V90_8_398';
+function run(){
+  if(document.documentElement.dataset.raCharacterPicker398)return;
+  document.documentElement.dataset.raCharacterPicker398='1';
+  const dialog=document.createElement('dialog');
+  dialog.className='ra-picker-dialog';
+  dialog.innerHTML=`<div class="ra-picker-shell"><header class="ra-picker-head"><div><div class="small">倉庫内の装備から選択</div><h3>装備選択</h3></div><button type="button" class="ghost ra-picker-close" aria-label="閉じる">×</button></header><div class="ra-picker-search"><input type="search" placeholder="名称・種類・効果で検索"></div><div class="ra-picker-tabs"></div><div class="ra-picker-body"><div class="ra-picker-list"></div><aside class="ra-picker-detail"><div class="ra-picker-empty">一覧から「詳細」を選ぶと性能を確認できます。</div></aside></div></div>`;
+  document.body.appendChild(dialog);
+  const search=dialog.querySelector('input[type=search]'),tabs=dialog.querySelector('.ra-picker-tabs'),list=dialog.querySelector('.ra-picker-list'),detail=dialog.querySelector('.ra-picker-detail');
+  let target=null,activeCategory='すべて',detailKey='',savedScroll=0;
+  const txt=v=>String(v??'').trim();
+  const escHtml=v=>txt(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  function itemKey(item,index=0){try{return typeof inventoryItemKey==='function'?String(inventoryItemKey(item,index)||''):String(item?.id||item?.masterId||item?.publicId||index);}catch(_){return String(item?.id||item?.masterId||item?.publicId||index)}}
+  function itemForOption(option){
+    const value=String(option.value||'');
+    let rows=[];try{rows=Array.isArray(inventoryItemsState)?inventoryItemsState:[]}catch(_){rows=[]}
+    return rows.find((item,index)=>itemKey(item,index)===value)||rows.find(item=>txt(item?.name)===txt(option.textContent?.replace(/\s*[（(].*$/u,'')))||null;
+  }
+  function categoryOf(item,option){return txt(item?.itemCategory||item?.category||item?.type||item?.kind||option?.dataset?.category||'その他')||'その他'}
+  function candidates(){
+    if(!target)return[];
+    return [...target.options].filter(o=>o.value).map((option,index)=>{const item=itemForOption(option)||{};return{key:String(option.value),option,item,index,name:txt(item.name)||txt(option.textContent),category:categoryOf(item,option)}});
+  }
+  function currentLabel(){if(!target)return'装備を選択';const opt=target.selectedOptions?.[0];return target.value&&opt?txt(opt.textContent):'未選択';}
+  function updateTrigger(){if(!target)return;const btn=target.parentElement?.querySelector('.ra-picker-trigger');if(btn)btn.querySelector('[data-ra-picker-label]').textContent=currentLabel()}
+  function choose(candidate){
+    if(!target||!candidate)return;
+    target.value=candidate.key;
+    target.dispatchEvent(new Event('input',{bubbles:true}));
+    target.dispatchEvent(new Event('change',{bubbles:true}));
+    updateTrigger();
+    dialog.close();
+  }
+  function detailHtml(candidate){
+    if(!candidate)return'<div class="ra-picker-empty">詳細を表示する装備を選んでください。</div>';
+    const x=candidate.item||{};
+    const pairs=[['種類',candidate.category],['ランク',x.rank?`★${x.rank}`:''],['属性',x.element],['ダメージ／威力',x.power],['命中・補正',typeof modifierDisplayText==='function'?modifierDisplayText(x.modifiers||''):x.modifiers],['強化枠上限',typeof resolvedEquipmentUpgradeLimit==='function'?resolvedEquipmentUpgradeLimit(x):x.upgradeLimit],['対象',x.target],['使用技能',x.checkType],['説明',x.description],['効果',x.effect||x.note]].filter(([,v])=>txt(v));
+    return `<h4>${escHtml(candidate.name)}</h4><div class="ra-picker-meta">${escHtml(candidate.category)}</div><dl class="ra-picker-detail-grid">${pairs.map(([k,v])=>`<dt>${escHtml(k)}</dt><dd>${escHtml(v)}</dd>`).join('')}</dl><div class="button-row"><button type="button" data-ra-choose="${escHtml(candidate.key)}">この装備を選択</button></div>`;
+  }
+  function render(){
+    const all=candidates();
+    const cats=['すべて',...new Set(all.map(x=>x.category))];
+    if(!cats.includes(activeCategory))activeCategory='すべて';
+    tabs.innerHTML=cats.map(c=>`<button type="button" data-ra-category="${escHtml(c)}" class="${c===activeCategory?'active':''}">${escHtml(c)}</button>`).join('');
+    const q=txt(search.value).normalize('NFKC').toLocaleLowerCase('ja');
+    const rows=all.filter(x=>activeCategory==='すべて'||x.category===activeCategory).filter(x=>!q||[x.name,x.category,x.item?.description,x.item?.effect,x.item?.power].map(txt).join(' ').normalize('NFKC').toLocaleLowerCase('ja').includes(q));
+    list.innerHTML=rows.length?rows.map(x=>`<article class="ra-picker-card ${target?.value===x.key?'current':''}"><div><div class="ra-picker-name">${escHtml(x.name)}</div><div class="ra-picker-meta">${escHtml([x.category,x.item?.rank?`★${x.item.rank}`:'',x.item?.power||''].filter(Boolean).join(' / '))}</div></div><div class="ra-picker-actions"><button type="button" class="ghost" data-ra-detail="${escHtml(x.key)}">詳細</button><button type="button" data-ra-choose="${escHtml(x.key)}">選択</button></div></article>`).join(''):'<div class="ra-picker-empty">条件に一致する装備がありません。</div>';
+    const selected=all.find(x=>x.key===detailKey)||all.find(x=>x.key===target?.value)||null;
+    detail.innerHTML=detailHtml(selected);
+    requestAnimationFrame(()=>{list.scrollTop=savedScroll;});
+  }
+  function open(select){target=select;activeCategory='すべて';detailKey=select.value||'';search.value='';savedScroll=0;render();dialog.showModal();search.focus();}
+  function enhance(select){
+    if(select.dataset.raPickerEnhanced||!/^equip_.+_itemSelect$/u.test(select.id))return;
+    select.dataset.raPickerEnhanced='1';select.classList.add('ra-picker-native');
+    const btn=document.createElement('button');btn.type='button';btn.className='ra-picker-trigger';btn.innerHTML='<span data-ra-picker-label></span><span aria-hidden="true">選択 ▾</span>';
+    btn.addEventListener('click',()=>open(select));
+    select.insertAdjacentElement('afterend',btn);
+    target=select;updateTrigger();target=null;
+    select.addEventListener('change',()=>{target=select;updateTrigger();target=null;});
+  }
+  function enhanceAll(){document.querySelectorAll('select[id^="equip_"][id$="_itemSelect"]').forEach(enhance)}
+  dialog.addEventListener('click',e=>{
+    if(e.target===dialog||e.target.closest('.ra-picker-close')){dialog.close();return;}
+    const cat=e.target.closest('[data-ra-category]');if(cat){savedScroll=0;activeCategory=cat.dataset.raCategory||'すべて';render();return;}
+    const d=e.target.closest('[data-ra-detail]');if(d){savedScroll=list.scrollTop;detailKey=d.dataset.raDetail||'';render();return;}
+    const c=e.target.closest('[data-ra-choose]');if(c){const row=candidates().find(x=>x.key===c.dataset.raChoose);choose(row);}
+  });
+  search.addEventListener('input',()=>{savedScroll=0;render()});
+  new MutationObserver(enhanceAll).observe(document.getElementById('equipmentArea')||document.body,{childList:true,subtree:true});
+  enhanceAll();
+
+  // 強化枠上限が装備個体側で欠落している場合、共通DBのマスター値を復元して所持データへ書き戻す。
+  document.addEventListener('change',e=>{
+    const select=e.target?.matches?.('select[id^="equip_"][id$="_itemSelect"]')?e.target:null;if(!select||!select.value)return;
+    queueMicrotask(()=>{
+      try{
+        const item=findCsItemById(select.value);if(!item)return;
+        const own=txt(item.upgradeLimit);if(own)return;
+        const master=typeof inventoryMasterRowForClassification==='function'?inventoryMasterRowForClassification(item):null;
+        const limit=txt(master?.upgradeLimit||master?.upgradeSlotLimit||master?.upgradeSlots||'');if(!limit)return;
+        item.upgradeLimit=limit;
+        const slotKey=select.id.replace(/^equip_/,'').replace(/_itemSelect$/,'');
+        const input=document.getElementById(`equip_${slotKey}_upgradeLimit`);if(input)input.value=limit;
+        if(typeof renderEquipmentUpgradeSlots==='function')renderEquipmentUpgradeSlots(slotKey,item.upgradeEntries||item.upgradeLines||[]);
+        if(typeof updateSummary==='function')updateSummary();
+        if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon();
+      }catch(error){console.warn('強化枠上限の補完に失敗しました。',error)}
+    });
+  });
+
+
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});else run();
 })();
 </script>
 </body>
