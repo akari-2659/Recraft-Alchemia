@@ -3853,8 +3853,8 @@ function equipmentDamageDisplayInfo(slotKey='',equipment=getEquipmentState(),all
     const otherMerged=normalizeInventoryItem({...(otherSource||{}),...(other||{}),type:other.type||otherSource?.itemCategory||otherSource?.category||''});
     if(canUseAsDualWeapon(otherMerged)&&!isPaletteTwoHandEquipment(otherMerged,otherSource))offhandBonus=paletteOffhandBonusForItem(otherMerged,otherSource);
   }
-  const formula=formulaWithSeparatedTerms(base,[skillBonus||'',powerTerm,fixedPowerTerm,offhandBonus||'']);
-  const breakdown=[`武器ダメージ ${base}`,skillName&&skillBonus?`${skillName} +${skillBonus}`:'',powerTerm?`威力強化${powerStage} +${powerTerm}`:'',fixedPowerTerm?`威力固定強化${fixedPowerStage} +${fixedPowerTerm}`:'',offhandBonus?`副手追撃 ${signedNumberText(offhandBonus)}`:''].filter(Boolean).join(' / ');
+  const formula=formulaWithSeparatedTerms(base,[offhandBonus||'',skillBonus||'',powerTerm,fixedPowerTerm]);
+  const breakdown=[`武器ダメージ ${base}`,offhandBonus?`副手攻撃値 ${signedNumberText(offhandBonus)}`:'',skillName&&skillBonus?`${skillName} +${skillBonus}`:'',powerTerm?`威力強化${powerStage} +${powerTerm}`:'',fixedPowerTerm?`威力固定強化${fixedPowerStage} +${fixedPowerTerm}`:''].filter(Boolean).join(' / ');
   return {formula,breakdown};
 }
 function setEquipmentDisplayText(id,value='—'){const el=$(id);if(el)el.textContent=(value===undefined||value===null)?'—':String(value);}
@@ -7173,13 +7173,19 @@ function paletteDamageSkillBonus(totals={}, skillKey='') {
   const row = totals?.[skillKey] || {};
   return (Number(row.cat) || 0) + (Number(row.free) || 0);
 }
+/* RA_PATCH_CHARACTER_OFFHAND_DAMAGE_ORDER_V90_8_398_FIX1 */
 function paletteOffhandBonusForItem(item={}, source=null) {
   const type = normalizeEquipmentType(item.type || source?.category || source?.kind || 'なし');
   const preset = EQUIPMENT_PRESETS[type] || {};
-  return parseFlatBonus(item.offhand || source?.offhandBonus || source?.offhand || preset.offhand || '');
+  const base = parseFlatBonus(item.offhand || source?.offhandBonus || source?.offhand || preset.offhand || '');
+  const upgradeStage = Math.max(
+    equipmentUpgradeStage(item, [/^副手追撃強化$/]),
+    equipmentUpgradeStage(source || {}, [/^副手追撃強化$/])
+  );
+  return base + upgradeStage;
 }
 function paletteDamageFormulaWithBonus(formula='', skillBonus=0, offhandBonus=0, powerTerm='', fixedPowerTerm='') {
-  return formulaWithSeparatedTerms(formula,[Number(skillBonus)||'',powerTerm,fixedPowerTerm,Number(offhandBonus)||'']);
+  return formulaWithSeparatedTerms(formula,[Number(offhandBonus)||'',Number(skillBonus)||'',powerTerm,fixedPowerTerm]);
 }
 
 function collectWeaponDamagePaletteLines(data={}, totals={}) {
