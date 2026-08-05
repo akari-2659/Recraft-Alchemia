@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.394</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.395</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -522,7 +522,10 @@
   }
   .equipment-wide { grid-column: 1 / -1; }
   .equipment-upgrade-list{display:grid;gap:8px}
-  .equipment-upgrade-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(110px,.48fr);gap:8px;align-items:end;border:1px solid var(--line);background:rgba(255,255,255,.68);border-radius:12px;padding:8px}
+  .equipment-upgrade-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:8px;align-items:end;border:1px solid var(--line);background:rgba(255,255,255,.68);border-radius:12px;padding:8px}
+  .equipment-upgrade-slot-badge{align-self:center;display:inline-flex;align-items:center;justify-content:center;min-width:84px;border:1px solid var(--line);border-radius:999px;background:rgba(255,249,238,.96);padding:7px 10px;font-size:.8rem;font-weight:900;color:var(--accent2);white-space:nowrap}
+  .equipment-readonly-text{min-height:42px;border:1px solid var(--line);border-radius:10px;background:rgba(249,245,235,.82);padding:9px 10px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+  .inventory-count-editor{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.inventory-count-editor input{width:96px;min-width:0}
   .equipment-upgrade-special-detail{grid-column:1/-1;border:1px solid var(--line);border-radius:10px;background:rgba(249,245,235,.82);padding:8px 10px;font-size:.82rem;line-height:1.55;white-space:pre-wrap}
   .equipment-upgrade-special-detail:empty{display:none}
   .equipment-upgrade-row label{font-size:.78rem}
@@ -1095,10 +1098,10 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
 .inventory-registration-card>summary{padding:9px 11px!important}
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.394-removal-admin1">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.395-equipment-readonly1">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.394｜更新：2026年8月5日</div>
+<div class="ra-build-info">v90.8.395｜更新：2026年8月5日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -2195,27 +2198,20 @@ function renderStatic() {
             </div>
           </div>
           <div id="equip_${slot.key}_effectPreview" class="carry-item-effect" hidden></div>
-          <details class="carry-item-edit">
-            <summary>詳細編集</summary>
-            <div class="equipment-fields three">
-              <div class="field">
-                <label for="equip_${slot.key}_name">品名</label>
-                <input id="equip_${slot.key}_name" data-equipment-input="1" type="text" placeholder="例：ポーション" />
-              </div>
-              <div class="field">
-                <label for="equip_${slot.key}_type">種類</label>
-                <select id="equip_${slot.key}_type" data-equipment-input="1">${options}</select>
-              </div>
-              <div class="field equipment-wide">
-                <label for="equip_${slot.key}_description">説明</label>
-                <textarea id="equip_${slot.key}_description" data-equipment-input="1" placeholder="見た目や雰囲気など"></textarea>
-              </div>
-              <div class="field equipment-wide">
-                <label for="equip_${slot.key}_note">効果</label>
-                <textarea id="equip_${slot.key}_note" data-equipment-input="1" placeholder="数値・ルール処理など"></textarea>
-              </div>
+          <input id="equip_${slot.key}_name" data-equipment-input="1" type="hidden" value="" />
+          <select id="equip_${slot.key}_type" data-equipment-input="1" hidden aria-hidden="true" tabindex="-1">${options}</select>
+          <input id="equip_${slot.key}_description" data-equipment-input="1" type="hidden" value="" />
+          <input id="equip_${slot.key}_note" data-equipment-input="1" type="hidden" value="" />
+          <div class="equipment-readonly-grid">
+            <div class="equipment-readonly-card equipment-description-field">
+              <span class="equipment-readonly-label">説明</span>
+              <div id="equip_${slot.key}_descriptionDisplay" class="equipment-readonly-text">—</div>
             </div>
-          </details>
+            <div class="equipment-readonly-card equipment-effect-field">
+              <span class="equipment-readonly-label">効果</span>
+              <div id="equip_${slot.key}_noteDisplay" class="equipment-readonly-text">—</div>
+            </div>
+          </div>
         </div>`;
     }
     return `
@@ -2294,15 +2290,17 @@ function renderStatic() {
                 <div id="equip_${slot.key}_upgradeUsage" class="small"></div>
                 <div id="equip_${slot.key}_upgradeSlots" class="equipment-upgrade-list" data-equipment-input="1"></div>
                 <input id="equip_${slot.key}_upgradeLines" data-equipment-input="1" type="hidden" value="" />
-                <div class="small">倉庫内にある対象素材だけを候補に表示します。装備の「強化素材最低ランク」未満の素材は表示しません。</div>
+                <div class="small">選択中の武器・防具・装飾品に使用できる強化を共通DBから表示します。装備の「強化素材最低ランク」未満の素材による強化は表示しません。消費枠は強化内容から自動設定されます。</div>
               </details>
+              <input id="equip_${slot.key}_description" data-equipment-input="1" type="hidden" value="" />
+              <input id="equip_${slot.key}_note" data-equipment-input="1" type="hidden" value="" />
               <div class="field equipment-description-field">
-                <label for="equip_${slot.key}_description">説明</label>
-                <textarea id="equip_${slot.key}_description" data-equipment-input="1" placeholder="見た目や雰囲気など"></textarea>
+                <label>説明</label>
+                <div id="equip_${slot.key}_descriptionDisplay" class="equipment-readonly-text">—</div>
               </div>
               <div class="field equipment-effect-field">
-                <label for="equip_${slot.key}_note">効果</label>
-                <textarea id="equip_${slot.key}_note" data-equipment-input="1" placeholder="数値・ルール処理など"></textarea>
+                <label>効果</label>
+                <div id="equip_${slot.key}_noteDisplay" class="equipment-readonly-text">—</div>
               </div>
             </div>
           </details>
@@ -3413,26 +3411,27 @@ function trimUpgradeEntriesToSlotLimit(entries=[],limit=0){
   }
   return out;
 }
-function upgradeOptionHtml(slotKey='',selected=''){
+function upgradeOptionHtml(slotKey='',selected='',maxSlotCost=Infinity){
   const current=normalizeUpgradeContentName(selected||'');
-  const standardEffects=new Set(standardUpgradeMaterialCandidates(slotKey).map(c=>c.effectName));
-  const hasSpecial=specialUpgradeMaterialCandidates(slotKey).length>0;
+  const standardEffects=new Set(standardUpgradeMaterialCandidates(slotKey,'',maxSlotCost).map(c=>c.effectName));
+  const hasSpecial=specialUpgradeMaterialCandidates(slotKey,null,maxSlotCost).length>0;
   const base=[''].concat(EQUIPMENT_UPGRADE_OPTIONS.filter(v=>v&&((v==='素材固有効果'&&hasSpecial)||standardEffects.has(v))));
   const options=base.map(v=>{
     let label=EQUIPMENT_UPGRADE_OPTION_LABELS[v]||v||'未選択';
     if(v&&v!=='素材固有効果'){
-      const candidates=standardUpgradeMaterialCandidates(slotKey,v);
+      const candidates=standardUpgradeMaterialCandidates(slotKey,v,maxSlotCost);
       const names=[...new Set(candidates.map(c=>c.materialName).filter(Boolean))];
-      if(names.length)label+=`（${names[0]}${names.length>1?` ほか${names.length-1}種`:''}）`;
+      const cost=standardUpgradeSlotCostForSelection(slotKey,v,maxSlotCost);
+      if(names.length)label+=`（${cost}枠 / ${names[0]}${names.length>1?` ほか${names.length-1}種`:''}）`;
     }else if(v==='素材固有効果'){
-      const count=specialUpgradeMaterialCandidates(slotKey).length;
-      if(count)label+=`（${count}件）`;
+      const candidates=specialUpgradeMaterialCandidates(slotKey,null,maxSlotCost);
+      if(candidates.length)label+=`（${candidates.length}件）`;
     }
     return `<option value="${esc(v)}" ${v===current?'selected':''}>${esc(label)}</option>`;
   });
   if(current&&!base.includes(current)){
-    const label=(EQUIPMENT_UPGRADE_OPTION_LABELS[current]||current)+`（保存済み・現在の所持素材では選択不可）`;
-    options.push(`<option value="${esc(current)}" selected disabled>${esc(label)}</option>`);
+    const label=(EQUIPMENT_UPGRADE_OPTION_LABELS[current]||current)+`（保存済み）`;
+    options.push(`<option value="${esc(current)}" selected>${esc(label)}</option>`);
   }
   return options.join('');
 }
@@ -3473,19 +3472,28 @@ function equipmentUpgradeMaterialRankEligible(item={},slotKey=''){
   const materialRank=Number(characterNumericRankValue(item.rank,0))||0;
   return materialRank>=minRank;
 }
-function equipmentUpgradeInventoryMaterialCandidates(slotKey=''){
+function equipmentUpgradeMasterMaterialCandidates(slotKey=''){
   const tokens=specialUpgradeTargetTokensForSlot(slotKey);
-  return (inventoryItemsState||[]).map(raw=>normalizeInventoryItem(raw)).filter(item=>{
-    if(item.kind!=='素材'||Number(item.count||0)<=0)return false;
-    if(!equipmentUpgradeMaterialRankEligible(item,slotKey))return false;
-    return specialUpgradeTargetMatches(item.equipmentUpgradeTarget,tokens);
-  });
+  const minRank=equipmentUpgradeMaterialMinimumRank(slotKey);
+  const byKey=new Map();
+  for(const raw of (DB_INITIAL_ITEM_MASTER||[])){
+    const item=normalizeInventoryItem(dbItemToInventoryItem(raw));
+    const effect=String(item.equipmentUpgradeEffect||'').trim();
+    if(item.kind!=='素材'||!effect)continue;
+    const materialRank=Number(characterNumericRankValue(item.rank,0))||0;
+    if(minRank>0&&materialRank<minRank)continue;
+    if(!specialUpgradeTargetMatches(item.equipmentUpgradeTarget,tokens))continue;
+    const key=String(item.masterId||item.id||item.publicId||item.name||'').trim();
+    if(key&&!byKey.has(key))byKey.set(key,item);
+  }
+  return [...byKey.values()];
 }
-function standardUpgradeMaterialCandidates(slotKey='',effectName=''){
+function standardUpgradeMaterialCandidates(slotKey='',effectName='',maxSlotCost=Infinity){
   const requested=normalizeUpgradeContentName(effectName||'');
-  return equipmentUpgradeInventoryMaterialCandidates(slotKey).filter(item=>{
+  return equipmentUpgradeMasterMaterialCandidates(slotKey).filter(item=>{
     const effect=normalizeUpgradeContentName(item.equipmentUpgradeEffect||'');
-    return isStandardUpgradeEffectName(effect)&&(!requested||effect===requested);
+    const cost=Math.max(1,Math.min(3,Number(item.equipmentUpgradeSlotCost)||upgradeDefaultSlotCost(effect)));
+    return isStandardUpgradeEffectName(effect)&&(!requested||effect===requested)&&cost<=Number(maxSlotCost||Infinity);
   }).map(item=>({
     key:String(item.id||item.masterId||item.publicId||item.name||''),
     effectName:normalizeUpgradeContentName(item.equipmentUpgradeEffect||''),
@@ -3495,8 +3503,9 @@ function standardUpgradeMaterialCandidates(slotKey='',effectName=''){
     rank:characterPlayerRankLabel(item.rank),slotCost:Math.max(1,Math.min(3,Number(item.equipmentUpgradeSlotCost)||upgradeDefaultSlotCost(item.equipmentUpgradeEffect)))
   })).sort((a,b)=>a.effectName.localeCompare(b.effectName,'ja')||characterNumericRankValue(a.rank,9999)-characterNumericRankValue(b.rank,9999)||a.materialName.localeCompare(b.materialName,'ja'));
 }
-function standardUpgradeSlotCostForSelection(slotKey='',effectName=''){
-  return Number(standardUpgradeMaterialCandidates(slotKey,effectName)[0]?.slotCost)||upgradeDefaultSlotCost(effectName);
+function standardUpgradeSlotCostForSelection(slotKey='',effectName='',maxSlotCost=Infinity){
+  const costs=standardUpgradeMaterialCandidates(slotKey,effectName,maxSlotCost).map(c=>Number(c.slotCost)||upgradeDefaultSlotCost(effectName));
+  return costs.length?Math.min(...costs):upgradeDefaultSlotCost(effectName);
 }
 function standardUpgradeAvailabilityText(slotKey='',entry={}){
   const e=normalizeUpgradeEntry(entry),candidates=standardUpgradeMaterialCandidates(slotKey,e.content);
@@ -3505,18 +3514,19 @@ function standardUpgradeAvailabilityText(slotKey='',entry={}){
   const minRank=equipmentUpgradeMaterialMinimumRank(slotKey);
   const lines=[detail?`能力詳細：${detail}`:''];
   if(materials.length)lines.push(`対応素材：${materials.join('、')}`);
-  else lines.push(`対応素材：倉庫内に${minRank?`★${minRank}以上で`:''}使用可能な素材がありません。`);
+  else lines.push(`対応素材：${minRank?`★${minRank}以上で`:''}この装備に使用可能な素材がありません。`);
   return lines.filter(Boolean).join('\n');
 }
 function specialUpgradeEffectNameForMaterial(item={}){
   const effect=String(item.equipmentUpgradeEffect||'').trim();
   return effect&&!isStandardUpgradeEffectName(effect)?effect:'';
 }
-function specialUpgradeMaterialCandidates(slotKey='',blockedEffectNames=null){
+function specialUpgradeMaterialCandidates(slotKey='',blockedEffectNames=null,maxSlotCost=Infinity){
   const blocked=blockedEffectNames instanceof Set?blockedEffectNames:new Set(blockedEffectNames||[]);
-  return equipmentUpgradeInventoryMaterialCandidates(slotKey).filter(item=>{
+  return equipmentUpgradeMasterMaterialCandidates(slotKey).filter(item=>{
     const effectName=specialUpgradeEffectNameForMaterial(item);
-    return !!effectName&&!blocked.has(effectName);
+    const cost=Math.max(1,Math.min(3,Number(item.equipmentUpgradeSlotCost)||2));
+    return !!effectName&&!blocked.has(effectName)&&cost<=Number(maxSlotCost||Infinity);
   }).map(item=>({
     key:String(item.id||item.masterId||item.publicId||item.name||''),effectName:specialUpgradeEffectNameForMaterial(item),
     detail:String(item.equipmentUpgradeDetail||'').trim(),materialId:String(item.id||item.masterId||'').trim(),
@@ -3548,13 +3558,13 @@ function specialUpgradeCandidateForEntry(slotKey='',entry={}){
     ||candidates.find(c=>e.sourceMaterialPublicId&&c.materialPublicId===e.sourceMaterialPublicId)
     ||candidates.find(c=>c.effectName===e.specialEffectName&&(!e.specialEffectDetail||c.detail===e.specialEffectDetail))||null;
 }
-function specialUpgradeCandidateByKey(slotKey='',key=''){return specialUpgradeMaterialCandidates(slotKey).find(c=>c.key===String(key||''))||null;}
+function specialUpgradeCandidateByKey(slotKey='',key='',maxSlotCost=Infinity){return specialUpgradeMaterialCandidates(slotKey,null,maxSlotCost).find(c=>c.key===String(key||''))||null;}
 function specialUpgradeDetailText(candidate=null,entry={}){
   const e=normalizeUpgradeEntry(entry),name=String(candidate?.effectName||e.specialEffectName||'').trim(),detail=String(candidate?.detail||e.specialEffectDetail||'').trim(),material=String(candidate?.materialName||e.sourceMaterialName||'').trim(),target=String(candidate?.target||e.sourceMaterialTarget||'').trim();
   return [name?`効果名：${name}`:'',detail?`能力詳細：${detail}`:'',material?`付与素材：${material}`:'',target?`強化対象：${target}`:''].filter(Boolean).join('\n');
 }
-function specialUpgradeSelectorHtml(slotKey='',entry={},blockedEffectNames=null){
-  const e=normalizeUpgradeEntry(entry),selected=specialUpgradeCandidateForEntry(slotKey,e),selectedKey=selected?.key||'',blocked=blockedEffectNames instanceof Set?blockedEffectNames:new Set(blockedEffectNames||[]),candidates=specialUpgradeMaterialCandidates(slotKey,blocked),hasSaved=!!e.specialEffectName&&!selected;
+function specialUpgradeSelectorHtml(slotKey='',entry={},blockedEffectNames=null,maxSlotCost=Infinity){
+  const e=normalizeUpgradeEntry(entry),selected=specialUpgradeCandidateForEntry(slotKey,e),selectedKey=selected?.key||'',blocked=blockedEffectNames instanceof Set?blockedEffectNames:new Set(blockedEffectNames||[]),candidates=specialUpgradeMaterialCandidates(slotKey,blocked,maxSlotCost),hasSaved=!!e.specialEffectName&&!selected;
   const options=[`<option value="">特殊効果を選択</option>`].concat(candidates.map(c=>`<option value="${esc(c.key)}" ${c.key===selectedKey?'selected':''}>${esc(c.effectName)}（${esc(c.materialName)}${c.rank?` / ${esc(c.rank)}`:''} / ${c.slotCost}枠）</option>`));
   if(hasSaved)options.push(`<option value="__saved__" selected>${esc(e.specialEffectName)}（保存済み）</option>`);
   const resolved=selected||null,effectName=resolved?.effectName||e.specialEffectName||'',detail=resolved?.detail||e.specialEffectDetail||'',materialId=resolved?.materialId||e.sourceMaterialId||'',materialPublicId=resolved?.materialPublicId||e.sourceMaterialPublicId||'',materialName=resolved?.materialName||e.sourceMaterialName||'',target=resolved?.target||e.sourceMaterialTarget||'';
@@ -3564,32 +3574,36 @@ function specialUpgradeSelectorHtml(slotKey='',entry={},blockedEffectNames=null)
     <input type="hidden" data-upgrade-special-material-name value="${esc(materialName)}" /><input type="hidden" data-upgrade-special-material-target value="${esc(target)}" />
   </div>`;
 }
-function applySpecialUpgradeSelection(row,slotKey=''){
+function applySpecialUpgradeSelection(row,slotKey='',maxSlotCost=Infinity){
   const select=row?.querySelector('[data-upgrade-special-select]');if(!select)return;
-  let candidate=select.value&&select.value!=='__saved__'?specialUpgradeCandidateByKey(slotKey,select.value):null;
+  let candidate=select.value&&select.value!=='__saved__'?specialUpgradeCandidateByKey(slotKey,select.value,maxSlotCost):null;
   const blocked=specialUpgradeEffectNamesInOtherRows(slotKey,row);
   if(candidate&&blocked.has(candidate.effectName)){
     select.value='';candidate=null;
     if(typeof showToast==='function')showToast('同じ特殊効果は同一装備へ重複して付与できません。','error');
   }
   const set=(selector,value)=>{const el=row.querySelector(selector);if(el)el.value=String(value||'');};
-  if(candidate){set('[data-upgrade-special-name-value]',candidate.effectName);set('[data-upgrade-special-detail-value]',candidate.detail);set('[data-upgrade-special-material-id]',candidate.materialId);set('[data-upgrade-special-material-public-id]',candidate.materialPublicId);set('[data-upgrade-special-material-name]',candidate.materialName);set('[data-upgrade-special-material-target]',candidate.target);const slot=row.querySelector('[data-upgrade-slot-cost]');if(slot)slot.value=String(candidate.slotCost);}
+  if(candidate){set('[data-upgrade-special-name-value]',candidate.effectName);set('[data-upgrade-special-detail-value]',candidate.detail);set('[data-upgrade-special-material-id]',candidate.materialId);set('[data-upgrade-special-material-public-id]',candidate.materialPublicId);set('[data-upgrade-special-material-name]',candidate.materialName);set('[data-upgrade-special-material-target]',candidate.target);const slot=row.querySelector('[data-upgrade-slot-cost]');if(slot)slot.value=String(candidate.slotCost);const badge=row.querySelector('[data-upgrade-slot-badge]');if(badge)badge.textContent=`使用枠：${candidate.slotCost}枠`;}
   else if(!select.value){['[data-upgrade-special-name-value]','[data-upgrade-special-detail-value]','[data-upgrade-special-material-id]','[data-upgrade-special-material-public-id]','[data-upgrade-special-material-name]','[data-upgrade-special-material-target]'].forEach(s=>set(s,''));}
   const entry=normalizeUpgradeEntry({content:'素材固有効果',slotCost:row.querySelector('[data-upgrade-slot-cost]')?.value||'',specialEffectName:row.querySelector('[data-upgrade-special-name-value]')?.value||'',specialEffectDetail:row.querySelector('[data-upgrade-special-detail-value]')?.value||'',sourceMaterialName:row.querySelector('[data-upgrade-special-material-name]')?.value||'',sourceMaterialTarget:row.querySelector('[data-upgrade-special-material-target]')?.value||''});
-  const view=row.querySelector('[data-upgrade-special-detail-view]');if(view)view.textContent=specialUpgradeDetailText(candidate,entry)||'倉庫にある、対象装備へ使用可能な特殊効果から選択してください。';
+  const view=row.querySelector('[data-upgrade-special-detail-view]');if(view)view.textContent=specialUpgradeDetailText(candidate,entry)||'この装備に使用できる特殊効果から選択してください。';
 }
 function renderEquipmentUpgradeSlots(slotKey, sourceEntries=null){
   const list=$('equip_'+slotKey+'_upgradeSlots'),hidden=$('equip_'+slotKey+'_upgradeLines'),details=$('equip_'+slotKey+'_upgradeDetails');if(!list)return;
   const limit=equipmentUpgradeLimit(slotKey),rawEntries=sourceEntries!==null?parseUpgradeLines(sourceEntries):collectUpgradeEntries(slotKey),entries=trimUpgradeEntriesToSlotLimit(rawEntries,limit),usage=$('equip_'+slotKey+'_upgradeUsage');
-  if(usage)usage.textContent=`使用済み強化枠：${equipmentUpgradeUsedSlots(entries)} / ${limit}`;if(details)details.style.display=limit>0?'':'none';
+  const used=equipmentUpgradeUsedSlots(entries),remaining=Math.max(0,limit-used);
+  if(usage)usage.textContent=`使用済み強化枠：${used} / ${limit}（残り${remaining}枠）`;if(details)details.style.display=limit>0?'':'none';
   if(limit<=0){list.innerHTML='<div class="small">この装備は強化できません。</div>';if(hidden)hidden.value='';return;}
-  list.innerHTML=Array.from({length:limit},(_,i)=>{
-    const entry=normalizeUpgradeEntry(entries[i]||{}),special=entry.content==='素材固有効果',blockedSpecialEffects=specialUpgradeBlockedEffectNames(entries,i);
-    const effectField=special?specialUpgradeSelectorHtml(slotKey,entry,blockedSpecialEffects):`<input type="hidden" data-upgrade-legacy-amount value="${esc(entry.legacyEffectAmount||'')}" /><input type="hidden" data-upgrade-legacy-detail value="${esc(entry.legacyEffectDetail||'')}" /><div class="equipment-upgrade-effect-detail" data-upgrade-effect-detail>${esc(entry.content?standardUpgradeAvailabilityText(slotKey,entry):'倉庫内にある、対象装備へ使用可能な強化素材から選択してください。')}</div>`;
+  const rowEntries=entries.slice();if(remaining>0)rowEntries.push(normalizeUpgradeEntry({}));
+  list.innerHTML=rowEntries.map((rawEntry,i)=>{
+    const entry=normalizeUpgradeEntry(rawEntry||{}),currentCost=entry.content?Math.max(1,Number(entry.slotCost)||1):0,maxSlotCost=Math.max(0,limit-(used-currentCost));
+    const special=entry.content==='素材固有効果',blockedSpecialEffects=specialUpgradeBlockedEffectNames(entries,i);
+    const effectField=special?specialUpgradeSelectorHtml(slotKey,entry,blockedSpecialEffects,maxSlotCost):`<input type="hidden" data-upgrade-legacy-amount value="${esc(entry.legacyEffectAmount||'')}" /><input type="hidden" data-upgrade-legacy-detail value="${esc(entry.legacyEffectDetail||'')}" /><div class="equipment-upgrade-effect-detail" data-upgrade-effect-detail>${esc(entry.content?standardUpgradeAvailabilityText(slotKey,entry):'この装備に使用できる強化内容を選択してください。')}</div>`;
     const specialDetail=special?specialUpgradeDetailText(specialUpgradeCandidateForEntry(slotKey,entry),entry):'';
-    return `<div class="equipment-upgrade-row" data-upgrade-row="${i}"><div class="field"><label>強化内容 ${i+1}</label><select data-upgrade-content data-equipment-input="1">${upgradeOptionHtml(slotKey,entry.content)}</select></div>${effectField}<div class="field"><label>消費強化枠</label><select data-upgrade-slot-cost data-equipment-input="1"><option value="1" ${entry.slotCost===1?'selected':''}>1枠</option><option value="2" ${entry.slotCost===2?'selected':''}>2枠</option><option value="3" ${entry.slotCost===3?'selected':''}>3枠</option></select></div>${special?`<div class="equipment-upgrade-special-detail" data-upgrade-special-detail-view>${esc(specialDetail||'倉庫にある、対象装備へ使用可能な特殊効果から選択してください。')}</div>`:''}</div>`;
-  }).join('');
-  if(hidden)hidden.value=serializeUpgradeEntries(entries.slice(0,limit));if(typeof updateEquipmentFieldAvailability==='function')updateEquipmentFieldAvailability();
+    const slotCost=entry.content?Math.max(1,Number(entry.slotCost)||upgradeDefaultSlotCost(entry.content)):0;
+    return `<div class="equipment-upgrade-row" data-upgrade-row="${i}" data-upgrade-max-cost="${maxSlotCost}"><div class="field"><label>強化内容 ${i+1}</label><select data-upgrade-content data-equipment-input="1">${upgradeOptionHtml(slotKey,entry.content,maxSlotCost)}</select></div>${effectField}<input type="hidden" data-upgrade-slot-cost value="${slotCost||''}" /><div class="equipment-upgrade-slot-badge" data-upgrade-slot-badge>${slotCost?`使用枠：${slotCost}枠`:'未選択'}</div>${special?`<div class="equipment-upgrade-special-detail" data-upgrade-special-detail-view>${esc(specialDetail||'この装備に使用できる特殊効果から選択してください。')}</div>`:''}</div>`;
+  }).join('')||'<div class="small">強化枠をすべて使用しています。</div>';
+  if(hidden)hidden.value=serializeUpgradeEntries(entries);if(typeof updateEquipmentFieldAvailability==='function')updateEquipmentFieldAvailability();
 }
 function inventoryItemIndexForEquipmentKey(itemKey=''){
   const selectedKey = String(itemKey || '').trim();
@@ -3858,6 +3872,13 @@ function updateEquipmentReadOnlyDisplays(){
     const damage=equipmentDamageDisplayInfo(slot.key,equipment,alloc);
     setEquipmentDisplayText('equip_'+slot.key+'_powerDisplay',damage.formula||'—');
     setEquipmentDisplayText('equip_'+slot.key+'_powerBreakdown',damage.breakdown||'');
+    setEquipmentDisplayText('equip_'+slot.key+'_descriptionDisplay',eq.description||'—');
+    setEquipmentDisplayText('equip_'+slot.key+'_noteDisplay',eq.note||'—');
+  }
+  for(const slot of EQUIPMENT_SLOTS.filter(s=>s.kind==='carry')){
+    const eq=equipment[slot.key]||{};
+    setEquipmentDisplayText('equip_'+slot.key+'_descriptionDisplay',eq.description||'—');
+    setEquipmentDisplayText('equip_'+slot.key+'_noteDisplay',eq.note||'—');
   }
 }
 function updateEquipmentSummaries() {
@@ -5104,7 +5125,6 @@ function renderInventory() {
       <summary class="inventory-card-head">
         <div><div class="inventory-title">${esc(title)}</div><div class="small">倉庫 / ${esc(displayType)} / ${esc(displayCategory)}</div></div>
         <div class="button-row" style="margin:0;">
-          <button type="button" class="ghost" data-inventory-action="edit" data-index="${index}">編集</button>
           <button type="button" class="ghost" data-inventory-action="duplicate" data-index="${index}">複製</button>
           <button type="button" class="danger" data-inventory-action="delete" data-index="${index}">削除</button>
         </div>
@@ -5112,7 +5132,7 @@ function renderInventory() {
       <div class="inventory-card-meta">
         <div class="meta-item"><span class="meta-label">カテゴリ</span>${esc(categoryDisplay)}</div>
         ${item.publicId ? `<div class="meta-item"><span class="meta-label">登録ID</span>${esc(item.publicId)}</div>` : ''}
-        <div class="meta-item"><span class="meta-label">個数</span>${esc(item.count ?? 0)}</div>
+        <div class="meta-item"><span class="meta-label">個数</span><div class="inventory-count-editor"><input type="number" min="0" max="9999" inputmode="numeric" value="${esc(item.count ?? 0)}" data-inventory-count-index="${index}" aria-label="${esc(title)}の個数" /></div></div>
         ${bagMeta ? `<div class="meta-item"><span class="meta-label">バッグ容量</span>${esc(item.capacity || 0)}</div>` : ''}
         <div class="meta-item"><span class="meta-label">ランク</span>${esc(inventoryRankLabel(item) || '—')}</div>
         <div class="meta-item"><span class="meta-label">売値</span>${esc(inventorySellPriceText(item.price) || '—')}</div>
@@ -5162,7 +5182,7 @@ function openInventoryDialog(index=-1) {
   const existing = index >= 0 ? inventoryItemsState[index] : null;
   const item = normalizeInventoryItem(existing || emptyInventoryItem());
   if ($('inventoryEditIndex')) $('inventoryEditIndex').value = String(index);
-  if ($('inventoryDialogTitle')) $('inventoryDialogTitle').textContent = index >= 0 ? '倉庫アイテムを編集' : '倉庫アイテムを追加';
+  if ($('inventoryDialogTitle')) $('inventoryDialogTitle').textContent = '倉庫アイテムを追加';
   fillInventoryDialogOptions(item);
   if ($('inventoryFormName')) $('inventoryFormName').value = item.name || '';
   if ($('inventoryFormCount')) $('inventoryFormCount').value = item.count ?? 1;
@@ -5601,6 +5621,11 @@ function setDbCharacterSheetMaster(res={}) {
     inventoryItemsState = inventoryItemsState.map(item=>normalizeInventoryItem(item));
     try{ renderInventoryTabs(); renderInventory(); }catch(_){ }
   }
+  try{
+    for(const slot of EQUIPMENT_SLOTS){
+      if(slot.kind!=='carry') renderEquipmentUpgradeSlots(slot.key);
+    }
+  }catch(_){ }
   DB_INITIAL_SPELL_MASTER = Array.isArray(res.spells) ? res.spells : [];
   DB_RECIPE_MASTER = Array.isArray(res.recipes) ? res.recipes : [];
   DB_SKILL_MASTER = Array.isArray(res.skills) ? res.skills : [];
@@ -6021,7 +6046,7 @@ function scheduleInitialInventorySyncForEditor(mode) {
 function duplicateInventoryItem(index) {
   const src = inventoryItemsState[index];
   if (!src) return;
-  inventoryItemsState.splice(index + 1, 0, { ...src, id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), name: src.name ? src.name + ' コピー' : '' });
+  inventoryItemsState.splice(index + 1, 0, { ...src, id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), name: src.name || '' });
   renderInventory();
   updateSummary();
 }
@@ -7695,7 +7720,7 @@ function bindEvents() {
     e.preventDefault();
     e.stopPropagation();
     const index = Number(btn.dataset.index || 0);
-    if (btn.dataset.inventoryAction === 'edit') openInventoryDialog(index);
+    if (btn.dataset.inventoryAction === 'edit') return;
     if (btn.dataset.inventoryAction === 'delete') deleteInventoryItem(index);
     if (btn.dataset.inventoryAction === 'duplicate') duplicateInventoryItem(index);
   });
@@ -7751,12 +7776,13 @@ function bindEvents() {
         const entries=collectUpgradeEntries(slotKey);
         const next=normalizeUpgradeEntry(entries[index]||{});
         next.content=normalizeUpgradeContentName(e.target.value||'');
-        next.slotCost=next.content==='素材固有効果'?2:standardUpgradeSlotCostForSelection(slotKey,next.content);
+        const maxSlotCost=Math.max(0,Number(row.dataset.upgradeMaxCost)||equipmentUpgradeLimit(slotKey));
+        next.slotCost=!next.content?0:(next.content==='素材固有効果'?Math.min(2,maxSlotCost):standardUpgradeSlotCostForSelection(slotKey,next.content,maxSlotCost));
         next.specialEffectName='';next.specialEffectDetail='';next.sourceMaterialId='';next.sourceMaterialPublicId='';next.sourceMaterialName='';next.sourceMaterialTarget='';next.legacyEffectAmount=0;next.legacyEffectDetail='';
         entries[index]=next;
         renderEquipmentUpgradeSlots(slotKey,entries);
       }else if(e.target.matches('[data-upgrade-special-select]')&&slotKey){
-        applySpecialUpgradeSelection(row,slotKey);
+        applySpecialUpgradeSelection(row,slotKey,Math.max(0,Number(row.dataset.upgradeMaxCost)||equipmentUpgradeLimit(slotKey)));
         renderEquipmentUpgradeSlots(slotKey,collectUpgradeEntries(slotKey));
       }
       if(slotKey) syncEquipmentUpgradeHidden(slotKey);
@@ -7768,6 +7794,17 @@ function bindEvents() {
     if (e.target.id?.startsWith('stat_') || e.target.dataset.abilityInput || e.target.dataset.skillInput || e.target.id?.startsWith('manualBonus_') || ['currentHp','currentMp','hpBonus','mpBonus','fatigueLevel'].includes(e.target.id)) updateAll();
   });
   document.addEventListener('change', e => {
+    if(e.target.matches('[data-inventory-count-index]')){
+      const index=Number(e.target.dataset.inventoryCountIndex);
+      if(Number.isInteger(index)&&index>=0&&inventoryItemsState[index]){
+        const current=normalizeInventoryItem(inventoryItemsState[index]);
+        inventoryItemsState[index]=normalizeInventoryItem({...current,count:clampInt(e.target.value||0,0,9999)});
+        e.target.value=String(inventoryItemsState[index].count);
+        refreshWarehouseQuantityViews();
+        if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon();
+      }
+      return;
+    }
     if (e.target.classList?.contains('spell-slot-select')) {
       const slotKey = e.target.dataset.slotKey || '';
       syncSpellSetHidden(slotKey);
