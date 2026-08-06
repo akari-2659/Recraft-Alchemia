@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.403</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.404</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1098,10 +1098,10 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
 .inventory-registration-card>summary{padding:9px 11px!important}
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.403-skill-crystal-stage1">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.404-skill-crystal-stage1">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.403｜更新：2026年8月6日</div>
+<div class="ra-build-info">v90.8.404｜更新：2026年8月6日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -8302,5 +8302,120 @@ function run(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});else run();
 })();
 </script>
+
+<style id="raDaggerAtlasPrototypeStyle">
+/* v90.8.404: 短剣のみの仮画像アトラス実装 */
+.ra-dagger-atlas-icon{
+  --ra-atlas-x:0%;
+  --ra-atlas-y:0%;
+  display:inline-block;
+  flex:0 0 auto;
+  width:52px;
+  height:52px;
+  border:1px solid rgba(151,112,70,.30);
+  border-radius:11px;
+  background-image:url("assets/items/weapons/dagger-atlas.webp");
+  background-repeat:no-repeat;
+  background-size:800% 800%;
+  background-position:var(--ra-atlas-x) var(--ra-atlas-y);
+  box-shadow:0 3px 10px rgba(66,43,22,.12);
+  vertical-align:middle;
+}
+.ra-dagger-atlas-icon.ra-atlas-xs{width:38px;height:38px;border-radius:8px}
+.ra-dagger-atlas-icon.ra-atlas-sm{width:48px;height:48px}
+.ra-dagger-atlas-icon.ra-atlas-md{width:78px;height:78px;border-radius:14px}
+.ra-dagger-atlas-icon.ra-atlas-lg{width:min(220px,64vw);height:min(220px,64vw);border-radius:18px}
+.ra-dagger-atlas-preview{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  margin:0 0 12px;
+}
+</style>
+
+<style id="raDaggerAtlasCharacterLayout">
+.ra-picker-card-info{display:flex;align-items:center;gap:10px;min-width:0}
+.ra-picker-card-info>div{min-width:0}
+.ra-picker-trigger>.ra-dagger-atlas-icon{margin-right:2px}
+.ra-picker-detail>.ra-dagger-atlas-preview+.ra-picker-meta,
+.ra-picker-detail>.ra-dagger-atlas-preview+h4{margin-top:0}
+@media(max-width:520px){
+  .ra-dagger-atlas-icon.ra-atlas-sm{width:44px;height:44px}
+  .ra-picker-trigger>.ra-dagger-atlas-icon{width:34px;height:34px}
+}
+</style>
+
+<script id="raDaggerAtlasCharacterPrototype">
+(()=>{
+'use strict';
+
+const RA_DAGGER_ATLAS_NAME_SLOTS=Object.freeze({"ショートダガー":1,"スティレット":2,"ファングナイフ":3,"ヴェルデスティング":4,"リーフナイフ":5,"ビーストククリ":6,"シルヴァエッジ":7,"マッドナイフ":8,"ヴェノムニードル":9,"マイアスティング":10,"フェイズダガー":11,"スペクトラナイフ":12,"ヴォイドスティンガー":13,"フェラススティレット":14,"シルバーニードル":15,"グランドファング":16,"ゼファースティング":17,"ボルトニードル":18,"テンペストエッジ":19});
+function raDaggerAtlasSlotByName(value){
+  const text=String(value||'').trim();
+  if(!text)return 0;
+  if(Object.prototype.hasOwnProperty.call(RA_DAGGER_ATLAS_NAME_SLOTS,text))return RA_DAGGER_ATLAS_NAME_SLOTS[text];
+  const names=Object.keys(RA_DAGGER_ATLAS_NAME_SLOTS).sort((a,b)=>b.length-a.length);
+  const hit=names.find(name=>text.includes(name));
+  return hit?RA_DAGGER_ATLAS_NAME_SLOTS[hit]:0;
+}
+function raCreateDaggerAtlasIcon(slot,size='sm',label='短剣画像'){
+  const n=Number(slot)||0;
+  if(n<1||n>64)return null;
+  const col=(n-1)%8,row=Math.floor((n-1)/8);
+  const span=document.createElement('span');
+  span.className=`ra-dagger-atlas-icon ra-atlas-${size}`;
+  span.style.setProperty('--ra-atlas-x',`${(col*100/7).toFixed(6)}%`);
+  span.style.setProperty('--ra-atlas-y',`${(row*100/7).toFixed(6)}%`);
+  span.setAttribute('role','img');
+  span.setAttribute('aria-label',String(label||'短剣画像'));
+  span.dataset.raDaggerSlot=String(n);
+  return span;
+}
+
+function decorateCharacterDaggerImages(root=document){
+  root.querySelectorAll('.ra-picker-card').forEach(card=>{
+    const name=card.querySelector('.ra-picker-name')?.textContent?.trim()||'';
+    const slot=raDaggerAtlasSlotByName(name);
+    const host=card.firstElementChild;
+    if(!host)return;
+    host.classList.add('ra-picker-card-info');
+    const old=host.querySelector(':scope > .ra-dagger-atlas-icon');
+    if(!slot){old?.remove();return;}
+    if(old?.dataset.raDaggerSlot===String(slot))return;
+    old?.remove();
+    host.prepend(raCreateDaggerAtlasIcon(slot,'sm',`${name}の画像`));
+  });
+  root.querySelectorAll('.ra-picker-detail').forEach(detail=>{
+    const title=detail.querySelector('h4')?.textContent?.trim()||'';
+    const slot=raDaggerAtlasSlotByName(title);
+    const old=detail.querySelector(':scope > .ra-dagger-atlas-preview');
+    if(!slot){old?.remove();return;}
+    if(old?.dataset.raDaggerSlot===String(slot))return;
+    old?.remove();
+    const wrap=document.createElement('div');
+    wrap.className='ra-dagger-atlas-preview';
+    wrap.dataset.raDaggerSlot=String(slot);
+    wrap.appendChild(raCreateDaggerAtlasIcon(slot,'lg',`${title}の画像`));
+    detail.prepend(wrap);
+  });
+  root.querySelectorAll('.ra-picker-trigger').forEach(button=>{
+    const label=button.querySelector('[data-ra-picker-label]')?.textContent?.trim()||'';
+    const slot=raDaggerAtlasSlotByName(label);
+    const old=button.querySelector(':scope > .ra-dagger-atlas-icon');
+    if(!slot){old?.remove();return;}
+    if(old?.dataset.raDaggerSlot===String(slot))return;
+    old?.remove();
+    button.prepend(raCreateDaggerAtlasIcon(slot,'xs',`${label}の画像`));
+  });
+}
+const observer=new MutationObserver(()=>decorateCharacterDaggerImages());
+function start(){
+  decorateCharacterDaggerImages();
+  observer.observe(document.body,{childList:true,subtree:true,characterData:true});
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
+</script>
+
 </body>
 </html>
