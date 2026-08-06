@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.398</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.403</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1098,10 +1098,10 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
 .inventory-registration-card>summary{padding:9px 11px!important}
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.398-equipment-readonly1">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.403-skill-crystal-stage1">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.398｜更新：2026年8月5日</div>
+<div class="ra-build-info">v90.8.403｜更新：2026年8月6日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -1356,6 +1356,22 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
 
 
     <div id="tabSkillCrystal" class="editor-tab-page">
+      <details class="big-section" open>
+        <summary>強化段階</summary>
+        <div class="section-body">
+          <p class="hint">鍛冶屋で実行済みのスキルクリスタル強化段階を選択します。選んだ段階に応じて、装着できるスキル枠数が変わります。</p>
+          <div class="skill-crystal-overview">
+            <div class="skill-crystal-card">
+              <label for="skillCrystalStageSelect">強化段階</label>
+              <select id="skillCrystalStageSelect" data-skill-crystal-input="1"></select>
+              <div id="skillCrystalCurrent" class="skill-crystal-current">現在の装着枠：2枠</div>
+              <div id="skillCrystalStageNote" class="small">未強化の状態です。</div>
+            </div>
+          </div>
+          <div id="skillCrystalStages" class="skill-stage-list"></div>
+        </div>
+      </details>
+
       <details class="big-section" open>
         <summary>所持スキルの設定</summary>
         <div class="section-body">
@@ -4280,13 +4296,77 @@ function normalizeSkillGachaState(raw={}){
 function defaultSkillGachaState(){return normalizeSkillGachaState({crystalSlots:2,acquiredSkillIds:[],equippedSkillIds:['',''],resonanceFragments:{}});}
 function getSkillGachaState(){skillGachaState=normalizeSkillGachaState(skillGachaState||{});return JSON.parse(JSON.stringify(skillGachaState));}
 function setSkillGachaState(raw={}){skillGachaState=normalizeSkillGachaState(raw||{});renderSkillCrystalPanel();}
-function skillMasterRows(){return (Array.isArray(DB_SKILL_MASTER)?DB_SKILL_MASTER:[]).filter(r=>r&&r.enabled!==false);}
+function skillMasterRows(){return (Array.isArray(DB_SKILL_MASTER)?DB_SKILL_MASTER:[]).filter(r=>r&&String(r.enabled??'TRUE').trim().toUpperCase()!=='FALSE');}
 function characterSkillById(id=''){return skillMasterRows().find(s=>String(s.id||'')===String(id||''))||null;}
 function characterSkillByPublicId(value=''){const key=String(value||'').trim().toUpperCase();return skillMasterRows().find(s=>String(s.publicId||'').trim().toUpperCase()===key)||null;}
+function resonanceFragmentMasterRow(rank=1){
+  const r=Math.max(1,Math.floor(Number(rank)||1));
+  const id=`mat_resonance_fragment_rank${r}`,name=`★${r}共鳴片`;
+  const rows=[...(Array.isArray(DB_INITIAL_ITEM_MASTER)?DB_INITIAL_ITEM_MASTER:[]),...(Array.isArray(CS_ITEM_MASTER)?CS_ITEM_MASTER:[])];
+  return rows.find(row=>String(row?.id||'').trim()===id||String(row?.name||'').trim()===name)||null;
+}
+function addResonanceFragmentsToInventory(rank=1,count=1){
+  const r=Math.max(1,Math.floor(Number(rank)||1)),amount=Math.max(0,Math.floor(Number(count)||0));
+  if(!amount)return 0;
+  const master=resonanceFragmentMasterRow(r);
+  const preset=master?dbItemToInventoryItem(master):normalizeInventoryItem({
+    id:`mat_resonance_fragment_rank${r}`,masterId:`mat_resonance_fragment_rank${r}`,masterSheet:'items',name:`★${r}共鳴片`,kind:'素材',materialType:'特殊素材',materialCategory:'共鳴素材',category:'共鳴素材',count:1,rank:r,price:0,source:`★${r}スキルガチャ（習得済みスキル重複時）`,tags:`素材,特殊素材,共鳴素材,スキル,スキルガチャ,重複,★${r}`,description:`習得済みの★${r}スキルが重複した際に残る共鳴の結晶片。`,effect:`習得済みの★${r}スキルが重複したとき、重複した1件につき1個獲得する。`,location:'倉庫'
+  });
+  const masterId=String(preset.masterId||preset.id||'').trim(),name=String(preset.name||'').trim();
+  const index=(inventoryItemsState||[]).findIndex(raw=>{const row=normalizeInventoryItem(raw);return (masterId&&String(row.masterId||row.id||'').trim()===masterId)||(name&&String(row.name||'').trim()===name);});
+  if(index>=0){
+    const current=normalizeInventoryItem(inventoryItemsState[index]);
+    inventoryItemsState[index]=normalizeInventoryItem({...current,...preset,id:current.id||preset.id,masterId:preset.masterId||preset.id||current.masterId,count:clampInt(Number(current.count||0)+amount,0,9999),location:'倉庫'});
+  }else{
+    inventoryItemsState.push(normalizeInventoryItem({...preset,count:amount,location:'倉庫'}));
+  }
+  return amount;
+}
+function addSkillDuplicateFragments(state,rank=1,count=1){
+  const r=String(Math.max(1,Math.floor(Number(rank)||1))),amount=Math.max(0,Math.floor(Number(count)||0));
+  if(!amount)return 0;
+  state.resonanceFragments=state.resonanceFragments||{};
+  state.resonanceFragments[r]=Math.max(0,Number(state.resonanceFragments[r])||0)+amount;
+  return addResonanceFragmentsToInventory(Number(r),amount);
+}
+function resonanceFragmentAwardText(awards={}){
+  return Object.entries(awards).filter(([,count])=>Number(count)>0).sort((a,b)=>Number(a[0])-Number(b[0])).map(([rank,count])=>`★${rank}共鳴片×${count}`).join('、');
+}
 function crystalUpgradeStageRows(){return (DB_RECIPE_MASTER||[]).filter(r=>String(r.craftType||'').trim()==='クリスタル強化').slice().sort((a,b)=>(Number(String(a.resultItem||'').match(/\d+/)?.[0])||0)-(Number(String(b.resultItem||'').match(/\d+/)?.[0])||0));}
+function crystalSlotNumber(value,fallback=2){
+  const match=String(value||'').match(/(\d+)/);
+  const parsed=match?Number(match[1]):Number(fallback);
+  return Math.max(2,Math.min(6,Number.isFinite(parsed)?parsed:2));
+}
+function skillCrystalStageOptions(state){
+  const rows=crystalUpgradeStageRows();
+  const options=[{slots:2,label:'未強化（2枠）',row:null}];
+  rows.forEach((row,index)=>{
+    const from=crystalSlotNumber(row.baseItem,2),to=crystalSlotNumber(row.resultItem,from+1);
+    const label=`${String(row.name||`スキルクリスタル強化${index+1}`).trim()}（${to}枠）`;
+    if(!options.some(option=>option.slots===to))options.push({slots:to,label,row});
+  });
+  const current=crystalSlotNumber(state?.crystalSlots,2);
+  if(!options.some(option=>option.slots===current))options.push({slots:current,label:`設定済み（${current}枠）`,row:null});
+  return options.sort((a,b)=>a.slots-b.slots);
+}
+function renderSkillCrystalStageSelector(state){
+  const select=$('skillCrystalStageSelect'),current=$('skillCrystalCurrent'),note=$('skillCrystalStageNote');
+  if(!select)return;
+  const options=skillCrystalStageOptions(state),slots=crystalSlotNumber(state.crystalSlots,2);
+  select.innerHTML=options.map(option=>`<option value="${option.slots}">${esc(option.label)}</option>`).join('');
+  select.value=String(slots);
+  if(current)current.textContent=`現在の装着枠：${slots}枠`;
+  const selected=options.find(option=>option.slots===slots),row=selected?.row;
+  if(note){
+    note.textContent=row
+      ? `${row.unlockCondition||row.unlockAreaKey||'解放条件未設定'}／${String(row.price||0)}G／必要素材：${row.requiredMaterials||'未設定'}`
+      : slots===2?'未強化の状態です。':'現在保存されている枠数です。';
+  }
+}
 function renderSkillCrystalStages(state){
   const area=$('skillCrystalStages');if(!area)return;const rows=crystalUpgradeStageRows();
-  area.innerHTML=rows.length?rows.map(row=>{const from=Number(String(row.baseItem||'').match(/\d+/)?.[0])||2,to=Number(String(row.resultItem||'').match(/\d+/)?.[0])||from+1;const cls=state.crystalSlots>=to?'done':state.crystalSlots===from?'next':'';return `<div class="skill-stage-card ${cls}"><h4>${esc(row.name||`クリスタル強化 ${to}枠`)}</h4><div class="skill-meta"><span class="skill-badge">${from}枠 → ${to}枠</span><span class="skill-badge">${esc(String(row.price||0))}G</span><span class="skill-badge">${esc(row.unlockCondition||row.unlockAreaKey||'初期')}</span></div><div class="skill-detail-lines"><div><b>必要素材：</b>${esc(row.requiredMaterials||'未設定')}</div>${row.effect?`<div><b>効果：</b>${esc(row.effect)}</div>`:''}</div></div>`;}).join(''):'<div class="skill-stage-card">クリスタル強化データがありません。</div>';
+  area.innerHTML=rows.length?rows.map(row=>{const from=crystalSlotNumber(row.baseItem,2),to=crystalSlotNumber(row.resultItem,from+1);const cls=state.crystalSlots===to?'current':state.crystalSlots>to?'done':state.crystalSlots===from?'next':'';return `<div class="skill-stage-card ${cls}"><h4>${esc(row.name||`クリスタル強化 ${to}枠`)}</h4><div class="skill-meta"><span class="skill-badge">${from}枠 → ${to}枠</span><span class="skill-badge">${esc(String(row.price||0))}G</span><span class="skill-badge">${esc(row.unlockCondition||row.unlockAreaKey||'初期')}</span></div><div class="skill-detail-lines"><div><b>必要素材：</b>${esc(row.requiredMaterials||'未設定')}</div>${row.effect?`<div><b>効果：</b>${esc(row.effect)}</div>`:''}</div></div>`;}).join(''):'<div class="skill-stage-card">クリスタル強化データがありません。</div>';
 }
 function renderSkillSlots(state){
   const box=$('skillCrystalSlots');if(!box)return;const owned=state.acquiredSkillIds.map(characterSkillById).filter(Boolean).sort((a,b)=>String(a.category||'').localeCompare(String(b.category||''),'ja')||String(a.weaponType||'').localeCompare(String(b.weaponType||''),'ja')||String(a.name||'').localeCompare(String(b.name||''),'ja'));
@@ -4324,15 +4404,19 @@ function renderEquippedSkillView(state){
 }
 function renderSkillCrystalPanel(){
   const state=normalizeSkillGachaState(skillGachaState||{});skillGachaState=state;
+  renderSkillCrystalStageSelector(state);
+  renderSkillCrystalStages(state);
   renderSkillSlots(state);
   renderEquippedSkillView(state);
   renderInventory();
 }
 function addSkillByPublicIds(){
   const input=$('skillPublicIdInput'),status=$('skillPublicIdStatus');if(!input)return;const ids=String(input.value||'').split(/[\s,，、]+/).map(v=>v.trim()).filter(Boolean);if(!ids.length){if(status){status.className='status-box error';status.textContent='登録IDを入力してください。';}return;}
-  const state=normalizeSkillGachaState(skillGachaState||{}),owned=new Set(state.acquiredSkillIds);let added=0,duplicate=0;const missing=[];
-  ids.forEach(id=>{const s=characterSkillByPublicId(id);if(!s){missing.push(id);return;}if(owned.has(s.id)){duplicate++;return;}owned.add(s.id);added++;});state.acquiredSkillIds=[...owned];skillGachaState=state;renderSkillCrystalPanel();updateAll();if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon();
-  if(status){status.className='status-box '+(missing.length?'warn':'ok');status.textContent=`追加 ${added}件 / 登録済み ${duplicate}件${missing.length?` / 該当なし：${missing.join(', ')}`:''}`;}
+  const state=normalizeSkillGachaState(skillGachaState||{}),owned=new Set(state.acquiredSkillIds);let added=0,duplicate=0;const missing=[],fragmentAwards={};
+  ids.forEach(id=>{const skill=characterSkillByPublicId(id);if(!skill){missing.push(id);return;}if(owned.has(skill.id)){const rank=Math.max(1,Math.floor(Number(skill.rank)||1));duplicate++;fragmentAwards[String(rank)]=(fragmentAwards[String(rank)]||0)+1;return;}owned.add(skill.id);added++;});
+  Object.entries(fragmentAwards).forEach(([rank,count])=>addSkillDuplicateFragments(state,rank,count));
+  state.acquiredSkillIds=[...owned];skillGachaState=state;renderSkillCrystalPanel();updateAll();if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon();
+  if(status){const awardText=resonanceFragmentAwardText(fragmentAwards);status.className='status-box '+(missing.length?'warn':'ok');status.textContent=`追加 ${added}件 / 重複 ${duplicate}件${awardText?` / 獲得：${awardText}`:''}${missing.length?` / 該当なし：${missing.join(', ')}`:''}`;}
 }
 function removeSkillFromWarehouse(id=''){
   const state=normalizeSkillGachaState(skillGachaState||{});if(state.equippedSkillIds.includes(id))return;state.acquiredSkillIds=state.acquiredSkillIds.filter(v=>v!==id);skillGachaState=state;renderSkillCrystalPanel();updateAll();if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon();
@@ -5572,8 +5656,8 @@ function buildCharacterSheetMasterFromGithub(masterDocument={}, manifest={}) {
   };
 }
 function characterGithubDelay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
-async function characterFetchGithubJson(url) {
-  const response = await fetch(url, { cache:'no-store' });
+async function characterFetchGithubJson(url,{fresh=false}={}) {
+  const response = await fetch(url, { cache:fresh?'no-store':'force-cache' });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   return response.json();
 }
@@ -5598,11 +5682,11 @@ async function fetchGithubCharacterSheetMaster({force=false}={}) {
         try{
           const manifestUrl=new URL('manifest.json',base);
           manifestUrl.searchParams.set('_ra',token);
-          const manifest=await characterFetchGithubJson(manifestUrl.toString());
+          const manifest=await characterFetchGithubJson(manifestUrl.toString(),{fresh:true});
           const info=characterManifestMasterInfo(manifest);
           if(!info.file||info.file.includes('..')||info.file.includes('\\'))throw new Error('GitHub共通DBのmanifestに有効なmasterファイル名がありません。');
           const masterUrlObject=new URL(info.file,base);
-          masterUrlObject.searchParams.set('_ra',`${info.sha256||String(manifest.version||'master')}_${token}`);
+          masterUrlObject.searchParams.set('v',info.sha256||String(manifest.version||'master'));
           const result=characterGithubMasterResult(await characterFetchGithubJson(masterUrlObject.toString()),manifest);
           if(!result.__versionWarning)return result;
           usableMismatch=result;
@@ -5612,8 +5696,7 @@ async function fetchGithubCharacterSheetMaster({force=false}={}) {
       }
       try{
         const directUrl=new URL('recraft_alchemia_master.json',base);
-        directUrl.searchParams.set('_ra',`${Date.now()}_direct_${Math.random().toString(36).slice(2)}`);
-        return characterGithubMasterResult(await characterFetchGithubJson(directUrl.toString()),{master:'recraft_alchemia_master.json'});
+        return characterGithubMasterResult(await characterFetchGithubJson(directUrl.toString(),{fresh:true}),{master:'recraft_alchemia_master.json'});
       }catch(directError){
         errors.push(`${base}: ${[lastError&&lastError.message,directError&&directError.message].filter(Boolean).join(' / ')}`);
       }
@@ -5917,13 +6000,13 @@ async function addInventoryByPublicIdPaste(){
   }
   const skill=characterSkillByPublicId(publicId);
   if(skill){
-    const state=normalizeSkillGachaState(skillGachaState||{});
-    if(state.acquiredSkillIds.includes(skill.id)){
-      if(status){status.className='status-box warn';status.textContent=`登録済みです：${skill.name}`;}
-    }else{
-      state.acquiredSkillIds.push(skill.id);skillGachaState=state;renderSkillCrystalPanel();updateAll();
-      if(status){status.className='status-box ok';status.textContent=`スキルを追加しました：${skill.name}`;}
-    }
+    const state=normalizeSkillGachaState(skillGachaState||{}),copies=Math.max(1,count),rank=Math.max(1,Math.floor(Number(skill.rank)||1));
+    let fragmentCount=0;
+    if(state.acquiredSkillIds.includes(skill.id))fragmentCount=copies;
+    else{state.acquiredSkillIds.push(skill.id);fragmentCount=Math.max(0,copies-1);}
+    if(fragmentCount)addSkillDuplicateFragments(state,rank,fragmentCount);
+    skillGachaState=state;renderSkillCrystalPanel();updateAll();
+    if(status){status.className='status-box ok';status.textContent=fragmentCount?`スキルを追加・変換しました：${skill.name} / 獲得：★${rank}共鳴片×${fragmentCount}`:`スキルを追加しました：${skill.name}`;}
     if(idInput)idInput.value='';if(countInput)countInput.value='1';
     if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon();
     return;
@@ -5941,13 +6024,13 @@ async function addInventoryByPublicIdPaste(){
   }
   const loadedSkill=characterSkillByPublicId(publicId);
   if(loadedSkill){
-    const state=normalizeSkillGachaState(skillGachaState||{});
-    if(state.acquiredSkillIds.includes(loadedSkill.id)){
-      if(status){status.className='status-box warn';status.textContent=`登録済みです：${loadedSkill.name}`;}
-    }else{
-      state.acquiredSkillIds.push(loadedSkill.id);skillGachaState=state;renderSkillCrystalPanel();updateAll();
-      if(status){status.className='status-box ok';status.textContent=`スキルを追加しました：${loadedSkill.name}`;}
-    }
+    const state=normalizeSkillGachaState(skillGachaState||{}),copies=Math.max(1,count),rank=Math.max(1,Math.floor(Number(loadedSkill.rank)||1));
+    let fragmentCount=0;
+    if(state.acquiredSkillIds.includes(loadedSkill.id))fragmentCount=copies;
+    else{state.acquiredSkillIds.push(loadedSkill.id);fragmentCount=Math.max(0,copies-1);}
+    if(fragmentCount)addSkillDuplicateFragments(state,rank,fragmentCount);
+    skillGachaState=state;renderSkillCrystalPanel();updateAll();
+    if(status){status.className='status-box ok';status.textContent=fragmentCount?`スキルを追加・変換しました：${loadedSkill.name} / 獲得：★${rank}共鳴片×${fragmentCount}`:`スキルを追加しました：${loadedSkill.name}`;}
     if(idInput)idInput.value='';if(countInput)countInput.value='1';
     if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon();
     return;
@@ -7738,6 +7821,17 @@ function bindEvents() {
   if ($('skillWarehouseSearch')) $('skillWarehouseSearch').addEventListener('input',e=>{skillWarehouseFilter.search=e.target.value||'';renderSkillWarehouse();});
   if ($('skillCategoryTabs')) $('skillCategoryTabs').addEventListener('click',e=>{const b=e.target.closest('[data-skill-category]');if(!b)return;skillWarehouseFilter.category=b.dataset.skillCategory||'全て';if(skillWarehouseFilter.category!=='全て'&&skillWarehouseFilter.category!=='武器専用')skillWarehouseFilter.weaponType='全て';renderSkillWarehouse();});
   if ($('skillWeaponTabs')) $('skillWeaponTabs').addEventListener('click',e=>{const b=e.target.closest('[data-skill-weapon]');if(!b)return;skillWarehouseFilter.weaponType=b.dataset.skillWeapon||'全て';renderSkillWarehouse();});
+  if ($('skillCrystalStageSelect')) $('skillCrystalStageSelect').addEventListener('change',e=>{
+    const state=normalizeSkillGachaState(skillGachaState||{}),oldSlots=state.crystalSlots,nextSlots=crystalSlotNumber(e.target.value,oldSlots);
+    if(nextSlots===oldSlots)return;
+    const removed=state.equippedSkillIds.slice(nextSlots).filter(Boolean).length;
+    state.crystalSlots=nextSlots;
+    state.equippedSkillIds=state.equippedSkillIds.slice(0,nextSlots);
+    while(state.equippedSkillIds.length<nextSlots)state.equippedSkillIds.push('');
+    skillGachaState=normalizeSkillGachaState(state);
+    renderSkillCrystalPanel();updateAll();if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon();
+    if($('editorStatus')){$('editorStatus').className='status-box ok';$('editorStatus').textContent=`スキルクリスタルを${nextSlots}枠へ変更しました。${removed?`外れたスキル${removed}件はスキル倉庫に残っています。`:''}`;}
+  });
   if ($('skillCrystalSlots')) $('skillCrystalSlots').addEventListener('change',e=>{const sel=e.target.closest('[data-skill-crystal-slot]');if(!sel)return;const state=normalizeSkillGachaState(skillGachaState||{}),i=Number(sel.dataset.skillCrystalSlot),old=state.equippedSkillIds[i]||'',next=sel.value||'';if(next&&state.equippedSkillIds.some((v,j)=>j!==i&&v===next)){sel.value=old;if($('editorStatus')){$('editorStatus').className='status-box error';$('editorStatus').textContent='同じスキルを複数枠へ装着できません。';}return;}state.equippedSkillIds[i]=next;skillGachaState=state;renderSkillCrystalPanel();updateAll();if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon();});
   if ($('skillWarehouseArea')) $('skillWarehouseArea').addEventListener('click',e=>{const b=e.target.closest('[data-skill-remove]');if(!b)return;removeSkillFromWarehouse(b.dataset.skillRemove||'');});
 
