@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.421</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.423</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -510,6 +510,14 @@
   .equipment-slot-label::after { content:'装備枠'; font-size:.72rem; color:var(--muted); border:1px solid rgba(184,119,56,.24); border-radius:999px; padding:2px 7px; background:rgba(255,255,255,.58); }
   .equipment-slot-body { display:grid; gap:10px; }
   .equipment-summary { color: var(--muted); font-size: .82rem; text-align: right; line-height: 1.4; }
+  .owned-item-detail { margin-top:8px; border:1px solid rgba(221,203,176,.82); border-radius:12px; background:rgba(255,253,248,.76); overflow:hidden; }
+  .owned-item-detail > summary { cursor:pointer; list-style:none; padding:7px 10px; font-size:.82rem; font-weight:900; color:var(--accent2); display:flex; align-items:center; gap:6px; }
+  .owned-item-detail > summary::-webkit-details-marker { display:none; }
+  .owned-item-detail > summary::before { content:'▶'; font-size:.72rem; transition:transform .12s ease; }
+  .owned-item-detail[open] > summary::before { transform:rotate(90deg); }
+  .owned-item-detail-body { border-top:1px solid rgba(221,203,176,.72); padding:8px 10px; display:grid; gap:5px; font-size:.82rem; line-height:1.55; }
+  .owned-item-detail-line { display:grid; grid-template-columns:max-content minmax(0,1fr); gap:7px; align-items:start; }
+  .owned-item-detail-line > b { color:var(--muted); font-size:.76rem; }
   .equipment-card h3 { color: var(--accent2); }
   .equipment-fields {
     display: grid;
@@ -588,22 +596,18 @@
   body.public-view [data-private-section="1"],
   body.public-view [data-section-key="warehouse"],
   body.public-view [data-section-key="inventory"],
-  body.public-view [data-section-key="carry"],
   body.public-view [data-section-key="storage"],
   body.public-view [data-section-key="deposit"],
   body.public-view #warehouseSection,
   body.public-view #inventorySection,
-  body.public-view #carrySection,
   body.public-view #storageSection,
   body.public-view #depositSection,
   body.public-view #warehousePanel,
   body.public-view #inventoryPanel,
-  body.public-view #carryPanel,
   body.public-view #storagePanel,
   body.public-view #depositPanel,
   body.public-view #warehouseList,
   body.public-view #inventoryList,
-  body.public-view #carryList,
   body.public-view #storageList,
   body.public-view #depositList,
   body.public-view #itemRegisterSection,
@@ -617,7 +621,6 @@
   body.public-view textarea[data-equipment-input="1"],
   body.public-view .warehouse-card,
   body.public-view .inventory-card,
-  body.public-view .carry-card,
   body.public-view .storage-card,
   body.public-view .deposit-card,
   body.public-view .item-edit-area,
@@ -1099,10 +1102,10 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
 .inventory-registration-card>summary{padding:9px 11px!important}
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.421-learned-switch-ui1">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.423-learned-switch-ui1">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.421｜更新：2026年8月8日</div>
+<div class="ra-build-info">v90.8.423｜更新：2026年8月8日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -2224,6 +2227,10 @@ function renderStatic() {
             </div>
           </div>
           <div id="equip_${slot.key}_effectPreview" class="carry-item-effect" hidden></div>
+          <details class="owned-item-detail" data-owned-item-detail="${slot.key}">
+            <summary>アイテム詳細</summary>
+            <div id="equip_${slot.key}_itemDetail" class="owned-item-detail-body"><div class="small">アイテムを選択すると詳細を表示します。</div></div>
+          </details>
           <input id="equip_${slot.key}_name" data-equipment-input="1" type="hidden" value="" />
           <select id="equip_${slot.key}_type" data-equipment-input="1" hidden aria-hidden="true" tabindex="-1">${options}</select>
           <input id="equip_${slot.key}_description" data-equipment-input="1" type="hidden" value="" />
@@ -2299,7 +2306,7 @@ function renderStatic() {
           <input id="equip_${slot.key}_checkType" data-equipment-input="1" type="hidden" value="" />
 
           <details class="equipment-extra-details">
-            <summary>補正・強化・説明</summary>
+            <summary>装備詳細（効果・補正・強化）</summary>
             <div class="equipment-extra-body">
               <div class="field equipment-wide equipment-modifier-field">
                 <label>装備固有の補正値</label>
@@ -3905,6 +3912,11 @@ function updateEquipmentReadOnlyDisplays(){
     const eq=equipment[slot.key]||{};
     setEquipmentDisplayText('equip_'+slot.key+'_descriptionDisplay',eq.description||'—');
     setEquipmentDisplayText('equip_'+slot.key+'_noteDisplay',eq.note||'—');
+    const detail=$('equip_'+slot.key+'_itemDetail');
+    if(detail){
+      const source=findCsItemById(eq.itemId||'') || warehouseItemByKey(eq.itemId||'',eq.name||'');
+      detail.innerHTML=ownedItemDetailHtml(source || {...eq,kind:'アイテム'}, eq.count || 1);
+    }
   }
 }
 function updateEquipmentSummaries() {
@@ -4814,6 +4826,26 @@ function updateQuiverAmmoSlotCount(slotKey, rawValue) {
   refreshWarehouseQuantityViews();
 }
 
+function ownedItemDetailHtml(item={}, count='') {
+  const row = item ? normalizeInventoryItem(item) : null;
+  if (!row || !String(row.name || '').trim()) return '<div class="small">アイテムを選択すると詳細を表示します。</div>';
+  const lines = [];
+  const add = (label, value) => { const text=String(value ?? '').trim(); if(text) lines.push(`<div class="owned-item-detail-line"><b>${esc(label)}</b><span>${esc(text)}</span></div>`); };
+  add('名称', row.name);
+  if (count !== '' && count !== null && count !== undefined) add('個数', String(count));
+  add('分類', [row.kind, row.itemType, row.materialType, row.category || row.itemCategory || row.materialCategory].map(v=>String(v||'').trim()).filter((v,i,a)=>v&&a.indexOf(v)===i).join(' / '));
+  if (row.rank) add('ランク', inventoryRankLabel(row));
+  const sell = inventorySellPriceText(row.price); if (sell) add('売値', sell);
+  add('属性', row.element);
+  add('対象', row.target);
+  add('使用技能', row.checkType || row.skill);
+  add('威力', row.power);
+  add('効果', row.effect || row.note);
+  add('説明', row.description);
+  add('入手先', row.source);
+  if (row.equipmentUpgradeEffect) add('装備強化', [row.equipmentUpgradeEffect, row.equipmentUpgradeDetail].filter(Boolean).join('：'));
+  return lines.join('') || '<div class="small">表示できる詳細情報がありません。</div>';
+}
 function renderQuiverControls() {
   quiverAmmoSlotsState = normalizeQuiverAmmoSlotsState(quiverAmmoSlotsState, {restoreInvalid:true});
   const select = $('quiverSelect');
@@ -4864,7 +4896,7 @@ function renderQuiverControls() {
           <input data-inventory-input="1" type="number" min="1" max="${esc(maxStack)}" value="${esc(count)}" data-quiver-ammo-count="${key}" ${state?.warehouseAllocated ? '' : 'disabled'} />
         </div>
       </div>
-      ${selectedRow ? `<div class="quiver-item-effect">効果：${esc(effectText || '特別な効果はない。')}</div>` : ''}
+      ${selectedRow ? `<details class="owned-item-detail"><summary>矢弾の詳細</summary><div class="owned-item-detail-body">${ownedItemDetailHtml(selectedRow, count)}</div></details>` : ''}
     </div>`;
   }).join('');
 }
@@ -6578,13 +6610,14 @@ function openEditor(mode, data=null) {
   clearAutoSaveTimer();
   currentMode = mode;
   applyData(data || emptyCharacter());
-  const title = mode === 'new' ? '新規作成' : mode === 'view' ? 'キャラクター閲覧' : 'キャラクター編集';
+  const publicShareView = mode === 'view' && typeof isPublicViewMode === 'function' && isPublicViewMode();
+  const title = mode === 'new' ? '新規作成' : mode === 'view' ? (publicShareView ? '共有キャラクター閲覧' : 'キャラクター閲覧') : 'キャラクター編集';
   $('editorTitle').textContent = title;
   $('editorSub').textContent = `${storageLabel()} / ID: ${currentCharacter.id}`;
   setReadOnly(mode === 'view');
   $('editorStatus').className = 'status-box';
   $('editorStatus').textContent = mode === 'view'
-    ? '閲覧モードです。編集する場合は「編集に切替」を押してください。'
+    ? (publicShareView ? '共有用の閲覧ページです。装備と冒険中の所持品を表示します。倉庫・習得データは公開しません。' : '閲覧モードです。編集する場合は「編集に切替」を押してください。')
     : (autoSaveEnabled ? '編集中です。変更は自動保存されます。' : '編集中です。自動保存はOFFです。');
   setActionBarCollapsed(false);
   showEditorTab('ability');
@@ -7960,8 +7993,8 @@ async function copyShareData() {
     await copyTextDirect(url);
     currentCharacter = data;
     $('editorStatus').className = 'status-box ok';
-    $('editorStatus').textContent = '共有用の閲覧URLをクリップボードにコピーしました。';
-    showToast('共有URLをコピーしました。', 'ok');
+    $('editorStatus').textContent = '共有用の閲覧URLをコピーしました。共有先では倉庫・習得データを表示せず、装備と冒険中の所持品だけを公開します。';
+    showToast('共有URLをコピーしました（倉庫・習得は非公開）。', 'ok');
   } catch (e) {
     $('editorStatus').className = 'status-box error';
     $('editorStatus').textContent = e.message || '共有URLの発行に失敗しました。';
@@ -8342,7 +8375,7 @@ function privacyNormalizeText(value=''){
   return String(value || '').replace(/\s+/g,'');
 }
 function markPrivateViewSections(){
-  const privateWords = ['倉庫','所持品','携行品','預け','預かり','登録ID','公開ID','プレイヤーキー','保存','読込','DB同期','データベース','管理','デバッグ'];
+  const privateWords = ['倉庫','習得','預け','預かり','登録ID','公開ID','プレイヤーキー','保存','読込','DB同期','データベース','管理','デバッグ'];
   document.querySelectorAll('section, details, .panel, .card, .box, fieldset, article').forEach(el=>{
     const heading = el.querySelector('h1,h2,h3,h4,summary,legend,.section-title,.panel-title');
     const text = privacyNormalizeText(heading ? heading.textContent : '');
@@ -8357,9 +8390,9 @@ function sanitizePublicView(){
   document.body.classList.add('public-view');
   markPrivateViewSections();
   const privateSelectors = [
-    '#warehouseSection','#inventorySection','#carrySection','#storageSection','#depositSection',
-    '#warehousePanel','#inventoryPanel','#carryPanel','#storagePanel','#depositPanel',
-    '#warehouseList','#inventoryList','#carryList','#storageList','#depositList',
+    '#warehouseSection','#inventorySection','#storageSection','#depositSection',
+    '#warehousePanel','#inventoryPanel','#storagePanel','#depositPanel',
+    '#warehouseList','#inventoryList','#storageList','#depositList',
     '#itemRegisterSection','#warehouseRegisterSection','#cloudSavePanel','#dbSyncPanel',
     '#saveLoadPanel','#adminPanel','#debugPanel'
   ];
@@ -8372,6 +8405,15 @@ function sanitizePublicView(){
     el.setAttribute('hidden','');
     el.setAttribute('aria-hidden','true');
     el.style.display='none';
+  });
+  document.querySelectorAll('.editor-tab-btn').forEach(btn=>{
+    const tab=String(btn.dataset.editorTab||'');
+    if(tab==='inventory'){
+      btn.classList.add('private-view-only');
+      btn.setAttribute('data-private-view','1');
+    }else{
+      btn.classList.add('public-view-allowed');
+    }
   });
   document.querySelectorAll('button,[data-action],[data-row-save],[data-row-replace],[data-add-row],[data-delete-row]').forEach(el=>{
     if(!el.classList.contains('public-view-allowed')){
