@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.419</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.421</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -526,6 +526,7 @@
   .equipment-upgrade-slot-badge{align-self:center;display:inline-flex;align-items:center;justify-content:center;min-width:84px;border:1px solid var(--line);border-radius:999px;background:rgba(255,249,238,.96);padding:7px 10px;font-size:.8rem;font-weight:900;color:var(--accent2);white-space:nowrap}
   .equipment-readonly-text{min-height:42px;border:1px solid var(--line);border-radius:10px;background:rgba(249,245,235,.82);padding:9px 10px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
   .inventory-count-editor{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.inventory-count-editor input{width:96px;min-width:0}
+.inventory-mode-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 12px}.inventory-mode-tabs button{flex:0 1 auto}.inventory-mode-tabs button.active{background:#8f5728;color:#fffaf2;border-color:#8f5728}.learned-recipe-card .inventory-card-head{grid-template-columns:minmax(0,1fr)!important}.learned-recipe-empty{margin-top:10px}.inventory-card,.equipment-card,.skill-category-card,.quiver-slot-card{content-visibility:auto;contain-intrinsic-size:auto 170px}
   .equipment-upgrade-special-detail{grid-column:1/-1;border:1px solid var(--line);border-radius:10px;background:rgba(249,245,235,.82);padding:8px 10px;font-size:.82rem;line-height:1.55;white-space:pre-wrap}
   .equipment-upgrade-special-detail:empty{display:none}
   .equipment-upgrade-row label{font-size:.78rem}
@@ -1098,10 +1099,10 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
 .inventory-registration-card>summary{padding:9px 11px!important}
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.419-random-table-copy1">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.421-learned-switch-ui1">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.419｜更新：2026年8月7日</div>
+<div class="ra-build-info">v90.8.421｜更新：2026年8月8日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -1183,7 +1184,7 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
       <button type="button" class="editor-tab-btn" data-editor-tab="skillCrystal">スキルクリスタル</button>
       <button type="button" class="editor-tab-btn" data-editor-tab="equipment">装備</button>
       <button type="button" class="editor-tab-btn" data-editor-tab="carry">所持品</button>
-      <button type="button" class="editor-tab-btn" data-editor-tab="inventory">倉庫</button>
+      <button type="button" class="editor-tab-btn" data-editor-tab="inventory">倉庫・習得</button>
     </div>
 
     <div id="editorActionBar" class="editor-action-bar collapsed" aria-label="編集操作">
@@ -1449,13 +1450,13 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
 
     <div id="tabInventory" class="editor-tab-page">
       <details class="big-section" open>
-        <summary>倉庫</summary>
+        <summary>倉庫・習得</summary>
         <div class="section-body">
-          <p class="hint">旧「所持品」はこの「倉庫」です。拠点に保管しているアイテムを登録します。倉庫には保管上限はありません。装備欄・所持品欄・バッグ選択の候補は、この倉庫一覧から生成されます。</p>
+          <p class="hint">「所持品（倉庫）」では拠点に保管している装備・素材・道具・所持レシピなどを確認します。「習得系」では、覚えている術式・スキル・レシピを種類ごとに切り替えて確認できます。倉庫には保管上限はありません。</p>
           <details class="mini-card inventory-registration-card" open>
             <summary>倉庫へ登録</summary>
             <div class="inventory-registration-body">
-            <p class="hint">GMや進行管理HTMLから受け取った登録IDを入力して、アイテム・術式・レシピ・スキルを倉庫へ追加します。アイテム類は指定した個数で追加でき、0個でも登録・保存できます。</p>
+            <p class="hint">GMや進行管理HTMLから受け取った登録IDを入力して追加します。装備・素材・道具・レシピなどは倉庫へ、術式・スキルは習得系へ反映されます。所持数を持つものは指定した個数で追加でき、0個でも登録・保存できます。</p>
             <div class="inventory-form-grid">
               <div class="field">
                 <label for="publicIdInput">登録ID</label>
@@ -1474,10 +1475,19 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
             <div id="publicIdPasteStatus" class="status-box">登録IDと個数を入力してください。</div>
             </div>
           </details>
+          <div id="inventoryModeTabs" class="inventory-mode-tabs" aria-label="所持・習得表示切り替え">
+            <button type="button" class="ghost active" data-inventory-mode="warehouse">所持品（倉庫）</button>
+            <button type="button" class="ghost" data-inventory-mode="learned">習得系</button>
+          </div>
+          <div id="learnedKindTabs" class="inventory-mode-tabs" aria-label="習得系カテゴリ切り替え" hidden>
+            <button type="button" class="ghost active" data-learned-kind="spell">術式</button>
+            <button type="button" class="ghost" data-learned-kind="skill">スキル</button>
+            <button type="button" class="ghost" data-learned-kind="recipe">レシピ</button>
+          </div>
           <div class="inventory-list-heading">
             <div>
-              <h3>倉庫一覧</h3>
-              <p class="hint">検索・絞り込みの結果を、この直下の一覧へ反映します。</p>
+              <h3 id="inventoryListTitle">所持品（倉庫）一覧</h3>
+              <p id="inventoryListHint" class="hint">検索・絞り込みの結果を、この直下の一覧へ反映します。</p>
             </div>
             <button id="sortInventoryItemBtn" type="button" class="ghost">名称順に整理</button>
           </div>
@@ -1488,7 +1498,7 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
             </div>
             <div id="inventoryFilterStatus" class="inventory-filter-status">全件を表示中</div>
           </div>
-          <details class="inventory-filter-panel" aria-label="倉庫アイテムの詳細フィルター">
+          <details id="inventoryFilterPanel" class="inventory-filter-panel" aria-label="倉庫アイテムの詳細フィルター">
             <summary>詳細フィルター</summary>
             <div class="inventory-filter-body">
               <div class="inventory-filter-row">
@@ -4464,6 +4474,10 @@ function canonicalInventoryItemName(name){
 }
 let inventoryViewFilter = { location:'全て', itemType:'全て', category:'全て', search:'' };
 let inventoryItemsState = [];
+let learnedRecipesState = [];
+let inventoryDisplayMode = 'warehouse';
+let learnedContentType = 'spell';
+const inventoryCardOpenState = new Map();
 let selectedBagId = '';
 let selectedQuiverId = '';
 let quiverAmmoSlotsState = {};
@@ -4471,7 +4485,7 @@ let carryWarehouseAllocationState = {};
 
 function defaultInventory() {
   const basicBag = { id:'bag_simple', masterId:'', masterSheet:'', masterSync:'', name:'簡素なバッグ', kind:'バッグ', itemType:'バッグ', category:'バッグ', itemCategory:'バッグ', count:1, capacity:8, bagCapacity:8, location:'倉庫', rank:1, price:'100', equipSlot:'', power:'', hit:'', defense:'', guard:'', evade:'', offhand:'', spellSlots:'', target:'', element:'', cost:'', checkType:'', role:'', source:'初期支給 / 鍛冶屋', tags:'バッグ,初期倉庫', setItem:'', description:'冒険に必要な最低限の荷物を入れられる簡素なバッグ。', effect:'所持品枠8。', recipeResult:'', materials:'', note:'' };
-  return { items: [basicBag], bagId:'bag_simple', quiverId:'', quiverAmmoSlots:{} };
+  return { items: [basicBag], learnedRecipes:[], bagId:'bag_simple', quiverId:'', quiverAmmoSlots:{} };
 }
 
 function ensureDefaultBagItem() {
@@ -4534,8 +4548,12 @@ function normalizeInventoryState(inventory) {
       : (Array.isArray(inventory?.warehouse)
         ? inventory.warehouse
         : (Array.isArray(inventory?.storage) ? inventory.storage : [])));
+  const learnedSrc = inventory && !Array.isArray(inventory)
+    ? (Array.isArray(inventory.learnedRecipes) ? inventory.learnedRecipes : (Array.isArray(inventory.knownRecipes) ? inventory.knownRecipes : []))
+    : [];
   return {
     items: src.filter(Boolean).map(item => normalizeInventoryItem({ ...item, location:'倉庫' })),
+    learnedRecipes: learnedSrc.filter(Boolean).map(item => normalizeInventoryItem({ ...item, kind:'レシピ', count:1, location:'倉庫' })),
     bagId:String(inventory && !Array.isArray(inventory) ? (inventory.bagId || inventory.selectedBagId || inventory.selectedBag || '') : '').trim(),
     quiverId:String(inventory && !Array.isArray(inventory) ? (inventory.quiverId || inventory.selectedQuiverId || inventory.selectedQuiver || '') : '').trim(),
     quiverAmmoSlots:inventory && !Array.isArray(inventory) ? (inventory.quiverAmmoSlots || inventory.ammoSlots || {}) : {}
@@ -4659,8 +4677,17 @@ function adjustWarehouseItemCount(itemId='', delta=0, itemName='') {
   inventoryItemsState[index] = normalizeInventoryItem({ ...row, count:clampInt(next, 0, 9999) });
   return true;
 }
+function syncInventoryQuantityDom() {
+  document.querySelectorAll('[data-inventory-count-index]').forEach(input => {
+    const index = Number(input.dataset.inventoryCountIndex);
+    if (!Number.isInteger(index) || index < 0 || !inventoryItemsState[index]) return;
+    const next = String(normalizeInventoryItem(inventoryItemsState[index]).count ?? 0);
+    if (input.value !== next) input.value = next;
+  });
+}
 function refreshWarehouseQuantityViews({quiver=true}={}) {
-  renderInventory();
+  // 個数変更だけで倉庫一覧を再構築しない。開閉状態・スクロール位置を維持し、描画負荷も抑える。
+  syncInventoryQuantityDom();
   refreshEquipmentItemSelects();
   if (quiver) renderQuiverControls();
   updateSummary();
@@ -4961,9 +4988,16 @@ function ownedSkillRowsForInventory(){
   const state=normalizeSkillGachaState(skillGachaState||{});
   return state.acquiredSkillIds.map(characterSkillById).filter(Boolean).sort((a,b)=>String(a.category||'').localeCompare(String(b.category||''),'ja')||String(a.weaponType||'').localeCompare(String(b.weaponType||''),'ja')||String(a.name||'').localeCompare(String(b.name||''),'ja'));
 }
+function isLearnedSpellInventoryRow(item={}) {
+  const row = normalizeInventoryItem(item);
+  return isSpellInventoryItem(row) && inventorySmallCategory(row) === '術式';
+}
 function inventorySmallCategories() {
-  const present = new Set((inventoryItemsState || []).map(row => inventorySmallCategory(normalizeInventoryItem(row))).filter(Boolean));
-  present.add('スキル');
+  const present = new Set((inventoryItemsState || [])
+    .map(row => normalizeInventoryItem(row))
+    .filter(row => !isLearnedSpellInventoryRow(row))
+    .map(row => inventorySmallCategory(row))
+    .filter(Boolean));
   const ordered = INVENTORY_SMALL_CATEGORY_ORDER.filter(v => present.has(v));
   [...present].filter(v => !ordered.includes(v)).sort((a,b)=>a.localeCompare(b,'ja',{numeric:true})).forEach(v=>ordered.push(v));
   return ['全て', ...ordered];
@@ -4971,10 +5005,6 @@ function inventorySmallCategories() {
 function inventoryInternalCategories(selectedType='') {
   if (!selectedType || selectedType === '全て') return [];
   const present = new Set((inventoryItemsState || []).map(row => normalizeInventoryItem(row)).filter(row => inventorySmallCategory(row) === selectedType).map(inventoryInternalCategory).filter(Boolean));
-  if (selectedType === 'スキル') {
-    const categories=new Set(ownedSkillRowsForInventory().map(row=>String(row.category||'未分類').trim()||'未分類'));
-    return ['全て', ...SKILL_CATEGORY_ORDER.filter(v=>v!=='全て'), ...[...categories].filter(v=>!SKILL_CATEGORY_ORDER.includes(v)).sort((a,b)=>a.localeCompare(b,'ja'))];
-  }
   if (selectedType === '素材') return ['全て', ...INVENTORY_MATERIAL_TYPE_ORDER.filter(v => present.has(v))];
   if (selectedType === '収納具') return ['全て', ...['バッグ','矢筒'].filter(v => present.has(v))];
   return ['全て', ...[...present].sort((a,b)=>a.localeCompare(b,'ja',{numeric:true}))];
@@ -5128,14 +5158,36 @@ function isCarrySlotKey(slotKey) {
   const slot = EQUIPMENT_SLOTS.find(s => s.key === slotKey);
   return !!slot && slot.kind === 'carry';
 }
+function learnedRecipeKey(item={}) {
+  const row = normalizeInventoryItem(item);
+  return String(row.publicId || row.masterId || row.id || canonicalInventoryItemName(row.name || '')).trim().toUpperCase();
+}
+function normalizeLearnedRecipes(rows=[]) {
+  const seen = new Set();
+  const out = [];
+  for (const raw of (Array.isArray(rows) ? rows : [])) {
+    const row = normalizeInventoryItem({ ...raw, kind:'レシピ', count:1, location:'倉庫' });
+    const key = learnedRecipeKey(row);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(row);
+  }
+  return out;
+}
+function isRecipeLearned(item={}) {
+  const key = learnedRecipeKey(item);
+  return !!key && (learnedRecipesState || []).some(row => learnedRecipeKey(row) === key);
+}
 function getInventoryState() {
   syncAllEquipmentUpgradesToInventory();
   const items = inventoryItemsState.map(item => normalizeInventoryItem(item)).filter(item => item.name || item.category || item.power || item.description || item.effect || item.capacity || item.count > 0);
-  return { items, bagId:selectedBagId || '', quiverId:selectedQuiverId || '', quiverAmmoSlots:normalizeQuiverAmmoSlotsState(quiverAmmoSlotsState) };
+  const learnedRecipes = normalizeLearnedRecipes(learnedRecipesState);
+  return { items, learnedRecipes, bagId:selectedBagId || '', quiverId:selectedQuiverId || '', quiverAmmoSlots:normalizeQuiverAmmoSlotsState(quiverAmmoSlotsState) };
 }
 function setInventoryState(inventory=defaultInventory()) {
   const normalized = normalizeInventoryState(inventory);
   inventoryItemsState = normalized.items;
+  learnedRecipesState = normalizeLearnedRecipes(normalized.learnedRecipes || []);
   selectedBagId = normalized.bagId || '';
   selectedQuiverId = normalized.quiverId || '';
   quiverAmmoSlotsState = normalizeQuiverAmmoSlotsState(normalized.quiverAmmoSlots || {}, {restoreInvalid:true});
@@ -5144,7 +5196,6 @@ function setInventoryState(inventory=defaultInventory()) {
     const defaultBag = inventoryItemsState.find(item => isBagInventoryItem(item) && (inventoryItemKey(item) === 'bag_simple' || item.id === 'bag_simple' || item.name === '簡素なバッグ'));
     if (defaultBag) selectedBagId = inventoryItemKey(defaultBag) || defaultBag.id || defaultBag.name;
   }
-  renderInventoryTabs();
   renderInventory();
   renderQuiverControls();
 }
@@ -5172,7 +5223,8 @@ function renderInventoryTabs() {
   }
 }
 function applyInventoryFilters() {
-  const rows = Array.from(document.querySelectorAll('[data-inventory-row]'));
+  if (inventoryDisplayMode === 'learned') { applyLearnedKnowledgeSearch(); return; }
+  const rows = Array.from(document.querySelectorAll('#inventoryArea [data-inventory-row]'));
   const search = String(inventoryViewFilter.search || $('inventorySearchInput')?.value || '').trim().toLowerCase();
   let visible = 0;
   for (const card of rows) {
@@ -5205,7 +5257,7 @@ function setInventoryFilter(type, value) {
   }
   if (type === 'category') inventoryViewFilter.category = value || '全て';
   if (type === 'search') inventoryViewFilter.search = value || '';
-  renderInventoryTabs();
+  if (inventoryDisplayMode !== 'learned') renderInventoryTabs();
   applyInventoryFilters();
 }
 function inventoryOptions(value, list) {
@@ -5214,11 +5266,201 @@ function inventoryOptions(value, list) {
 function characterUpgradeDisplayName(item={}){
   return String(item.equipmentUpgradeEffect||'').trim();
 }
-function renderInventory() {
+function rememberInventoryCardOpenStates() {
+  document.querySelectorAll('#inventoryArea details.inventory-card[data-inventory-stable-key]').forEach(card => {
+    inventoryCardOpenState.set(String(card.dataset.inventoryStableKey || ''), !!card.open);
+  });
+}
+function restoreInventoryCardOpenStates() {
+  document.querySelectorAll('#inventoryArea details.inventory-card[data-inventory-stable-key]').forEach(card => {
+    const key = String(card.dataset.inventoryStableKey || '');
+    if (inventoryCardOpenState.has(key)) card.open = !!inventoryCardOpenState.get(key);
+  });
+}
+function learnedRecipeCardHtml(item, index) {
+  const row = normalizeInventoryItem(item);
+  const key = learnedRecipeKey(row);
+  const title = row.name || '名称未設定のレシピ';
+  const rank = inventoryRankLabel(row) || '—';
+  const category = row.category || row.itemCategory || 'レシピ';
+  const recipeMeta = [row.recipeResult ? '完成品：' + row.recipeResult : '', row.materials ? '必要素材：' + row.materials : ''].filter(Boolean).join('\n');
+  const searchText = [title, rank, category, row.recipeResult, row.materials, row.description, row.effect, row.publicId].filter(Boolean).join(' ');
+  return `<details class="inventory-card learned-recipe-card" data-inventory-row="learned-recipe-${index}" data-inventory-stable-key="learned-recipe:${esc(key)}" data-learned-search="${esc(searchText)}">
+    <summary class="inventory-card-head"><div><div class="inventory-title">${esc(title)}</div><div class="small">習得済み / レシピ / ${esc(category)}</div></div></summary>
+    <div class="inventory-card-meta">
+      ${row.publicId ? `<div class="meta-item"><span class="meta-label">登録ID</span>${esc(row.publicId)}</div>` : ''}
+      <div class="meta-item"><span class="meta-label">ランク</span>${esc(rank)}</div>
+      <div class="meta-item"><span class="meta-label">カテゴリ</span>${esc(category)}</div>
+      ${recipeMeta ? `<div class="meta-item meta-wide"><span class="meta-label">レシピ</span><div class="inventory-note">${esc(recipeMeta)}</div></div>` : ''}
+      ${row.description ? `<div class="meta-item meta-wide"><span class="meta-label">説明</span><div class="inventory-note">${esc(row.description)}</div></div>` : ''}
+      ${row.effect ? `<div class="meta-item meta-wide"><span class="meta-label">効果</span><div class="inventory-note">${esc(row.effect)}</div></div>` : ''}
+      <div class="meta-item meta-wide"><div class="button-row" style="margin:0"><button type="button" class="danger" data-unlearn-recipe="${esc(key)}">習得済みから外す</button></div></div>
+    </div>
+  </details>`;
+}
+function learnedSpellKey(item={}) {
+  const row = normalizeInventoryItem(item);
+  return String(row.publicId || row.masterId || row.id || canonicalInventoryItemName(row.name || '')).trim().toUpperCase();
+}
+function learnedSpellRowsForInventory() {
+  const seen = new Set();
+  const rows = [];
+  for (const raw of (inventoryItemsState || [])) {
+    const row = normalizeInventoryItem(raw);
+    if (!isLearnedSpellInventoryRow(row)) continue;
+    const key = learnedSpellKey(row);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    rows.push(row);
+  }
+  return rows.sort((a,b)=>String(a.category||'').localeCompare(String(b.category||''),'ja')||String(a.name||'').localeCompare(String(b.name||''),'ja'));
+}
+function learnedSpellCardHtml(item, index) {
+  const row = normalizeInventoryItem(item);
+  const key = learnedSpellKey(row);
+  const title = row.name || '名称未設定の術式';
+  const category = row.category || row.itemCategory || '術式';
+  const rank = inventoryRankLabel(row) || '—';
+  const spellMeta = [
+    row.element ? '属性：' + row.element : '',
+    row.cost ? '消費：' + row.cost : '',
+    row.target ? '対象：' + row.target : '',
+    row.power ? 'ダメージ/威力：' + row.power : '',
+    row.checkType ? '判定：' + checkExpressionDisplay(row.checkType) : '',
+    row.role ? '役割：' + row.role : ''
+  ].filter(Boolean).join(' / ');
+  const searchText = [title, category, rank, row.element, row.cost, row.target, row.power, row.checkType, row.role, row.description, row.effect, row.publicId].filter(Boolean).join(' ');
+  return `<details class="inventory-card learned-spell-card" data-inventory-row="learned-spell-${index}" data-inventory-stable-key="learned-spell:${esc(key)}" data-learned-search="${esc(searchText)}">
+    <summary class="inventory-card-head"><div><div class="inventory-title">${esc(title)}</div><div class="small">習得済み / 術式 / ${esc(category)}</div></div></summary>
+    <div class="inventory-card-meta">
+      ${row.publicId ? `<div class="meta-item"><span class="meta-label">登録ID</span>${esc(row.publicId)}</div>` : ''}
+      <div class="meta-item"><span class="meta-label">ランク</span>${esc(rank)}</div>
+      <div class="meta-item"><span class="meta-label">種別</span>${esc(category)}</div>
+      ${spellMeta ? `<div class="meta-item meta-wide"><span class="meta-label">術式データ</span><div class="inventory-note">${esc(spellMeta)}</div></div>` : ''}
+      ${row.description ? `<div class="meta-item meta-wide"><span class="meta-label">説明</span><div class="inventory-note">${esc(row.description)}</div></div>` : ''}
+      ${row.effect ? `<div class="meta-item meta-wide"><span class="meta-label">効果</span><div class="inventory-note">${esc(row.effect)}</div></div>` : ''}
+    </div>
+  </details>`;
+}
+function learnedSkillCardHtml(skill, index) {
+  const s = skill || {};
+  const category = String(s.category || '未分類').trim() || '未分類';
+  const searchText = [s.name,s.publicId,s.rank,s.category,s.weaponType,s.timing,s.cost,s.ct,s.effect,s.description].filter(Boolean).join(' ');
+  return `<details class="inventory-card learned-skill-card" data-inventory-row="learned-skill-${index}" data-inventory-stable-key="learned-skill:${esc(s.id || s.publicId || s.name || index)}" data-learned-search="${esc(searchText)}">
+    <summary class="inventory-card-head"><div><div class="inventory-title">${esc(s.name || '名称未設定のスキル')} <span class="skill-badge">★${esc(s.rank||1)}</span></div><div class="small">習得済み / スキル / ${esc(category)}</div></div></summary>
+    <div class="inventory-card-meta">
+      <div class="meta-item"><span class="meta-label">カテゴリ</span>${esc(category)}</div>
+      ${s.weaponType ? `<div class="meta-item"><span class="meta-label">武器種</span>${esc(s.weaponType)}</div>` : ''}
+      ${s.publicId ? `<div class="meta-item"><span class="meta-label">登録ID</span>${esc(s.publicId)}</div>` : ''}
+      <div class="meta-item"><span class="meta-label">ランク</span>★${esc(s.rank||1)}</div>
+      ${s.timing ? `<div class="meta-item meta-wide"><span class="meta-label">タイミング</span><div class="inventory-note">${esc(s.timing)}</div></div>` : ''}
+      ${s.cost ? `<div class="meta-item"><span class="meta-label">消費</span>${esc(s.cost)}</div>` : ''}
+      ${s.ct ? `<div class="meta-item"><span class="meta-label">CT</span>${esc(s.ct)}</div>` : ''}
+      ${s.effect ? `<div class="meta-item meta-wide"><span class="meta-label">効果</span><div class="inventory-note">${esc(s.effect)}</div></div>` : (s.description ? `<div class="meta-item meta-wide"><span class="meta-label">概要</span><div class="inventory-note">${esc(s.description)}</div></div>` : '')}
+    </div>
+  </details>`;
+}
+function learnedContentLabel(type=learnedContentType) {
+  return type === 'skill' ? 'スキル' : (type === 'recipe' ? 'レシピ' : '術式');
+}
+function learnedContentRows(type=learnedContentType) {
+  if (type === 'skill') return ownedSkillRowsForInventory();
+  if (type === 'recipe') return normalizeLearnedRecipes(learnedRecipesState);
+  return learnedSpellRowsForInventory();
+}
+function renderLearnedKindTabs() {
+  const tabs = $('learnedKindTabs');
+  if (!tabs) return;
+  const counts = {
+    spell: learnedSpellRowsForInventory().length,
+    skill: ownedSkillRowsForInventory().length,
+    recipe: normalizeLearnedRecipes(learnedRecipesState).length
+  };
+  tabs.querySelectorAll('[data-learned-kind]').forEach(btn => {
+    const type = btn.dataset.learnedKind || 'spell';
+    btn.classList.toggle('active', type === learnedContentType);
+    const label = learnedContentLabel(type);
+    btn.textContent = `${label}（${counts[type] || 0}）`;
+  });
+}
+function applyLearnedKnowledgeSearch() {
+  const search = String(inventoryViewFilter.search || $('inventorySearchInput')?.value || '').trim().toLowerCase();
+  const cards = Array.from(document.querySelectorAll('#inventoryArea [data-learned-search]'));
+  let visible = 0;
+  cards.forEach(card => {
+    const show = !search || String(card.dataset.learnedSearch || '').toLowerCase().includes(search);
+    card.classList.toggle('inventory-hidden', !show);
+    if (show) visible++;
+  });
+  const label = learnedContentLabel();
+  if ($('inventoryFilterStatus')) $('inventoryFilterStatus').textContent = `習得済み${label}：${visible}件表示（全${cards.length}件）${search ? ` / 検索「${search}」` : ''}`;
+  if ($('inventoryEmptyStatus')) {
+    $('inventoryEmptyStatus').style.display = cards.length ? 'none' : '';
+    $('inventoryEmptyStatus').textContent = learnedContentType === 'recipe'
+      ? '覚えたレシピはまだありません。所持品（倉庫）のレシピから「覚える」を押すと登録できます。'
+      : `習得済みの${label}はまだありません。`;
+  }
+}
+function updateInventoryModeUi() {
+  document.querySelectorAll('#inventoryModeTabs [data-inventory-mode]').forEach(btn => btn.classList.toggle('active', btn.dataset.inventoryMode === inventoryDisplayMode));
+  const learned = inventoryDisplayMode === 'learned';
+  const label = learnedContentLabel();
+  if ($('learnedKindTabs')) $('learnedKindTabs').hidden = !learned;
+  if (learned) renderLearnedKindTabs();
+  if ($('inventoryListTitle')) $('inventoryListTitle').textContent = learned ? `習得済み${label}` : '所持品（倉庫）一覧';
+  if ($('inventoryListHint')) $('inventoryListHint').textContent = learned
+    ? `習得済みの${label}だけを表示します。上の「術式／スキル／レシピ」で切り替えられます。`
+    : '倉庫に所持している物を表示します。所持レシピもここで確認できます。';
+  if ($('sortInventoryItemBtn')) $('sortInventoryItemBtn').hidden = learned;
+  if ($('inventoryFilterPanel')) $('inventoryFilterPanel').hidden = learned;
+  const registration = document.querySelector('.inventory-registration-card');
+  if (registration) registration.hidden = learned;
+}
+function setInventoryDisplayMode(mode='warehouse') {
+  inventoryDisplayMode = mode === 'learned' ? 'learned' : 'warehouse';
+  renderInventory({refreshLinked:false});
+}
+function setLearnedContentType(type='spell') {
+  learnedContentType = ['spell','skill','recipe'].includes(type) ? type : 'spell';
+  renderInventory({refreshLinked:false});
+}
+function learnRecipeFromInventory(index) {
+  if (currentMode === 'view') return;
+  const row = inventoryItemsState[index] ? normalizeInventoryItem(inventoryItemsState[index]) : null;
+  if (!row || row.kind !== 'レシピ') return;
+  if (isRecipeLearned(row)) { showToast('このレシピはすでに覚えています。', 'warn'); return; }
+  learnedRecipesState = normalizeLearnedRecipes([...(learnedRecipesState || []), row]);
+  renderInventory({refreshLinked:false});
+  if (typeof autoSaveDraftSoon === 'function') autoSaveDraftSoon();
+  showToast(`レシピを覚えました：${row.name || '名称未設定'}`, 'ok');
+}
+function unlearnRecipeByKey(key='') {
+  if (currentMode === 'view') return;
+  const target = String(key || '').trim().toUpperCase();
+  learnedRecipesState = normalizeLearnedRecipes(learnedRecipesState).filter(row => learnedRecipeKey(row) !== target);
+  renderInventory({refreshLinked:false});
+  if (typeof autoSaveDraftSoon === 'function') autoSaveDraftSoon();
+}
+function renderInventory({refreshLinked=true}={}) {
   const area = $('inventoryArea');
   if (!area) return;
+  rememberInventoryCardOpenStates();
   inventoryItemsState = (inventoryItemsState || []).map(item => normalizeInventoryItem(item));
+  learnedRecipesState = normalizeLearnedRecipes(learnedRecipesState);
+  updateInventoryModeUi();
+  if (inventoryDisplayMode === 'learned') {
+    const rows = learnedContentRows();
+    if (learnedContentType === 'recipe') area.innerHTML = rows.map(learnedRecipeCardHtml).join('');
+    else if (learnedContentType === 'skill') area.innerHTML = rows.map(learnedSkillCardHtml).join('');
+    else area.innerHTML = rows.map(learnedSpellCardHtml).join('');
+    restoreInventoryCardOpenStates();
+    setReadOnly(currentMode === 'view');
+    applyLearnedKnowledgeSearch();
+    return;
+  }
+  if ($('inventoryEmptyStatus')) $('inventoryEmptyStatus').textContent = 'まだ所持品が登録されていません。';
   area.innerHTML = inventoryItemsState.map((item, index) => {
+    if (isLearnedSpellInventoryRow(item)) return '';
     const title = item.name || '未設定アイテム';
     const description = item.description || '';
     const effectText = item.effect || '';
@@ -5244,10 +5486,11 @@ function renderInventory() {
       : (item.category || displayCategory || '—');
     const searchText = [title, displayType, displayCategory, categoryDisplay, item.itemType, item.itemCategory, item.materialType, item.materialCategory, item.kind, item.category, item.rank, item.price, item.equipSlot, item.skill, item.power, item.hit, item.defense, item.guard, item.evade, item.offhand, item.upgradeLimit, item.upgradeMaterialMinRank, item.equipmentUpgradeEffect, item.equipmentUpgradeSlotCost, item.equipmentUpgradeDetail, item.equipmentUpgradeTarget, item.spellSlots, item.capacity, item.bagCapacity, item.quiverCapacity, item.ammoKind, item.compatibleWeaponTypes, item.target, item.element, item.enchantTarget, item.enchantEffectType, item.enchantValue, item.enchantDuration, item.enchantRounds, item.enchantStackRule, item.cost, item.power, item.description, item.effect, item.checkType, item.role, item.source, item.tags, item.recipeResult, item.materials, item.upgradeLines].filter(Boolean).join(' ');
     return `
-    <details class="inventory-card" data-inventory-row="${index}" data-inventory-id="${esc(item.id || '')}" data-inventory-location="倉庫" data-inventory-kind="${esc(item.kind || 'アイテム')}" data-inventory-item-type="${esc(displayType)}" data-inventory-category="${esc(displayCategory)}" data-inventory-search="${esc(searchText)}">
+    <details class="inventory-card" data-inventory-row="${index}" data-inventory-stable-key="item:${esc(inventoryItemKey(item) || learnedRecipeKey(item) || String(index))}" data-inventory-id="${esc(item.id || '')}" data-inventory-location="倉庫" data-inventory-kind="${esc(item.kind || 'アイテム')}" data-inventory-item-type="${esc(displayType)}" data-inventory-category="${esc(displayCategory)}" data-inventory-search="${esc(searchText)}">
       <summary class="inventory-card-head">
         <div><div class="inventory-title">${esc(title)}</div><div class="small">倉庫 / ${esc(displayType)} / ${esc(displayCategory)}</div></div>
         <div class="button-row" style="margin:0;">
+          ${item.kind === 'レシピ' ? `<button type="button" class="secondary" data-inventory-action="learn-recipe" data-index="${index}" ${isRecipeLearned(item) ? 'disabled' : ''}>${isRecipeLearned(item) ? '習得済み' : '覚える'}</button>` : ''}
           <button type="button" class="ghost" data-inventory-action="duplicate" data-index="${index}">複製</button>
           <button type="button" class="danger" data-inventory-action="delete" data-index="${index}">削除</button>
         </div>
@@ -5270,22 +5513,17 @@ function renderInventory() {
       </div>
     </details>`;
   }).join('');
-  const ownedSkills=ownedSkillRowsForInventory();
-  if(ownedSkills.length){
-    area.insertAdjacentHTML('beforeend',ownedSkills.map(s=>{
-      const category=String(s.category||'未分類').trim()||'未分類';
-      const searchText=[s.name,s.publicId,s.category,s.weaponType,s.timing,s.cost,s.ct,s.effect,s.description].filter(Boolean).join(' ');
-      const state=normalizeSkillGachaState(skillGachaState||{});
-      return `<details class="inventory-card inventory-skill-card" data-inventory-row="skill-${esc(s.id)}" data-inventory-location="倉庫" data-inventory-kind="スキル" data-inventory-item-type="スキル" data-inventory-category="${esc(category)}" data-inventory-search="${esc(searchText)}"><summary class="inventory-card-head"><div><div class="inventory-title">${esc(s.name)} <span class="skill-badge">★${esc(s.rank||1)}</span></div><div class="small">倉庫 / スキル / ${esc(category)}</div></div><div class="button-row" style="margin:0;"><button type="button" class="danger" data-skill-remove="${esc(s.id)}" ${state.equippedSkillIds.includes(s.id)?'disabled':''}>削除</button></div></summary><div class="inventory-card-meta"><div class="meta-item"><span class="meta-label">カテゴリ</span>${esc(category)}</div>${s.weaponType?`<div class="meta-item"><span class="meta-label">武器種</span>${esc(s.weaponType)}</div>`:''}<div class="meta-item"><span class="meta-label">登録ID</span>${esc(s.publicId||'未設定')}</div><div class="meta-item"><span class="meta-label">ランク</span>★${esc(s.rank||1)}</div>${s.timing?`<div class="meta-item meta-wide"><span class="meta-label">タイミング</span><div class="inventory-note">${esc(s.timing)}</div></div>`:''}${s.cost?`<div class="meta-item"><span class="meta-label">消費</span>${esc(s.cost)}</div>`:''}${s.ct?`<div class="meta-item"><span class="meta-label">CT</span>${esc(s.ct)}</div>`:''}${s.effect?`<div class="meta-item meta-wide"><span class="meta-label">効果</span><div class="inventory-note">${esc(s.effect)}</div></div>`:''}</div></details>`;
-    }).join(''));
-  }
-  if ($('inventoryEmptyStatus')) $('inventoryEmptyStatus').style.display = (inventoryItemsState.length||ownedSkills.length) ? 'none' : '';
+  const warehouseCount = (inventoryItemsState || []).map(row=>normalizeInventoryItem(row)).filter(row=>!isLearnedSpellInventoryRow(row)).length;
+  if ($('inventoryEmptyStatus')) $('inventoryEmptyStatus').style.display = warehouseCount ? 'none' : '';
+  restoreInventoryCardOpenStates();
   setReadOnly(currentMode === 'view');
   renderInventoryTabs();
   applyInventoryFilters();
-  refreshEquipmentItemSelects();
-  refreshSpellSetSelects();
-  renderBagSelect();
+  if (refreshLinked) {
+    refreshEquipmentItemSelects();
+    refreshSpellSetSelects();
+    renderBagSelect();
+  }
 }
 
 function fillInventoryDialogOptions(item) {
@@ -7815,6 +8053,11 @@ function bindEvents() {
   $('actionBarToggleBtn').addEventListener('click', () => setActionBarCollapsed(!$('editorActionBar').classList.contains('collapsed')));
 
   document.querySelectorAll('.editor-tab-btn').forEach(btn => btn.addEventListener('click', () => showEditorTab(btn.dataset.editorTab)));
+  document.addEventListener('toggle', e => {
+    const d=e.target;
+    if(!(d instanceof HTMLDetailsElement)) return;
+    if(d.matches('#inventoryArea details.inventory-card[data-inventory-stable-key]')) inventoryCardOpenState.set(String(d.dataset.inventoryStableKey||''), !!d.open);
+  }, true);
 
   if ($('addSkillByPublicIdBtn')) $('addSkillByPublicIdBtn').addEventListener('click', addSkillByPublicIds);
   if ($('clearSkillPublicIdBtn')) $('clearSkillPublicIdBtn').addEventListener('click',()=>{if($('skillPublicIdInput'))$('skillPublicIdInput').value='';if($('skillPublicIdStatus')){$('skillPublicIdStatus').className='status-box';$('skillPublicIdStatus').textContent='登録IDを入力してください。';}});
@@ -7850,6 +8093,8 @@ function bindEvents() {
   if ($('saveInventoryDialogBtn')) $('saveInventoryDialogBtn').addEventListener('click', saveInventoryDialog);
   if ($('cancelInventoryDialogBtn')) $('cancelInventoryDialogBtn').addEventListener('click', () => $('inventoryDialog')?.close());
   if ($('inventoryArea')) $('inventoryArea').addEventListener('click', e => {
+    const unlearnBtn=e.target.closest('[data-unlearn-recipe]');
+    if(unlearnBtn){e.preventDefault();e.stopPropagation();unlearnRecipeByKey(unlearnBtn.dataset.unlearnRecipe||'');return;}
     const skillBtn=e.target.closest('[data-skill-remove]');
     if(skillBtn){e.preventDefault();e.stopPropagation();removeSkillFromWarehouse(skillBtn.dataset.skillRemove||'');return;}
     const btn = e.target.closest('[data-inventory-action]'); if (!btn) return;
@@ -7857,8 +8102,17 @@ function bindEvents() {
     e.stopPropagation();
     const index = Number(btn.dataset.index || 0);
     if (btn.dataset.inventoryAction === 'edit') return;
+    if (btn.dataset.inventoryAction === 'learn-recipe') { learnRecipeFromInventory(index); return; }
     if (btn.dataset.inventoryAction === 'delete') deleteInventoryItem(index);
     if (btn.dataset.inventoryAction === 'duplicate') duplicateInventoryItem(index);
+  });
+  if ($('inventoryModeTabs')) $('inventoryModeTabs').addEventListener('click', e => {
+    const btn=e.target.closest('[data-inventory-mode]'); if(!btn)return;
+    setInventoryDisplayMode(btn.dataset.inventoryMode || 'warehouse');
+  });
+  if ($('learnedKindTabs')) $('learnedKindTabs').addEventListener('click', e => {
+    const btn=e.target.closest('[data-learned-kind]'); if(!btn)return;
+    setLearnedContentType(btn.dataset.learnedKind || 'spell');
   });
   if ($('inventoryLocationTabs')) $('inventoryLocationTabs').addEventListener('click', e => {
     const btn = e.target.closest('[data-inventory-filter="location"]'); if (!btn) return;
