@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.456</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.457</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1102,10 +1102,10 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
 .inventory-registration-card>summary{padding:9px 11px!important}
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.456-character-performance1">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.457-craft-economy1">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.456｜更新：2026年8月9日</div>
+<div class="ra-build-info">v90.8.457｜更新：2026年8月9日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -1759,7 +1759,7 @@ function autoSaveTimeLabel(){
   return new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
 }
 function autoSaveContentHash(data){
-  // v90.8.456: 自動保存の変更判定は1回のJSON走査だけで行う。
+  // v90.8.457: 自動保存の変更判定は1回のJSON走査だけで行う。
   // 旧実装は deep clone → strip → deep clone → stringify と巨大な倉庫を複数回走査していた。
   const omit = new Set(['updatedAt','effectiveAbilities','combatStats','playerKey','newPlayerKey']);
   return JSON.stringify(data||{}, (key,value)=>omit.has(key)?undefined:value);
@@ -1851,7 +1851,7 @@ async function setAutoSaveEnabled(enabled){
 }
 function autoSaveDraftSoon(){
   if(!autoSaveEnabled || !autoSaveReady || currentMode==='view' || !currentCharacter)return;
-  // v90.8.456: 入力のたびにcollectData()+巨大JSON比較をしない。
+  // v90.8.457: 入力のたびにcollectData()+巨大JSON比較をしない。
   // 変更ありの印だけ付け、デバウンス後の保存時に1回だけ収集・比較する。
   autoSaveDirty=true;
   clearAutoSaveTimer();
@@ -4510,7 +4510,7 @@ let quiverAmmoSlotsState = {};
 let carryWarehouseAllocationState = {};
 let inventoryMasterSyncVersion = '';
 
-// v90.8.456: 倉庫派生データを1回だけ作り、同じ操作内で何度も全件normalize/filterしない。
+// v90.8.457: 倉庫派生データを1回だけ作り、同じ操作内で何度も全件normalize/filterしない。
 let inventoryStateRevision = 0;
 let inventoryDerivedCache = null;
 function invalidateInventoryDerivedCache(){
@@ -5739,7 +5739,7 @@ function renderInventory({refreshLinked=true}={}) {
     return;
   }
   if($('inventoryEmptyStatus'))$('inventoryEmptyStatus').textContent='まだ所持品が登録されていません。';
-  // v90.8.456: 閉じているカードの詳細DOMは生成しない。数百件でも初期描画を軽量化。
+  // v90.8.457: 閉じているカードの詳細DOMは生成しない。数百件でも初期描画を軽量化。
   area.innerHTML=cache.rows.map(inventoryWarehouseCardHtml).join('');
   if($('inventoryEmptyStatus'))$('inventoryEmptyStatus').style.display=cache.warehouseCount?'none':'';
   restoreInventoryCardOpenStates();
@@ -6133,7 +6133,7 @@ function buildCharacterSheetMasterFromGithub(masterDocument={}, manifest={}) {
   };
 }
 function characterGithubDelay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
-// v90.8.456: 共通DB全体(数MB)を毎回JSON.parseし直さないため、キャラシ用に変換済みのマスターをIndexedDBへ保存する。
+// v90.8.457: 共通DB全体(数MB)を毎回JSON.parseし直さないため、キャラシ用に変換済みのマスターをIndexedDBへ保存する。
 const CHARACTER_MASTER_CACHE_DB='recraft_alchemia_character_master_cache_v1';
 const CHARACTER_MASTER_CACHE_STORE='masters';
 function characterMasterCacheOpen(){
@@ -6651,7 +6651,7 @@ async function syncInitialInventoryFromDb(options={}) {
     };
   }
 
-  // v90.8.456: 同じ固定マスターバージョンで再びキャラを開いた場合、
+  // v90.8.457: 同じ固定マスターバージョンで再びキャラを開いた場合、
   // 全倉庫×全マスターの再同期を省き、初期配布品の欠落だけO(初期品数)で確認する。
   if(masterVersion && inventoryMasterSyncVersion===masterVersion && !options.force){
     let added=0;
@@ -6855,7 +6855,7 @@ function applyData(data) {
   setManualCategoryBonuses(currentCharacter.manualCategoryBonuses || {});
   setResourceState(currentCharacter.resources || {});
   legacyEquipmentUpgradeMigrationCount=0;
-  // v90.8.456: 倉庫→装備→倉庫表示の順に1回だけ構築する。
+  // v90.8.457: 倉庫→装備→倉庫表示の順に1回だけ構築する。
   // 旧処理は setInventoryState 内で全倉庫を描画した直後、setEquipmentState が同じ候補群を再構築していた。
   setInventoryState(currentCharacter.inventory || {}, {render:false});
   setEquipmentState(currentCharacter.equipment || {});
