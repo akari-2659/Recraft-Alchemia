@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.453</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.455</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1102,10 +1102,10 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
 .inventory-registration-card>summary{padding:9px 11px!important}
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.453-special-quest-objectives1">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.455-special-quest-objectives1">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.453｜更新：2026年8月9日</div>
+<div class="ra-build-info">v90.8.455｜更新：2026年8月9日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -5107,7 +5107,7 @@ function normalizeInventoryItem(item={}) {
     compatibleWeaponTypes: String(item.compatibleWeaponTypes || item.compatibleWeapons || '').trim(),
     location: '倉庫',
     rank: String(item.rank || '').trim(),
-    price: String(String(item.price ?? '').trim() || String(masterRow?.price ?? '').trim()).trim(),
+    price: String(String(item.price ?? '').trim() || String(masterRow?.sellPrice ?? '').trim() || String(masterRow?.price ?? '').trim()).trim(),
     equipSlot: inferEquipSlotForInventory({ ...item, kind }),
     skill: kind === '武器' ? canonicalWeaponUsageSkill(item) : String(item.skill || '').trim(),
     power: String(item.power || item.damage || item.damageValue || '').trim(),
@@ -5752,7 +5752,7 @@ function dbItemToInventoryItem(row) {
     ammoKind: row.ammoKind || '',
     compatibleWeaponTypes: row.compatibleWeaponTypes || '',
     rank: row.rank || '',
-    price: row.price || '',
+    price: row.sellPrice || row.price || '',
     equipSlot: row.equipSlot || '',
     skill: row.skill || '',
     power: row.power || '',
