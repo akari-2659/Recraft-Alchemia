@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.490</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.495</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1102,10 +1102,10 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
 .inventory-registration-card>summary{padding:9px 11px!important}
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.490-purifying-light-status-fix">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.495-purifying-light-status-fix">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.490｜更新：2026年8月11日</div>
+<div class="ra-build-info">v90.8.495｜更新：2026年8月11日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -3867,12 +3867,23 @@ function fixedUpgradeFormula(stage=0){
 }
 function formulaWithSeparatedTerms(formula='',terms=[]){
   const base=normalizePaletteFormula(formula);if(!base)return '';
-  const clean=(terms||[]).map(v=>String(v??'').trim()).filter(v=>v&&v!=='0'&&v!=='+0'&&v!=='-0');
+  const clean=(terms||[]).map(v=>normalizePaletteFormula(String(v??'')).trim()).filter(v=>v&&v!=='0'&&v!=='+0'&&v!=='-0');
   if(!clean.length)return base;
   const repeated=base.match(/^(.+?)([×xX*]\s*\d+\s*回)$/);
-  const combine=parts=>parts.join('+').replace(/\+\-/g,'-');
-  if(repeated)return `(${combine([repeated[1],...clean])})${repeated[2]}`;
+  const combine=parts=>parts.join('+').replace(/\+\-/g,'-').replace(/\+{2,}/g,'+');
+  if(repeated)return `(${combine([repeated[1].trim(),...clean])})${repeated[2].replace(/[xX*]/,'×')}`;
   return combine([base,...clean]);
+}
+function splitPaletteIndependentRepeatedEffect(formula=''){
+  const base=normalizePaletteFormula(formula);
+  const m=base.match(/^(.+?)\+\s*(防御値無視|防御無視)\s*(.+?[×xX*]\s*\d+\s*回)$/);
+  if(!m)return null;
+  return {primary:m[1].trim(),secondary:m[3].trim().replace(/[xX*]/,'×'),secondaryNote:'防御値無視'};
+}
+function paletteSpellDamageFormulaParts(rawFormula='',skillBonus=0,variableTerm='',fixedTerm=''){
+  const split=splitPaletteIndependentRepeatedEffect(rawFormula);
+  if(!split)return {primary:paletteSpellFormulaWithSeparatedBonuses(rawFormula,skillBonus,variableTerm,fixedTerm),secondary:'',secondaryNote:''};
+  return {primary:paletteSpellFormulaWithSeparatedBonuses(split.primary,skillBonus,variableTerm,fixedTerm),secondary:split.secondary,secondaryNote:split.secondaryNote};
 }
 function equipmentDamageDisplayInfo(slotKey='',equipment=getEquipmentState(),alloc=getSkillAlloc()){
   const eq=equipment?.[slotKey]||{},source=findCsItemById(eq.itemId||'');
@@ -7921,7 +7932,9 @@ function stripSkillPointTerms(value) {
     .trim();
 }
 function normalizePaletteFormula(value) {
-  return stripSkillPointTerms(value).replace(/[ｄＤ]/g, 'D').replace(/d/g, 'D');
+  return stripSkillPointTerms(value)
+    .replace(/[ｄＤ]/g, 'D').replace(/d/g, 'D')
+    .replace(/＋/g, '+').replace(/－/g, '-').replace(/[ｘＸ]/g, '×');
 }
 function paletteInventoryItems(data={}) {
   return normalizeInventoryState(data.inventory || {}).items || [];
@@ -8096,12 +8109,13 @@ function collectSetSpellDamagePaletteLines(data={}) {
       const healing=paletteSpellIsHealing(spell);
       const variableStage=scalable?(healing?spellBookHealStage(item):spellBookPowerStage(item)):0;
       const fixedStage=scalable?(healing?spellBookFixedHealStage(item):spellBookFixedPowerStage(item)):0;
-      const formula = paletteSpellFormulaWithSeparatedBonuses(rawFormula, skillPointBonus, stagedDiceUpgradeFormula(variableStage), fixedUpgradeFormula(fixedStage));
+      const parts = paletteSpellDamageFormulaParts(rawFormula, skillPointBonus, stagedDiceUpgradeFormula(variableStage), fixedUpgradeFormula(fixedStage));
       const label = String(spell.name || name).trim();
-      const key = label + '::' + formula;
+      const key = label + '::' + parts.primary + '::' + parts.secondary;
       if (used.has(key)) continue;
       used.add(key);
-      result.push(`${formula} 【${label}】`);
+      if(parts.primary)result.push(`${parts.primary} 【${label}】`);
+      if(parts.secondary)result.push(`${parts.secondary} 【${label}・継続ダメージ（${parts.secondaryNote}）】`);
     }
   }
   return result;
@@ -8146,8 +8160,9 @@ function collectSetSpellPaletteLines(data={}, totals={}) {
         const healing = paletteSpellIsHealing(spell);
         const variableStage = scalable ? (healing ? spellBookHealStage(container) : spellBookPowerStage(container)) : 0;
         const fixedStage = scalable ? (healing ? spellBookFixedHealStage(container) : spellBookFixedPowerStage(container)) : 0;
-        const formula = paletteSpellFormulaWithSeparatedBonuses(rawFormula, skillPointBonus, stagedDiceUpgradeFormula(variableStage), fixedUpgradeFormula(fixedStage));
-        if (formula) block.push(`${formula} 【${label}】`);
+        const parts = paletteSpellDamageFormulaParts(rawFormula, skillPointBonus, stagedDiceUpgradeFormula(variableStage), fixedUpgradeFormula(fixedStage));
+        if (parts.primary) block.push(`${parts.primary} 【${label}】`);
+        if (parts.secondary) block.push(`${parts.secondary} 【${label}・継続ダメージ（${parts.secondaryNote}）】`);
       }
       appendPaletteBlock(result, block);
     }
