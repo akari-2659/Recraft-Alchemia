@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.504</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.512</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1111,10 +1111,10 @@ body.public-view .loadout-preset-panel{display:none!important}
 @media(max-width:720px){.loadout-preset-head,.loadout-preset-row{grid-template-columns:1fr}.loadout-preset-head{display:grid}.loadout-preset-head .button-row,.loadout-preset-row .button-row{justify-content:flex-start}.loadout-preset-meta{grid-column:1}}
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.504-preset-modal-checks">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.512-focus-hit-skill-bonus-terms">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.504｜更新：2026年8月12日</div>
+<div class="ra-build-info">v90.8.512｜更新：2026年8月12日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -2151,11 +2151,13 @@ function skillTotals(abilities=computeAbilities(), alloc=getSkillAlloc(), equipm
   const equipmentMods = equipment ? computeEquipmentSkillModifiers(equipment) : {};
   const totals = {};
   for (const [key, sk] of Object.entries(SKILL_BY_KEY)) {
-    const base = abilities[sk.ability] || 0;
+    // 能力補正は技能の基礎値へ反映し、技能そのものへの装備補正だけを「その他」に加える。
+    // チャットパレットでは装備・装飾品由来の技能補正を +X の独立項として表示する。
+    const base = Number(abilities[sk.ability] || 0);
     const cat = alloc[key]?.cat || 0;
     const free = alloc[key]?.free || 0;
     const manualOther = 0;
-    const equipmentOther = equipmentMods[key] || 0;
+    const equipmentOther = Number(equipmentMods[key] || 0);
     const other = equipmentOther;
     totals[key] = { base, cat, free, manualOther, equipmentOther, other, add: cat + free + other, total: base + cat + free + other };
   }
@@ -2409,7 +2411,7 @@ function updateCategoryBonuses() {
   ).join('') : '<span class="pill empty">自動技能ボーナスなし</span>';
 }
 function updateSkills() {
-  const abilities = computeAbilities();
+  const abilities = computeEffectiveAbilities(getAbilityValues(), getEquipmentState());
   const alloc = getSkillAlloc();
   const totals = skillTotals(abilities, alloc, getEquipmentState());
   for (const [key, t] of Object.entries(totals)) {
@@ -2540,6 +2542,9 @@ function modifierTargetOptionsHtml(selected='') {
     ]],
     ['リソース', [
       ['resource:maxHp','最大HP'], ['resource:maxMp','最大MP']
+    ]],
+    ['装飾品固有補正', [
+      ['damage:melee','近接ダメージ'], ['damage:alchemyAttack','攻撃調合品ダメージ'], ['damage:trap','罠ダメージ'], ['healing:alchemy','回復調合品回復量']
     ]]
   ];
   let html = '<option value="">選択してください</option>';
@@ -2562,6 +2567,10 @@ function modifierTargetDisplayName(target='') {
   if(key === 'combat:initiative') return '感知';
   if(key === 'resource:maxHp') return '最大HP';
   if(key === 'resource:maxMp') return '最大MP';
+  if(key === 'damage:melee') return '近接ダメージ';
+  if(key === 'damage:alchemyAttack') return '攻撃調合品ダメージ';
+  if(key === 'damage:trap') return '罠ダメージ';
+  if(key === 'healing:alchemy') return '回復調合品回復量';
   if(['skill:monsterKnowledge','skill:materialKnowledge','skill:elementKnowledge'].includes(key)) return '知識';
   if(key.startsWith('ability:')) return ABILITY_NAMES[key.replace('ability:', '')] || key;
   if(key.startsWith('skill:')) {
@@ -2595,7 +2604,8 @@ function normalizeModifierRow(row={}) {
     'monsterKnowledge':'skill:knowledge', 'materialKnowledge':'skill:knowledge', 'elementKnowledge':'skill:knowledge',
     'skill:monsterKnowledge':'skill:knowledge', 'skill:materialKnowledge':'skill:knowledge', 'skill:elementKnowledge':'skill:knowledge',
     '体力':'ability:body', '器用':'ability:dexterity', '感覚':'ability:sense', '知性':'ability:intellect', '意志':'ability:will', '魅力':'ability:charm',
-    '最大HP':'resource:maxHp', 'HP':'resource:maxHp', '最大MP':'resource:maxMp', 'MP':'resource:maxMp', '先制':'skill:detect', '先制値':'skill:detect', 'combat:initiative':'skill:detect'
+    '最大HP':'resource:maxHp', 'HP':'resource:maxHp', '最大MP':'resource:maxMp', 'MP':'resource:maxMp', '先制':'skill:detect', '先制値':'skill:detect', 'combat:initiative':'skill:detect',
+    '近接ダメージ':'damage:melee', '攻撃調合品ダメージ':'damage:alchemyAttack', '罠ダメージ':'damage:trap', '回復調合品回復量':'healing:alchemy'
   };
   const target = /^知識[:：]/.test(rawTarget) ? 'skill:knowledge' : (aliases[rawTarget] || rawTarget);
   return target || value ? { target, value } : null;
@@ -2715,6 +2725,22 @@ function equipmentItemIsActive(item={}) {
 function activeEquipmentModifierRows(item={}) {
   if (!equipmentItemIsActive(item || {})) return [];
   return equipmentModifierRows(item).concat(equipmentUpgradeModifierRows(item));
+}
+function equipmentContextModifierSources(equipment=getEquipmentState(), target='') {
+  const out=[];
+  for (const slot of EQUIPMENT_SLOTS) {
+    if (slot.kind === 'carry') continue;
+    const item=(equipment||{})[slot.key]||{};
+    if(!equipmentItemIsActive(item)) continue;
+    const value=activeEquipmentModifierRows(item)
+      .filter(row=>String(row.target||'')===String(target||''))
+      .reduce((sum,row)=>sum+modifierValue(row),0);
+    if(value) out.push({slotKey:slot.key,slotLabel:slot.name,name:String(item.name||'').trim(),value});
+  }
+  return out;
+}
+function equipmentContextModifierTotal(equipment=getEquipmentState(), target='') {
+  return equipmentContextModifierSources(equipment,target).reduce((sum,row)=>sum+Number(row.value||0),0);
 }
 
 function isDualOneHandWeaponSetup(equipment=getEquipmentState()) {
@@ -2964,7 +2990,7 @@ function allocatedSkillPoints(skillKey, alloc=getSkillAlloc()) {
   const row = alloc?.[skillKey] || {};
   return (Number(row.cat) || 0) + (Number(row.free) || 0);
 }
-function computeCombatStats(abilities=computeAbilities(), alloc=getSkillAlloc(), equipment=getEquipmentState()) {
+function computeCombatStats(abilities=computeEffectiveAbilities(getAbilityValues(), getEquipmentState()), alloc=getSkillAlloc(), equipment=getEquipmentState()) {
   const totals = skillTotals(abilities, alloc, equipment);
   const combatMods = computeEquipmentCombatModifiers(equipment);
   const defenseValue = combatMods.defense;
@@ -2980,7 +3006,7 @@ function computeCombatStats(abilities=computeAbilities(), alloc=getSkillAlloc(),
   return { defenseTotal:defenseValue, defenseValue, defenseSkillPoints, constantDamageReduction, guardActionValue, evasionTotal, evadeSkill, evadeModifier, resistanceTotal, resistSkill, resistModifier, combatMods, hitMods: equipmentHitModifierStats(equipment), dualWield: computeDualWieldStats(equipment) };
 }
 function updateCombatStats() {
-  const combat = computeCombatStats(computeAbilities(), getSkillAlloc(), getEquipmentState());
+  const combat = computeCombatStats(computeEffectiveAbilities(getAbilityValues(), getEquipmentState()), getSkillAlloc(), getEquipmentState());
   const hitCards = combat.hitMods?.mode === 'twoHand'
     ? `<div class="ability-card computed-card"><div class="ability-name">両手命中補正</div><div class="computed-value big">${signedNumberText(combat.hitMods.twoHand || 0) || '0'}</div></div>`
     : `<div class="ability-card computed-card"><div class="ability-name">右手命中補正</div><div class="computed-value big">${signedNumberText(combat.hitMods?.right || 0) || '0'}</div></div>
@@ -3023,7 +3049,7 @@ function updateCombatStats() {
   return combat;
 }
 
-function computeResources(abilities=computeAbilities(), resources=getResourceState(), equipment=getEquipmentState()) {
+function computeResources(abilities=computeEffectiveAbilities(getAbilityValues(), getEquipmentState()), resources=getResourceState(), equipment=getEquipmentState()) {
   const hpBonusPoints = Math.max(0, resources.hpBonus || 0);
   const mpBonusPoints = Math.max(0, resources.mpBonus || 0);
   const combatMods = computeEquipmentCombatModifiers(equipment);
@@ -3042,7 +3068,7 @@ function computeResources(abilities=computeAbilities(), resources=getResourceSta
   };
 }
 function updateResources() {
-  const res = computeResources(computeAbilities(), getResourceState(), getEquipmentState());
+  const res = computeResources(computeEffectiveAbilities(getAbilityValues(), getEquipmentState()), getResourceState(), getEquipmentState());
   if ($('maxHp')) $('maxHp').textContent = res.maxHp;
   if ($('maxMp')) $('maxMp').textContent = res.maxMp;
   if ($('currentHp') && !$('currentHp').value) $('currentHp').value = res.maxHp;
@@ -3927,6 +3953,7 @@ function equipmentDamageDisplayInfo(slotKey='',equipment=getEquipmentState(),all
   const powerStage=equipmentUpgradeStageFromSources([/^威力強化$/],source,eq,item);
   const fixedPowerStage=equipmentUpgradeStageFromSources([/^威力固定強化$/],source,eq,item);
   const powerTerm=stagedDiceUpgradeFormula(powerStage),fixedPowerTerm=fixedUpgradeFormula(fixedPowerStage);
+  const accessoryDamageBonus=skillKey==='melee'?equipmentContextModifierTotal(equipment,'damage:melee'):0;
   let offhandBonus=0;
   const twoHand=isPaletteTwoHandEquipment({...item,type},source);
   if(!twoHand&&HAND_SLOT_KEYS.includes(slotKey)){
@@ -3934,8 +3961,8 @@ function equipmentDamageDisplayInfo(slotKey='',equipment=getEquipmentState(),all
     const otherMerged=normalizeInventoryItem({...(otherSource||{}),...(other||{}),type:other.type||otherSource?.itemCategory||otherSource?.category||''});
     if(canUseAsDualWeapon(otherMerged)&&!isPaletteTwoHandEquipment(otherMerged,otherSource))offhandBonus=paletteOffhandBonusForItem(otherMerged,otherSource);
   }
-  const formula=formulaWithSeparatedTerms(base,[offhandBonus||'',skillBonus||'',powerTerm,fixedPowerTerm]);
-  const breakdown=[`武器ダメージ ${base}`,offhandBonus?`副手攻撃値 ${signedNumberText(offhandBonus)}`:'',skillName&&skillBonus?`${skillName} +${skillBonus}`:'',powerTerm?`威力強化${powerStage} +${powerTerm}`:'',fixedPowerTerm?`威力固定強化${fixedPowerStage} +${fixedPowerTerm}`:''].filter(Boolean).join(' / ');
+  const formula=formulaWithSeparatedTerms(base,[offhandBonus||'',skillBonus||'',powerTerm,fixedPowerTerm,accessoryDamageBonus||'']);
+  const breakdown=[`武器ダメージ ${base}`,offhandBonus?`副手攻撃値 ${signedNumberText(offhandBonus)}`:'',skillName&&skillBonus?`${skillName} +${skillBonus}`:'',powerTerm?`威力強化${powerStage} +${powerTerm}`:'',fixedPowerTerm?`威力固定強化${fixedPowerStage} +${fixedPowerTerm}`:'',accessoryDamageBonus?`装飾品 +${accessoryDamageBonus}`:''].filter(Boolean).join(' / ');
   return {formula,breakdown};
 }
 function setEquipmentDisplayText(id,value='—'){const el=$(id);if(el)el.textContent=(value===undefined||value===null)?'—':String(value);}
@@ -8172,14 +8199,21 @@ function skillTotalByName(totals, skillName) {
   if (!key) return null;
   return totals[key]?.total || 0;
 }
+function paletteSkillValueParts(totals={}, skillName='') {
+  const key=CHECK_SKILL_NAME_TO_KEY[String(skillName||'').trim()];
+  if(!key)return null;
+  const row=totals?.[key]||{};
+  const total=Number(row.total||0),equipment=Number(row.equipmentOther||0);
+  return {total,equipment,base:total-equipment,key};
+}
 function paletteCheckLineFromExpression(checkType, label, totals, extraMod='', globalMod=0) {
   const parsed = parseCheckExpression(checkType);
   if (!parsed.skillName || !parsed.right || parsed.skillName === 'なし') return '';
-  const v = skillTotalByName(totals, parsed.skillName);
-  if (v === null) return '';
+  const parts=paletteSkillValueParts(totals,parsed.skillName);
+  if (!parts) return '';
   const mod = String(extraMod || '').trim();
   const rhs = parsed.right || '目標値';
-  return `2D6+${checkFormulaValue(v,[mod,signedNumberText(globalMod)])}>=${rhs} 【${label}】`;
+  return `2D6+${paletteSkillFormulaValue(parts,[mod,signedNumberText(globalMod)])}>=${rhs} 【${label}】`;
 }
 function fatiguePenaltyForData(data={}){
   const fatigue=Math.max(0,Number(data?.resources?.fatigue)||0);
@@ -8187,7 +8221,11 @@ function fatiguePenaltyForData(data={}){
 }
 function checkFormulaValue(base=0, parts=[]){
   const extras=(parts||[]).map(v=>String(v||'').trim()).filter(v=>v && v!=='0' && v!=='+0' && v!=='-0');
-  return extras.length ? `(${base}${extras.join('')})` : String(base);
+  return `${base}${extras.join('')}`;
+}
+function paletteSkillFormulaValue(parts={}, extras=[]){
+  const equipment=Number(parts?.equipment||0);
+  return checkFormulaValue(Number(parts?.base||0),[equipment?signedNumberText(equipment):'',...(extras||[])]);
 }
 function signedHitFormulaPart(value=0) {
   const n = Number(value || 0);
@@ -8197,10 +8235,10 @@ function signedHitFormulaPart(value=0) {
 function paletteWeaponCheckLineFromExpression(checkType, handLabel, totals, hitMod=0, globalMod=0) {
   const parsed = parseCheckExpression(checkType);
   if (!parsed.skillName || !parsed.right || parsed.skillName === 'なし') return '';
-  const v = skillTotalByName(totals, parsed.skillName);
-  if (v === null) return '';
+  const parts=paletteSkillValueParts(totals,parsed.skillName);
+  if (!parts) return '';
   const rhs = parsed.right || '回避値';
-  return `2D6+${checkFormulaValue(v,[signedHitFormulaPart(hitMod),signedNumberText(globalMod)])}>=${rhs} 【${handLabel}命中(${parsed.skillName})】`;
+  return `2D6+${paletteSkillFormulaValue(parts,[signedHitFormulaPart(hitMod),signedNumberText(globalMod)])}>=${rhs} 【${handLabel}命中(${parsed.skillName})】`;
 }
 function weaponPaletteSkillNames(defaultSkill='') {
   const skill = String(defaultSkill || '').trim();
@@ -8308,8 +8346,9 @@ function collectWeaponDamagePaletteLines(data={}, totals={}) {
     }
     const powerStage=equipmentUpgradeStageFromSources([/^威力強化$/],source,item,merged);
     const fixedPowerStage=equipmentUpgradeStageFromSources([/^威力固定強化$/],source,item,merged);
+    const accessoryDamageBonus=skillKey==='melee'?equipmentContextModifierTotal(equipment,'damage:melee'):0;
     const effectiveElement = merged.element||source?.element||item.element||'物';
-    const formula = paletteDamageFormulaWithBonus(power, skillBonus, offhandBonus, stagedDiceUpgradeFormula(powerStage), fixedUpgradeFormula(fixedPowerStage));
+    const formula = formulaWithSeparatedTerms(power,[offhandBonus||'',skillBonus||'',stagedDiceUpgradeFormula(powerStage),fixedUpgradeFormula(fixedPowerStage),accessoryDamageBonus||'']);
     if (!formula) continue;
     const skillLabel = skillKey === 'shoot' ? '射撃' : (skillKey === 'melee' ? '近接' : '');
     const elementLabel = effectiveElement ? ` / ${effectiveElement}` : '';
@@ -8430,9 +8469,12 @@ function collectSetSpellPaletteLines(data={}, totals={}) {
   const used = new Set();
   for (const slot of EQUIPMENT_SLOTS) {
     if (slot.kind === 'carry') continue;
-    const container = equipment[slot.key] || {};
-    const type = normalizeEquipmentType(container.type || 'なし');
+    const containerRaw = equipment[slot.key] || {};
+    const containerSource = findPaletteInventoryItem(items, containerRaw);
+    const container = normalizeInventoryItem({ ...(containerSource || {}), ...(containerRaw || {}) });
+    const type = normalizeEquipmentType(container.type || container.category || 'なし');
     if (!spellContainerKind(type)) continue;
+    const attackHitBonus = paletteAttackHitModifier(equipment,slot.key,container);
     const names = splitFormulaList(container.setSpells || container.knownSpells || '');
     for (const name of names) {
       const spell = findPaletteSpellByName(items, name) || normalizeInventoryItem({ name, kind:'術式' });
@@ -8450,14 +8492,14 @@ function collectSetSpellPaletteLines(data={}, totals={}) {
         checkTypeOrDefault(spell, defaultSkill, defaultSkill === '魔法' ? '回避値' : '目標値'),
         label,
         totals,
-        signedNumberText(spellBookHitBonus(container)),
+        signedNumberText(attackHitBonus),
         globalMod
       );
       if (checkLine) block.push(checkLine);
       if(focusEligible){
         const baseCheck=checkTypeOrDefault(spell,'魔法','回避値');
         const focusCheck=forceCheckExpressionLeft(baseCheck,'集中',checkExpressionRightDisplay(baseCheck,'回避値')||'回避値');
-        const focusedCheckLine=paletteCheckLineFromExpression(focusCheck,`${label}・集中攻撃`,totals,signedNumberText(spellBookHitBonus(container)+2),globalMod);
+        const focusedCheckLine=paletteCheckLineFromExpression(focusCheck,`${label}・集中攻撃`,totals,signedNumberText(attackHitBonus+2),globalMod);
         if(focusedCheckLine)block.push(focusedCheckLine);
       }
       if (rawFormula) {
@@ -8494,6 +8536,23 @@ function hitModifierValueForItem(item={}) {
 function signedHitModifierForPalette(item={}) {
   const n = hitModifierValueForItem(item);
   return n ? signedNumberText(n) : '';
+}
+function paletteOtherEquipmentHitModifier(equipment={}, activeSlotKey='') {
+  let total=0;
+  for(const slot of EQUIPMENT_SLOTS){
+    if(slot.kind==='carry'||slot.key===activeSlotKey)continue;
+    // もう一方の手に持つ武器・書物の命中補正は、現在使う攻撃へ横流ししない。
+    if(HAND_SLOT_KEYS.includes(slot.key))continue;
+    const item=(equipment||{})[slot.key]||{};
+    if(!equipmentItemIsActive(item))continue;
+    total+=activeEquipmentModifierRows(item)
+      .filter(row=>String(row.target||'')==='hit')
+      .reduce((sum,row)=>sum+modifierValue(row),0);
+  }
+  return total;
+}
+function paletteAttackHitModifier(equipment={}, activeSlotKey='', item={}) {
+  return hitModifierValueForItem(item)+paletteOtherEquipmentHitModifier(equipment,activeSlotKey);
 }
 function defaultSkillForEquipmentItem(item={}, slotKey='') {
   const type = normalizeEquipmentType(item.type || item.category || item.kind || 'なし');
@@ -8537,14 +8596,14 @@ function collectCheckPaletteLines(data={}, totals={}) {
     const defaultSkill = defaultSkillForEquipmentItem(merged, spec.key);
     const rhs = checkExpressionRightDisplay(merged.checkType || '', '回避値') || '回避値';
     const handLabel = isPaletteTwoHandEquipment(merged, source) ? '両手' : spec.label;
-    const hitMod = hitModifierValueForItem(merged);
+    const hitMod = paletteAttackHitModifier(equipment,spec.key,merged);
     for (const skillName of weaponPaletteSkillNames(defaultSkill)) {
       pushWeaponLine(`${skillName}>=${rhs}`, handLabel, hitMod);
     }
     if(defaultSkill==='射撃') {
-      const focusValue=skillTotalByName(totals,'集中');
-      if(focusValue!==null){
-        const focusLine=`2D6+${checkFormulaValue(focusValue,[signedHitFormulaPart(hitMod),'+2',signedNumberText(globalMod)])}>=${rhs} 【${handLabel}集中攻撃命中】`;
+      const focusParts=paletteSkillValueParts(totals,'集中');
+      if(focusParts){
+        const focusLine=`2D6+${paletteSkillFormulaValue(focusParts,[signedHitFormulaPart(hitMod),'+2',signedNumberText(globalMod)])}>=${rhs} 【${handLabel}集中攻撃命中】`;
         if(!used.has(focusLine)){used.add(focusLine);result.push(focusLine);}
       }
     }
@@ -8563,6 +8622,47 @@ function collectCheckPaletteLines(data={}, totals={}) {
     if (!line || used.has(line)) continue;
     used.add(line);
     result.push(line);
+  }
+  return result;
+}
+
+function paletteCarryItemType(item={}){return String(item.itemType||item.kind||'').trim();}
+function paletteCarryItemCategory(item={}){return String(item.itemCategory||item.category||'').trim();}
+function paletteItemHasDirectDamage(item={}){
+  const type=paletteCarryItemType(item),cat=paletteCarryItemCategory(item),effect=String(item.effect||item.note||'');
+  if(type==='調合品'&&cat==='攻撃')return true;
+  if(type==='道具'&&cat==='罠')return /(?:直接ダメージ|ダメージを与|属性\d*D|属性ダメージ|命中時[^。]*ダメージ)/.test(effect)&&!/毒蓄積[^。]*ダメージ/.test(effect);
+  return false;
+}
+function paletteContextBonusLabel(target=''){
+  return modifierTargetDisplayName(target)||target;
+}
+function collectCarryItemPaletteLines(data={},totals={}){
+  const equipment=data.equipment||{},items=paletteInventoryItems(data),result=[],seen=new Set();
+  const bonusMap={alchemyAttack:'damage:alchemyAttack',trap:'damage:trap',alchemyHeal:'healing:alchemy'};
+  for(const slot of EQUIPMENT_SLOTS){
+    if(slot.kind!=='carry')continue;
+    const eq=equipment[slot.key]||{},source=findPaletteInventoryItem(items,eq);
+    const item=normalizeInventoryItem({...(source||{}),...(eq||{})});
+    const name=String(item.name||'').trim();if(!name)continue;
+    const power=normalizePaletteFormula(item.power||'');if(!power)continue;
+    const type=paletteCarryItemType(item),cat=paletteCarryItemCategory(item);
+    let context='';
+    if(type==='調合品'&&cat==='攻撃'&&paletteItemHasDirectDamage(item))context='alchemyAttack';
+    else if(type==='道具'&&cat==='罠'&&paletteItemHasDirectDamage(item))context='trap';
+    else if(type==='調合品'&&cat==='回復')context='alchemyHeal';
+    const target=context?bonusMap[context]:'';
+    const bonus=target?equipmentContextModifierTotal(equipment,target):0;
+    const formula=formulaWithSeparatedTerms(power,[bonus||'']);
+    const key=`${name}::${formula}::${slot.key}`;if(seen.has(key))continue;seen.add(key);
+    const count=Math.max(1,Number(eq.count||1)||1);
+    const role=context==='alchemyHeal'?'回復':(context==='trap'?'罠ダメージ':(context==='alchemyAttack'?'攻撃調合品':'道具'));
+    const block=[`${formula} 【${name} / ${role}${count>1?` / ×${count}`:''}】`];
+    if(bonus){
+      const sources=equipmentContextModifierSources(equipment,target).map(row=>`${row.name||row.slotLabel}${signedNumberText(row.value)}`).join('、');
+      block.push(`// 装飾品補正：${paletteContextBonusLabel(target)} ${signedNumberText(bonus)}${sources?`（${sources}）`:''}`);
+    }
+    appendPaletteBlock(result,block);
   }
   return result;
 }
@@ -8587,9 +8687,11 @@ function collectEquipmentEffectPaletteLines(data={}){
     const isShield=['盾','大盾'].includes(type)||String(merged.itemType||'')==='盾';
     const category=merged.kind==='装飾品'?'装飾品':(merged.kind==='防具'||isShield?'防具':'武器');
     const baseEffect=String(source?.effect||merged.effect||eq.note||'').trim();
+    const modifierRows=activeEquipmentModifierRows(merged);
     const upgrades=parseUpgradeLines(source?.upgradeEntries||eq.upgradeEntries||source?.upgradeLines||eq.upgradeLines||'').filter(entry=>normalizeUpgradeEntry(entry).content==='素材固有効果');
-    if(!baseEffect&&!upgrades.length)continue;
+    if(!baseEffect&&!modifierRows.length&&!upgrades.length)continue;
     const block=[`// 【${category}・${slot.label}：${name}】`];
+    if(modifierRows.length)block.push(`// 補正：${modifierRows.map(row=>`${modifierTargetDisplayName(row.target)} ${signedNumberText(row.value)||row.value}`).join(' / ')}`);
     if(baseEffect)block.push(`// ${category==='武器'?'追加効果':category==='防具'?'特殊効果':'効果'}：${baseEffect}`);
     const seenUpgradeSpecialEffects=new Set();
     upgrades.forEach(raw=>{
@@ -8624,8 +8726,9 @@ function generatePaletteExport(data=collectData(false)) {
 
   for (const cat of SKILL_CATEGORIES) {
     for (const sk of cat.skills) {
-      const v = totals[sk.key]?.total || 0;
-      lines.push(`2D6+${checkFormulaValue(v,[signedNumberText(fatiguePenalty)])}>=目標値 【${sk.name}】`);
+      const row=totals[sk.key]||{};
+      const parts=paletteSkillValueParts(totals,sk.name)||{base:Number(row.total||0),equipment:0};
+      lines.push(`2D6+${paletteSkillFormulaValue(parts,[signedNumberText(fatiguePenalty)])}>=目標値 【${sk.name}】`);
     }
   }
 
@@ -8643,6 +8746,9 @@ function generatePaletteExport(data=collectData(false)) {
 
   const spellLines = collectSetSpellPaletteLines(data, totals);
   if (spellLines.length) appendPaletteBlock(lines, spellLines);
+
+  const carryItemLines=collectCarryItemPaletteLines(data,totals);
+  if(carryItemLines.length)appendPaletteBlock(lines,carryItemLines);
 
   explanationLines.push('// 集中攻撃：主行動で集中し、次の自分のターン開始まで1点以上のダメージを受けなければ、射撃武器またはダメージ魔法を集中技能+2で判定する。命中時は通常ダメージにダメージダイス+1個。射撃・魔法の配分ポイント、後衛狙い-2、矢弾・MP消費は通常どおり。');
   if (fatiguePenalty) explanationLines.unshift(`// 疲労度${Math.max(0,Number(data?.resources?.fatigue)||0)}：すべての判定${fatiguePenalty}`);
