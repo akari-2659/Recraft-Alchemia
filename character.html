@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.495</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.504</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1101,11 +1101,20 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
 .inventory-registration-card{margin:8px 0 12px!important}
 .inventory-registration-card>summary{padding:9px 11px!important}
 </style>
+<style id="raLoadoutPresetsV504">
+.loadout-preset-panel{margin:0 0 12px;padding:12px;border:1px solid rgba(184,119,56,.24);border-radius:14px;background:rgba(255,253,248,.78)}
+.loadout-preset-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px}.loadout-preset-head h3{margin:0;font-size:1rem}.loadout-preset-head .small{margin-top:2px}.loadout-preset-head .button-row{margin:0;flex:0 0 auto}
+.loadout-preset-list{display:grid;gap:8px;margin-top:10px}.loadout-preset-empty{padding:10px;border:1px dashed var(--line);border-radius:11px;color:var(--muted);background:rgba(255,255,255,.48)}
+.loadout-preset-row{display:grid;grid-template-columns:minmax(160px,1fr) auto;gap:8px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:12px;background:#fffdf8}.loadout-preset-name{min-width:0;font-weight:900;color:var(--accent2);overflow-wrap:anywhere}.loadout-preset-row .button-row{margin:0;justify-content:flex-end}.loadout-preset-meta{grid-column:1/-1;font-size:.76rem;color:var(--muted);line-height:1.45}
+.loadout-preset-dialog .dialog-inner{width:min(680px,calc(100vw - 32px))}.loadout-preset-modal-summary{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fffdf8;line-height:1.6}.loadout-preset-shortages{display:grid;gap:7px;margin-top:10px}.loadout-preset-shortage{padding:9px 10px;border:1px solid rgba(173,91,57,.28);border-radius:10px;background:rgba(255,243,236,.8);color:#7d3828;font-weight:800}.loadout-preset-ok{padding:9px 10px;border:1px solid rgba(66,128,87,.25);border-radius:10px;background:rgba(238,249,241,.8);color:#315f41;font-weight:800}.loadout-preset-dialog .field{margin-top:10px}.loadout-preset-dialog .field input{width:100%}
+body.public-view .loadout-preset-panel{display:none!important}
+@media(max-width:720px){.loadout-preset-head,.loadout-preset-row{grid-template-columns:1fr}.loadout-preset-head{display:grid}.loadout-preset-head .button-row,.loadout-preset-row .button-row{justify-content:flex-start}.loadout-preset-meta{grid-column:1}}
+</style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.495-purifying-light-status-fix">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.504-preset-modal-checks">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.495｜更新：2026年8月11日</div>
+<div class="ra-build-info">v90.8.504｜更新：2026年8月12日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -1402,12 +1411,20 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
             <button id="loadEquipmentCategoriesBtn" type="button" class="ghost">共通DBを再読込</button>
             <span id="equipmentCategoryStatus" class="small">GitHub共通DBを確認しています。取得できない場合はGASへ切り替えます。</span>
           </div>
+          <div class="loadout-preset-panel" data-private-view="1">
+            <div class="loadout-preset-head"><div><h3>装備プリセット</h3><div class="small">右手・左手・鎧・装飾品と、魔導書・祈祷書・魔印・聖印にセットした術式をまとめて保存します。</div></div><div class="button-row"><button id="saveEquipmentPresetBtn" data-loadout-preset-action="save-equipment" type="button">新規登録</button></div></div>
+            <div id="equipmentPresetList" class="loadout-preset-list"></div>
+          </div>
           <div id="equipmentArea" class="equipment-grid"></div>
         </div>
       </details>
     </div>
 
     <div id="tabCarry" class="editor-tab-page">
+      <div class="loadout-preset-panel" data-private-view="1">
+        <div class="loadout-preset-head"><div><h3>所持品プリセット</h3><div class="small">バッグ・矢筒・矢弾・冒険へ持ち出す所持品をまとめて保存します。呼び出し前に不足品を確認し、不足があっても不足分を除いて呼び出せます。</div></div><div class="button-row"><button id="saveCarryPresetBtn" data-loadout-preset-action="save-carry" type="button">新規登録</button></div></div>
+        <div id="carryPresetList" class="loadout-preset-list"></div>
+      </div>
       <details class="big-section carry-big-section">
         <summary>バッグ</summary>
         <div class="section-body">
@@ -1539,6 +1556,19 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
   </div>
 </dialog>
 
+
+<dialog id="loadoutPresetDialog" class="output-dialog loadout-preset-dialog">
+  <div class="dialog-inner">
+    <div id="loadoutPresetDialogTitle" class="dialog-title">プリセット</div>
+    <div id="loadoutPresetDialogBody"></div>
+    <div class="button-row" style="margin-top:12px;">
+      <button id="loadoutPresetDialogPrimaryBtn" type="button">決定</button>
+      <button id="loadoutPresetDialogCloseBtn" type="button" class="ghost">閉じる</button>
+    </div>
+    <div id="loadoutPresetDialogStatus" class="status-box">内容を確認してください。</div>
+  </div>
+</dialog>
+
 <dialog id="inventoryDialog" class="output-dialog">
   <div class="dialog-inner">
     <div id="inventoryDialogTitle" class="dialog-title">アイテムを追加</div>
@@ -1658,7 +1688,7 @@ const SKILL_CATEGORIES = [
   ]},
   { key:'will', name:'意志系', ability:'will', skills:[
     { key:'resist', name:'抵抗', desc:'状態異常や精神干渉に耐える', detail:'毒・汚染・呪い・麻痺・睡眠や精神干渉、弱体化などに耐える基準です。身体・精神・状態に作用する効果へ使用します。抵抗値 = 5 + 抵抗技能値 + 装備などの抵抗補正。' },
-    { key:'focus', name:'集中', desc:'行動を維持する', detail:'長時間の作業、高難度の調合、儀式、継続的な魔力操作など、精神を乱さずに行動を続ける判定に使用します。戦闘中は、妨害を受けながら術式や特殊な行動を維持する場面でも使います。' },
+    { key:'focus', name:'集中', desc:'維持・集中攻撃', detail:'長時間の作業、高難度の調合、儀式、継続的な魔力操作など、精神を乱さずに行動を続ける判定に使用します。戦闘中は主行動を使用して集中状態になれます。集中開始後から次の自分のターン開始までに1点以上のダメージを受けると集中は解除されます。維持したまま次の自分のターンを迎えた場合、射撃武器による攻撃またはダメージを与える魔法を1回行えます。その攻撃は本来の射撃・魔法の代わりに集中技能で判定し、判定に+2します。命中時は通常どおり射撃または魔法へ割り振ったポイントをダメージへ加え、さらにダメージダイスを1個追加します。単体・複数・列・範囲を問わず適用し、複数対象では各対象のダメージロールへ適用します。敵前衛がいる状態で射撃武器から後衛を狙う-2補正は通常どおり受けます。矢弾・MPなどの消費は攻撃1回分のみで、攻撃後に集中状態を解除します。祈祷には使用できません。' },
     { key:'magic', name:'魔法', desc:'魔法術式', detail:'魔法術式を使用する時の判定に使用します。魔法術式でダメージを与える場合、術式ダメージに魔法へ振り分けたポイント分のダメージを追加します。' },
     { key:'prayer', name:'祈祷', desc:'祈祷術式', detail:'祈祷術式を使用する時の判定に使用します。祈祷術式でダメージや回復を行う場合、術式の効果量に祈祷へ振り分けたポイント分を追加します。浄化、加護、回復、精神支援にも関わります。' },
   ]},
@@ -1720,8 +1750,8 @@ const BASE_EQUIPMENT_SLOTS = [
   { key:'rightHand', name:'右手', kind:'hand', typeOptions:HAND_TYPE_OPTIONS },
   { key:'leftHand', name:'左手', kind:'hand', typeOptions:HAND_TYPE_OPTIONS },
   { key:'armor', name:'鎧', kind:'armor', typeOptions:['なし','普段着','旅風のジャケット','鉄紐のベスト','鋲打ちの胴衣','星糸のケープ','祈り布のストール','特殊防具'] },
-  { key:'accessory1', name:'装飾品1', kind:'accessory', typeOptions:['なし','装飾品','魔印','聖印','護符','指輪','腕輪','その他'] },
-  { key:'accessory2', name:'装飾品2', kind:'accessory', typeOptions:['なし','装飾品','魔印','聖印','護符','指輪','腕輪','その他'] },
+  { key:'accessory1', name:'装飾品1', kind:'accessory', typeOptions:['なし','装飾品','魔印','聖印','護符','指輪','腕輪','耳飾り','首飾り','ブローチ','片眼鏡','髪飾り','魔導石','その他'] },
+  { key:'accessory2', name:'装飾品2', kind:'accessory', typeOptions:['なし','装飾品','魔印','聖印','護符','指輪','腕輪','耳飾り','首飾り','ブローチ','片眼鏡','髪飾り','魔導石','その他'] },
 ];
 const EQUIPMENT_SLOTS = BASE_EQUIPMENT_SLOTS.concat(Array.from({ length:CARRY_SLOT_MAX }, (_, i) => ({
   key:'carry' + (i + 1),
@@ -3120,7 +3150,7 @@ function characterCraftingToolName(craftSkill='',craftType=''){
   const type=String(craftType||'').trim();
   if(skill==='調合'||type==='調合') return '調合道具';
   if(type==='細工'||type==='仕掛け製作'||skill==='設計') return '細工道具';
-  if(['武器派生','防具製作','盾製作','装飾品製作','バッグ製作','矢筒製作','鍛冶製作','鍛冶'].includes(type)) return '鍛冶道具';
+  if(['武器派生','防具製作','盾製作','装飾品製作','装飾品強化','バッグ製作','矢筒製作','鍛冶製作','鍛冶'].includes(type)) return '鍛冶道具';
   if(skill==='細工') return '細工道具';
   return '対応道具';
 }
@@ -4519,6 +4549,7 @@ let selectedBagId = '';
 let selectedQuiverId = '';
 let quiverAmmoSlotsState = {};
 let carryWarehouseAllocationState = {};
+let loadoutPresetsState = { equipment:[], carry:[] };
 let inventoryMasterSyncVersion = '';
 
 // v90.8.457: 倉庫派生データを1回だけ作り、同じ操作内で何度も全件normalize/filterしない。
@@ -4602,6 +4633,263 @@ function inventoryIndexByLookup(itemId='',itemName=''){
     }
   }
   return -1;
+}
+
+function defaultLoadoutPresets(){ return { equipment:[], carry:[] }; }
+function normalizeLoadoutPresetEntry(raw={}, type='equipment'){
+  const presetType = type === 'carry' ? 'carry' : 'equipment';
+  const id = String(raw.id || '').trim() || uuid();
+  const name = String(raw.name || '').trim().slice(0,40) || (presetType === 'carry' ? '所持品プリセット' : '装備プリセット');
+  return { id, name, updatedAt:String(raw.updatedAt || nowIso()), data:(raw.data && typeof raw.data === 'object') ? raw.data : {} };
+}
+function normalizeLoadoutPresets(value={}){
+  const src = value && typeof value === 'object' ? value : {};
+  return {
+    equipment:(Array.isArray(src.equipment) ? src.equipment : []).filter(Boolean).map(v=>normalizeLoadoutPresetEntry(v,'equipment')),
+    carry:(Array.isArray(src.carry) ? src.carry : []).filter(Boolean).map(v=>normalizeLoadoutPresetEntry(v,'carry'))
+  };
+}
+function equipmentPresetSnapshot(){
+  syncAllEquipmentSpellSetsToInventory();
+  const eq=getEquipmentState();
+  const slots={};
+  for(const slot of BASE_EQUIPMENT_SLOTS){
+    const row=eq[slot.key]||{};
+    slots[slot.key]={ itemId:String(row.itemId||'').trim(), name:String(row.name||'').trim(), setSpells:String(row.setSpells||'').trim() };
+  }
+  return { slots };
+}
+function carryPresetSnapshot(){
+  const eq=getEquipmentState();
+  const slots={};
+  for(const slot of EQUIPMENT_SLOTS){
+    if(slot.kind!=='carry')continue;
+    const row=eq[slot.key]||{};
+    const allocation=carryWarehouseAllocationState[slot.key]||{};
+    if(!row.name&&!allocation.warehouseAllocated)continue;
+    slots[slot.key]={ itemId:String(allocation.warehouseItemId||row.itemId||'').trim(), name:String(row.name||'').trim(), count:clampInt(allocation.count||row.count||1,1,99) };
+  }
+  const ammo={};
+  for(const [key,raw] of Object.entries(quiverAmmoSlotsState||{})){
+    const row=normalizeQuiverAmmoSlotState(raw); if(!row||!row.itemId)continue;
+    ammo[key]={ itemId:String(row.itemId||'').trim(), name:String(row.name||'').trim(), count:clampInt(row.count||1,1,9999) };
+  }
+  const bag=selectedBagItem(), quiver=selectedQuiverItem();
+  return { bagId:String(selectedBagId||'').trim(), bagName:String(bag?.name||'').trim(), quiverId:String(selectedQuiverId||'').trim(), quiverName:String(quiver?.name||'').trim(), slots, quiverAmmoSlots:ammo };
+}
+function presetSummaryText(type='equipment', data={}){
+  if(type==='carry'){
+    const carryCount=Object.keys(data.slots||{}).length, ammoCount=Object.keys(data.quiverAmmoSlots||{}).length;
+    return `所持品${carryCount}枠 / 矢弾${ammoCount}枠${data.bagId||data.bagName?' / バッグ登録':''}${data.quiverId||data.quiverName?' / 矢筒登録':''}`;
+  }
+  const rows=Object.values(data.slots||{}); const equipped=rows.filter(v=>String(v?.itemId||v?.name||'').trim()).length;
+  const spells=rows.reduce((sum,v)=>sum+splitFormulaList(v?.setSpells||'').length,0);
+  return `装備${equipped}枠 / セット術式${spells}件`;
+}
+function loadoutPresetTypeLabel(type='equipment'){return type==='carry'?'所持品プリセット':'装備プリセット';}
+function renderLoadoutPresetList(type='equipment'){
+  const isCarry=type==='carry', area=$(isCarry?'carryPresetList':'equipmentPresetList'); if(!area)return;
+  const rows=(loadoutPresetsState?.[type]||[]);
+  if(!rows.length){area.innerHTML='<div class="loadout-preset-empty">まだプリセットは登録されていません。</div>';return;}
+  area.innerHTML=rows.map(p=>`<div class="loadout-preset-row" data-loadout-preset-row="${esc(p.id)}" data-loadout-preset-type="${type}"><div class="loadout-preset-name">${esc(p.name)}</div><div class="button-row"><button type="button" data-loadout-preset-action="apply" data-preset-id="${esc(p.id)}" data-preset-type="${type}">呼び出す</button><button type="button" class="secondary" data-loadout-preset-action="overwrite" data-preset-id="${esc(p.id)}" data-preset-type="${type}">更新</button><button type="button" class="danger" data-loadout-preset-action="delete" data-preset-id="${esc(p.id)}" data-preset-type="${type}">削除</button></div><div class="loadout-preset-meta">${esc(presetSummaryText(type,p.data||{}))}</div></div>`).join('');
+  if(currentMode==='view')area.querySelectorAll('button').forEach(el=>el.disabled=true);
+}
+function renderLoadoutPresets(){ renderLoadoutPresetList('equipment'); renderLoadoutPresetList('carry'); }
+function findLoadoutPreset(type='', id=''){return (loadoutPresetsState?.[type]||[]).find(p=>String(p.id||'')===String(id||''))||null;}
+function presetInventoryRow(ref={}, predicate=null){
+  const id=String(ref.itemId||ref.id||ref.masterId||'').trim(), name=String(ref.name||'').trim();
+  let row=id?warehouseItemByKey(id,name):null;
+  if(!row&&name)row=inventoryDerived().rows.find(v=>String(v.name||'').trim()===name)||null;
+  if(row&&predicate&&!predicate(row))return null;
+  return row;
+}
+function presetSameInventoryRow(row={}, ref={}){
+  const key=String(inventoryItemKey(row)||'').trim();
+  const ids=new Set([key,row.id,row.masterId,String(row.publicId||'').trim().toUpperCase()].filter(Boolean).map(String));
+  const refIds=[ref.itemId,ref.id,ref.masterId,String(ref.publicId||'').trim().toUpperCase()].filter(Boolean).map(String);
+  if(refIds.some(v=>ids.has(v)))return true;
+  return !!(ref.name&&String(row.name||'').trim()===String(ref.name||'').trim());
+}
+function presetTotalOwnedCount(row={}){
+  let total=Number(row.count||0);
+  for(const allocation of Object.values(carryWarehouseAllocationState||{})){
+    if(!allocation?.warehouseAllocated||Number(allocation.count||0)<=0)continue;
+    if(presetSameInventoryRow(row,{itemId:allocation.warehouseItemId}))total+=Number(allocation.count||0);
+  }
+  for(const raw of Object.values(quiverAmmoSlotsState||{})){
+    const state=rawQuiverAmmoSlotState(raw);if(!state?.warehouseAllocated||Number(state.count||0)<=0)continue;
+    if(presetSameInventoryRow(row,state))total+=Number(state.count||0);
+  }
+  return Math.max(0,total);
+}
+function presetLearnedSpellNames(){
+  const names=new Set();
+  for(const row of inventoryDerived().rows){if(isSpellInventoryItem(row)&&String(row.name||'').trim())names.add(String(row.name||'').trim());}
+  for(const row of (DB_INITIAL_SPELL_MASTER||[])){
+    try{if(hasInitialMasterToken(row)&&String(row.name||'').trim())names.add(String(row.name||'').trim());}catch(_){ }
+  }
+  return names;
+}
+function collectEquipmentPresetShortages(preset){
+  const shortages=[], reqs=new Map(), data=preset?.data||{};
+  for(const slot of BASE_EQUIPMENT_SLOTS){
+    const saved=data.slots?.[slot.key]||{};if(!String(saved.itemId||saved.name||'').trim())continue;
+    const row=presetInventoryRow(saved,r=>['武器','防具','装飾品'].includes(normalizeInventoryKind(r.kind||'')));
+    const key=row?`row:${inventoryItemKey(row)}`:`missing:${saved.itemId||saved.name}`;
+    const entry=reqs.get(key)||{row,ref:saved,name:String(saved.name||row?.name||saved.itemId||'装備').trim(),required:0};entry.required++;reqs.set(key,entry);
+  }
+  for(const entry of reqs.values()){
+    const available=entry.row?presetTotalOwnedCount(entry.row):0;
+    if(available<entry.required)shortages.push({name:entry.name,required:entry.required,available,kind:'装備',message:`${entry.name}が不足しています。（必要${entry.required} / 所持${available}）`});
+  }
+  const learned=presetLearnedSpellNames(), spellNames=new Set();
+  for(const saved of Object.values(data.slots||{}))for(const name of splitFormulaList(saved?.setSpells||'')){const n=String(name||'').trim();if(n)spellNames.add(n);}
+  for(const name of spellNames)if(!learned.has(name))shortages.push({name,required:1,available:0,kind:'術式',message:`${name}が不足しています。（未習得の術式）`});
+  return shortages;
+}
+function carryPresetRequiredCapacity(data={}){
+  let max=0;
+  for(const key of Object.keys(data.slots||{})){const slot=EQUIPMENT_SLOTS.find(v=>v.key===key&&v.kind==='carry');if(slot)max=Math.max(max,Number(slot.carryIndex||0));}
+  return max;
+}
+function quiverPresetRequiredCapacity(data={}){
+  let max=0;for(const key of Object.keys(data.quiverAmmoSlots||{})){max=Math.max(max,Number(String(key).replace(/\D/g,''))||0);}return max;
+}
+function collectCarryPresetShortages(preset){
+  const shortages=[], data=preset?.data||{}, reqs=new Map();
+  const bagRef={itemId:data.bagId||'',name:data.bagName||''};
+  const quiverRef={itemId:data.quiverId||'',name:data.quiverName||''};
+  const bag=String(bagRef.itemId||bagRef.name).trim()?presetInventoryRow(bagRef,isBagInventoryItem):null;
+  const quiver=String(quiverRef.itemId||quiverRef.name).trim()?presetInventoryRow(quiverRef,isQuiverInventoryItem):null;
+  if(String(bagRef.itemId||bagRef.name).trim()&&!bag)shortages.push({name:data.bagName||data.bagId||'バッグ',required:1,available:0,kind:'バッグ',message:`${data.bagName||data.bagId||'バッグ'}が不足しています。`});
+  if(String(quiverRef.itemId||quiverRef.name).trim()&&!quiver)shortages.push({name:data.quiverName||data.quiverId||'矢筒',required:1,available:0,kind:'矢筒',message:`${data.quiverName||data.quiverId||'矢筒'}が不足しています。`});
+  const carryCap=bag?parseBagCapacity(bag):0, carryNeed=carryPresetRequiredCapacity(data);
+  if(carryNeed>carryCap)shortages.push({name:'所持品枠',required:carryNeed,available:carryCap,kind:'容量',message:`所持品枠が不足しています。（必要${carryNeed}枠 / 使用可能${carryCap}枠）`});
+  const quiverCap=quiver?parseQuiverCapacity(quiver):0, quiverNeed=quiverPresetRequiredCapacity(data);
+  if(quiverNeed>quiverCap)shortages.push({name:'矢筒の収納枠',required:quiverNeed,available:quiverCap,kind:'容量',message:`矢筒の収納枠が不足しています。（必要${quiverNeed}種 / 収納可能${quiverCap}種）`});
+  const addReq=(saved={},kind='所持品',predicate=null)=>{
+    const required=clampInt(saved.count||1,1,9999), row=presetInventoryRow(saved,predicate);
+    const key=row?`row:${inventoryItemKey(row)}`:`missing:${saved.itemId||saved.name}:${kind}`;
+    const entry=reqs.get(key)||{row,ref:saved,name:String(saved.name||row?.name||saved.itemId||kind).trim(),required:0,kind};entry.required+=required;reqs.set(key,entry);
+  };
+  for(const saved of Object.values(data.slots||{}))if(saved)addReq(saved,'所持品',r=>!isSpellInventoryItem(r));
+  for(const saved of Object.values(data.quiverAmmoSlots||{}))if(saved)addReq(saved,'矢弾',isQuiverAmmoInventoryItem);
+  for(const entry of reqs.values()){
+    const available=entry.row?presetTotalOwnedCount(entry.row):0;
+    if(available<entry.required)shortages.push({name:entry.name,required:entry.required,available,kind:entry.kind,message:`${entry.name}が不足しています。（必要${entry.required} / 所持${available}）`});
+  }
+  return shortages;
+}
+function collectLoadoutPresetShortages(type='equipment',preset=null){return type==='carry'?collectCarryPresetShortages(preset):collectEquipmentPresetShortages(preset);}
+let loadoutPresetDialogContext={mode:'',type:'equipment',id:''};
+function closeLoadoutPresetDialog(){const dialog=$('loadoutPresetDialog');if(dialog?.open)dialog.close();loadoutPresetDialogContext={mode:'',type:'equipment',id:''};}
+function loadoutPresetDialogStatus(text='',kind=''){
+  const status=$('loadoutPresetDialogStatus');if(!status)return;status.className='status-box'+(kind?` ${kind}`:'');status.textContent=text||'内容を確認してください。';
+}
+function openLoadoutPresetDialog(mode='create',type='equipment',id=''){
+  if(currentMode==='view')return;
+  const dialog=$('loadoutPresetDialog'),title=$('loadoutPresetDialogTitle'),body=$('loadoutPresetDialogBody'),primary=$('loadoutPresetDialogPrimaryBtn');if(!dialog||!title||!body||!primary)return;
+  const preset=findLoadoutPreset(type,id), label=loadoutPresetTypeLabel(type);loadoutPresetDialogContext={mode,type,id};
+  if(mode==='create'){
+    const summary=presetSummaryText(type,type==='carry'?carryPresetSnapshot():equipmentPresetSnapshot());
+    title.textContent=`${label}を登録`;
+    body.innerHTML=`<p class="hint">現在の状態を新しいプリセットとして登録します。</p><div class="field"><label for="loadoutPresetDialogName">プリセット名</label><input id="loadoutPresetDialogName" type="text" maxlength="40" placeholder="${type==='carry'?'例：通常探索、採取遠征':'例：対ボス用、探索用'}"></div><div class="loadout-preset-modal-summary"><b>登録内容</b><br>${esc(summary)}</div>`;
+    primary.textContent='登録する';primary.className='';primary.disabled=false;loadoutPresetDialogStatus('プリセット名を入力して登録してください。');
+  }else if(mode==='overwrite'&&preset){
+    const summary=presetSummaryText(type,type==='carry'?carryPresetSnapshot():equipmentPresetSnapshot());
+    title.textContent=`${label}を更新`;
+    body.innerHTML=`<p class="hint">現在の状態でプリセット内容を更新します。名称もここで変更できます。</p><div class="field"><label for="loadoutPresetDialogName">プリセット名</label><input id="loadoutPresetDialogName" type="text" maxlength="40" value="${esc(preset.name)}"></div><div class="loadout-preset-modal-summary"><b>更新後の内容</b><br>${esc(summary)}</div>`;
+    primary.textContent='現在の状態で更新';primary.className='';primary.disabled=false;loadoutPresetDialogStatus(`「${preset.name}」を更新します。`);
+  }else if(mode==='apply'&&preset){
+    const shortages=collectLoadoutPresetShortages(type,preset);
+    title.textContent=`${label}を呼び出す`;
+    const shortageHtml=shortages.length?`<div class="loadout-preset-shortages">${shortages.map(x=>`<div class="loadout-preset-shortage">${esc(x.message)}</div>`).join('')}</div>`:`<div class="loadout-preset-ok">不足している装備・アイテム・術式はありません。</div>`;
+    body.innerHTML=`<div class="loadout-preset-modal-summary"><b>${esc(preset.name)}</b><br>${esc(presetSummaryText(type,preset.data||{}))}</div>${shortageHtml}<p class="hint" style="margin-top:10px;">${shortages.length?'不足しているものは設定せず、用意できる内容だけで呼び出せます。呼び出しますか？':'このプリセットを呼び出しますか？'}</p>`;
+    primary.textContent=shortages.length?'不足分を除いて呼び出す':'呼び出す';primary.className=shortages.length?'danger':'';primary.disabled=false;loadoutPresetDialogStatus(shortages.length?`${shortages.length}件の不足があります。確認後も呼び出し可能です。`:'不足はありません。','');
+  }else if(mode==='delete'&&preset){
+    title.textContent=`${label}を削除`;
+    body.innerHTML=`<div class="loadout-preset-modal-summary"><b>${esc(preset.name)}</b><br>${esc(presetSummaryText(type,preset.data||{}))}</div><p class="hint" style="margin-top:10px;">このプリセットを削除します。元に戻せません。</p>`;
+    primary.textContent='削除する';primary.className='danger';primary.disabled=false;loadoutPresetDialogStatus(`「${preset.name}」を削除します。`,'warn');
+  }else{return;}
+  dialog.showModal();queueMicrotask(()=>body.querySelector('input')?.focus());
+}
+function registerLoadoutPresetFromDialog(){
+  const {type}=loadoutPresetDialogContext,input=$('loadoutPresetDialogName');const name=String(input?.value||'').trim().slice(0,40);if(!name){loadoutPresetDialogStatus('プリセット名を入力してください。','warn');input?.focus();return;}
+  const rows=loadoutPresetsState[type]||(loadoutPresetsState[type]=[]);if(rows.some(p=>String(p.name||'').trim()===name)){loadoutPresetDialogStatus('同じ名称のプリセットがあります。既存プリセットの「更新」から変更してください。','warn');return;}
+  const data=type==='carry'?carryPresetSnapshot():equipmentPresetSnapshot();rows.push({id:uuid(),name,updatedAt:nowIso(),data});renderLoadoutPresetList(type);updateSummary();closeLoadoutPresetDialog();showToast(`「${name}」を登録しました。`,'ok');
+}
+function overwriteLoadoutPresetFromDialog(){
+  const {type,id}=loadoutPresetDialogContext,p=findLoadoutPreset(type,id),input=$('loadoutPresetDialogName');if(!p)return;
+  const name=String(input?.value||'').trim().slice(0,40);if(!name){loadoutPresetDialogStatus('プリセット名を入力してください。','warn');input?.focus();return;}
+  if((loadoutPresetsState[type]||[]).some(row=>row.id!==id&&String(row.name||'').trim()===name)){loadoutPresetDialogStatus('同じ名称のプリセットがあります。別の名称を指定してください。','warn');return;}
+  p.name=name;p.data=type==='carry'?carryPresetSnapshot():equipmentPresetSnapshot();p.updatedAt=nowIso();renderLoadoutPresetList(type);updateSummary();closeLoadoutPresetDialog();showToast(`「${name}」を現在の状態で更新しました。`,'ok');
+}
+function deleteLoadoutPresetFromDialog(){
+  const {type,id}=loadoutPresetDialogContext,p=findLoadoutPreset(type,id);if(!p)return;
+  loadoutPresetsState[type]=(loadoutPresetsState[type]||[]).filter(row=>row.id!==id);renderLoadoutPresetList(type);updateSummary();closeLoadoutPresetDialog();showToast(`「${p.name}」を削除しました。`,'ok');
+}
+function applyEquipmentLoadoutPreset(preset){
+  const data=preset?.data||{}, current=getEquipmentState(), defaults=defaultEquipment(), missing=[], remaining=new Map();
+  for(const slot of BASE_EQUIPMENT_SLOTS){
+    const saved=data.slots?.[slot.key]||{};
+    const row=saved.itemId||saved.name ? presetInventoryRow(saved, r=>['武器','防具','装飾品'].includes(normalizeInventoryKind(r.kind||''))) : null;
+    const key=row?inventoryItemKey(row):'';
+    if(row&&!remaining.has(key))remaining.set(key,Math.max(0,presetTotalOwnedCount(row)));
+    const canUse=!!row&&Number(remaining.get(key)||0)>0;
+    if((saved.itemId||saved.name)&&!canUse)missing.push(saved.name||saved.itemId);
+    if(canUse)remaining.set(key,Number(remaining.get(key)||0)-1);
+    current[slot.key]={...defaults[slot.key],itemId:canUse?key:'',name:canUse?row.name:'',setSpells:canUse?String(saved.setSpells||''):''};
+  }
+  setEquipmentState(current);
+  const learned=presetLearnedSpellNames();
+  for(const slot of BASE_EQUIPMENT_SLOTS){
+    const saved=data.slots?.[slot.key]||{}, equipped=current[slot.key]||{};if(!String(saved.setSpells||'').trim()||!String(equipped.itemId||equipped.name||'').trim())continue;
+    const validSpells=splitFormulaList(saved.setSpells||'').filter(name=>learned.has(String(name||'').trim()));
+    if(validSpells.length<splitFormulaList(saved.setSpells||'').length)missing.push('セット術式');
+    setSpellSelectValues(slot.key,validSpells);syncEquippedSpellSetToInventoryItem(slot.key);
+  }
+  updateAll();renderLoadoutPresets();
+  if(missing.length)showToast(`「${preset.name}」を不足分を除いて呼び出しました。`,'warn');
+  else showToast(`「${preset.name}」を呼び出しました。`,'ok');
+}
+function applyCarryLoadoutPreset(preset){
+  const data=preset?.data||{}, missing=[];
+  for(const slot of EQUIPMENT_SLOTS){if(slot.kind!=='carry')continue;releaseCarryWarehouseAllocation(slot.key);clearCarrySlotFields(slot.key);}
+  releaseAllQuiverAmmoSlots();
+  const bag=(data.bagId||data.bagName)?inventoryDerived().bags.find(row=>[inventoryItemKey(row),row.id,row.masterId].map(String).includes(String(data.bagId))||String(row.name||'')===String(data.bagName||'')):null;
+  selectedBagId=bag&&Number(bag.count||0)>0?inventoryItemKey(bag):'';if((data.bagId||data.bagName)&&!selectedBagId)missing.push(data.bagName||data.bagId);renderBagSelect();
+  const quiver=(data.quiverId||data.quiverName)?inventoryDerived().quivers.find(row=>[inventoryItemKey(row),row.id,row.masterId].map(String).includes(String(data.quiverId))||String(row.name||'')===String(data.quiverName||'')):null;
+  selectedQuiverId=quiver&&Number(quiver.count||0)>0?inventoryItemKey(quiver):'';if((data.quiverId||data.quiverName)&&!selectedQuiverId)missing.push(data.quiverName||data.quiverId);renderQuiverControls();
+  refreshEquipmentItemSelects();
+  const cap=selectedBagCapacity();
+  for(const slot of EQUIPMENT_SLOTS){
+    if(slot.kind!=='carry')continue;const saved=data.slots?.[slot.key];if(!saved)continue;
+    if((slot.carryIndex||0)>cap){missing.push(saved.name||saved.itemId);continue;}
+    const row=presetInventoryRow(saved, r=>!isSpellInventoryItem(r));if(!row||Number(row.count||0)<=0){missing.push(saved.name||saved.itemId);continue;}
+    const select=$('equip_'+slot.key+'_itemSelect');if(select)select.value=inventoryItemKey(row);
+    applyWarehouseItemToCarrySlot(slot.key,row);updateCarryWarehouseAllocationCount(slot.key,saved.count||1);
+    const allocation=carryWarehouseAllocationState[slot.key]||{};if(Number(allocation.count||0)<Number(saved.count||1))missing.push(saved.name||saved.itemId);
+  }
+  const qcap=selectedQuiverCapacity();
+  for(const [key,saved] of Object.entries(data.quiverAmmoSlots||{})){
+    const idx=Number(String(key).replace(/\D/g,''))||0;if(idx<1||idx>qcap){missing.push(saved.name||saved.itemId);continue;}
+    const row=presetInventoryRow(saved,isQuiverAmmoInventoryItem);if(!row||Number(row.count||0)<=0){missing.push(saved.name||saved.itemId);continue;}
+    selectQuiverAmmoForSlot(key,inventoryItemKey(row));updateQuiverAmmoSlotCount(key,saved.count||1);
+    const state=rawQuiverAmmoSlotState(quiverAmmoSlotsState[key]);if(Number(state?.count||0)<Number(saved.count||1))missing.push(saved.name||saved.itemId);
+  }
+  renderQuiverControls();applyBagCapacityToEquipmentSlots();refreshWarehouseQuantityViews();updateAll();renderLoadoutPresets();
+  if(missing.length)showToast(`「${preset.name}」を不足分を除いて呼び出しました。`,'warn');
+  else showToast(`「${preset.name}」を呼び出しました。`,'ok');
+}
+function applyLoadoutPresetConfirmed(type='',id=''){
+  const p=findLoadoutPreset(type,id);if(!p)return;if(type==='carry')applyCarryLoadoutPreset(p);else applyEquipmentLoadoutPreset(p);updateSummary();closeLoadoutPresetDialog();
+}
+function handleLoadoutPresetDialogPrimary(){
+  const {mode,type,id}=loadoutPresetDialogContext;
+  if(mode==='create')registerLoadoutPresetFromDialog();
+  else if(mode==='overwrite')overwriteLoadoutPresetFromDialog();
+  else if(mode==='apply')applyLoadoutPresetConfirmed(type,id);
+  else if(mode==='delete')deleteLoadoutPresetFromDialog();
 }
 
 function defaultInventory() {
@@ -6879,7 +7167,7 @@ function sortInventoryItems() {
 function emptyCharacter() {
   const stats = Object.fromEntries(STAT_ORDER.map(k => [k, '']));
   const abilities = Object.fromEntries(ABILITIES.map(a => [a.key, 0]));
-  return { id: uuid(), name: '', gender: '', age: '', stats, abilities, skills: defaultSkillAlloc(), manualCategoryBonuses: emptyCategoryBonus(), resources: { hpBonus:0, mpBonus:0, currentHp:'', currentMp:'', fatigue:0 }, equipment: defaultEquipment(), inventory: defaultInventory(), skillGacha:defaultSkillGachaState(), autoSaveEnabled:true, memo: '', createdAt: nowIso(), updatedAt: nowIso() };
+  return { id: uuid(), name: '', gender: '', age: '', stats, abilities, skills: defaultSkillAlloc(), manualCategoryBonuses: emptyCategoryBonus(), resources: { hpBonus:0, mpBonus:0, currentHp:'', currentMp:'', fatigue:0 }, equipment: defaultEquipment(), inventory: defaultInventory(), loadoutPresets:defaultLoadoutPresets(), skillGacha:defaultSkillGachaState(), autoSaveEnabled:true, memo: '', createdAt: nowIso(), updatedAt: nowIso() };
 }
 function collectData(updateTime=true) {
   const base = currentCharacter || emptyCharacter();
@@ -6901,6 +7189,7 @@ function collectData(updateTime=true) {
     resources: computeResources(abilities, getResourceState(), equipment),
     equipment,
     inventory: getInventoryState(),
+    loadoutPresets: normalizeLoadoutPresets(loadoutPresetsState),
     skillGacha: getSkillGachaState(),
     combatStats: computeCombatStats(abilities, getSkillAlloc(), equipment),
     autoSaveEnabled: autoSaveEnabled!==false,
@@ -6926,6 +7215,7 @@ function applyData(data) {
   // v90.8.457: 倉庫→装備→倉庫表示の順に1回だけ構築する。
   // 旧処理は setInventoryState 内で全倉庫を描画した直後、setEquipmentState が同じ候補群を再構築していた。
   setInventoryState(currentCharacter.inventory || {}, {render:false});
+  loadoutPresetsState = normalizeLoadoutPresets(currentCharacter.loadoutPresets || {});
   setEquipmentState(currentCharacter.equipment || {});
   renderInventory({refreshLinked:false});
   renderQuiverControls();
@@ -6935,6 +7225,7 @@ function applyData(data) {
   }
   renderBagSelect();
   applyBagCapacityToEquipmentSlots();
+  renderLoadoutPresets();
   $('charMemo').value = currentCharacter.memo || '';
   updateAll();
 }
@@ -6957,6 +7248,7 @@ function setReadOnly(readOnly) {
   }
   for (const btn of document.querySelectorAll('[data-inventory-action]')) btn.disabled = readOnly;
   for (const el of document.querySelectorAll('[data-skill-crystal-input]')) el.disabled = readOnly;
+  for (const el of document.querySelectorAll('[data-loadout-preset-input],[data-loadout-preset-action]')) el.disabled = readOnly;
   for (const btn of document.querySelectorAll('[data-skill-remove],#addSkillByPublicIdBtn,#clearSkillPublicIdBtn')) btn.disabled = readOnly || (btn.dataset.skillRemove && normalizeSkillGachaState(skillGachaState||{}).equippedSkillIds.includes(btn.dataset.skillRemove));
   if ($('addInventoryItemBtn')) $('addInventoryItemBtn').disabled = readOnly;
   if ($('sortInventoryItemBtn')) $('sortInventoryItemBtn').disabled = readOnly;
@@ -7983,6 +8275,10 @@ function paletteDamageFormulaWithBonus(formula='', skillBonus=0, offhandBonus=0,
   return formulaWithSeparatedTerms(formula,[Number(offhandBonus)||'',Number(skillBonus)||'',powerTerm,fixedPowerTerm]);
 }
 
+function addOnePrimaryDamageDie(formula='') {
+  const text=String(formula||'');
+  return text.replace(/(\d*)D(\d+)/i,(m,count,sides)=>`${(Number(count)||1)+1}D${sides}`);
+}
 function collectWeaponDamagePaletteLines(data={}, totals={}) {
   const equipment = data.equipment || {};
   const items = paletteInventoryItems(data);
@@ -8022,6 +8318,10 @@ function collectWeaponDamagePaletteLines(data={}, totals={}) {
     if (used.has(key)) continue;
     used.add(key);
     result.push(`${formula} 【${label}】`);
+    if (skillKey === 'shoot') {
+      const focusedFormula=addOnePrimaryDamageDie(formula);
+      if(focusedFormula&&focusedFormula!==formula) result.push(`${focusedFormula} 【${twoHand?'両手':spec.label}集中攻撃ダメージ(射撃${elementLabel})】`);
+    }
     if (twoHand) break;
   }
   return result;
@@ -8144,6 +8444,8 @@ function collectSetSpellPaletteLines(data={}, totals={}) {
       if (effectLine) block.push(effectLine);
       const spellKind = String(spell.category || spell.kind || type || '').trim();
       const defaultSkill = /祈祷|聖|神/.test(spellKind) ? '祈祷' : '魔法';
+      const rawFormula = normalizePaletteFormula(spell.power || spell.damage || '');
+      const focusEligible = defaultSkill==='魔法' && !!rawFormula && paletteSpellHasScalablePower(spell,rawFormula) && !paletteSpellIsHealing(spell);
       const checkLine = paletteCheckLineFromExpression(
         checkTypeOrDefault(spell, defaultSkill, defaultSkill === '魔法' ? '回避値' : '目標値'),
         label,
@@ -8152,7 +8454,12 @@ function collectSetSpellPaletteLines(data={}, totals={}) {
         globalMod
       );
       if (checkLine) block.push(checkLine);
-      const rawFormula = normalizePaletteFormula(spell.power || spell.damage || '');
+      if(focusEligible){
+        const baseCheck=checkTypeOrDefault(spell,'魔法','回避値');
+        const focusCheck=forceCheckExpressionLeft(baseCheck,'集中',checkExpressionRightDisplay(baseCheck,'回避値')||'回避値');
+        const focusedCheckLine=paletteCheckLineFromExpression(focusCheck,`${label}・集中攻撃`,totals,signedNumberText(spellBookHitBonus(container)+2),globalMod);
+        if(focusedCheckLine)block.push(focusedCheckLine);
+      }
       if (rawFormula) {
         const scalable = paletteSpellHasScalablePower(spell, rawFormula);
         const pointKey = paletteSpellPointKey(spell, type);
@@ -8162,6 +8469,10 @@ function collectSetSpellPaletteLines(data={}, totals={}) {
         const fixedStage = scalable ? (healing ? spellBookFixedHealStage(container) : spellBookFixedPowerStage(container)) : 0;
         const parts = paletteSpellDamageFormulaParts(rawFormula, skillPointBonus, stagedDiceUpgradeFormula(variableStage), fixedUpgradeFormula(fixedStage));
         if (parts.primary) block.push(`${parts.primary} 【${label}】`);
+        if (focusEligible && parts.primary) {
+          const focusedPrimary=addOnePrimaryDamageDie(parts.primary);
+          if(focusedPrimary&&focusedPrimary!==parts.primary)block.push(`${focusedPrimary} 【${label}・集中攻撃】`);
+        }
         if (parts.secondary) block.push(`${parts.secondary} 【${label}・継続ダメージ（${parts.secondaryNote}）】`);
       }
       appendPaletteBlock(result, block);
@@ -8229,6 +8540,13 @@ function collectCheckPaletteLines(data={}, totals={}) {
     const hitMod = hitModifierValueForItem(merged);
     for (const skillName of weaponPaletteSkillNames(defaultSkill)) {
       pushWeaponLine(`${skillName}>=${rhs}`, handLabel, hitMod);
+    }
+    if(defaultSkill==='射撃') {
+      const focusValue=skillTotalByName(totals,'集中');
+      if(focusValue!==null){
+        const focusLine=`2D6+${checkFormulaValue(focusValue,[signedHitFormulaPart(hitMod),'+2',signedNumberText(globalMod)])}>=${rhs} 【${handLabel}集中攻撃命中】`;
+        if(!used.has(focusLine)){used.add(focusLine);result.push(focusLine);}
+      }
     }
     if (isPaletteTwoHandEquipment(merged, source)) break;
   }
@@ -8326,6 +8644,7 @@ function generatePaletteExport(data=collectData(false)) {
   const spellLines = collectSetSpellPaletteLines(data, totals);
   if (spellLines.length) appendPaletteBlock(lines, spellLines);
 
+  explanationLines.push('// 集中攻撃：主行動で集中し、次の自分のターン開始まで1点以上のダメージを受けなければ、射撃武器またはダメージ魔法を集中技能+2で判定する。命中時は通常ダメージにダメージダイス+1個。射撃・魔法の配分ポイント、後衛狙い-2、矢弾・MP消費は通常どおり。');
   if (fatiguePenalty) explanationLines.unshift(`// 疲労度${Math.max(0,Number(data?.resources?.fatigue)||0)}：すべての判定${fatiguePenalty}`);
   const equipmentEffectLines=collectEquipmentEffectPaletteLines(data);
   const crystalSkillLines=collectSkillCrystalPaletteLines(data);
@@ -8452,6 +8771,15 @@ function bindEvents() {
   try { localStorage.removeItem(APP_NAME + '.master.adminKey'); } catch(e) {}
   try { setGasUrl(gasUrl()); } catch(e) {}
   if ($('loadEquipmentCategoriesBtn')) $('loadEquipmentCategoriesBtn').addEventListener('click', async () => { try { await loadEquipmentCategoriesFromDb({force:true}); } catch (e) { showToast(e.message, 'error'); const st=$('equipmentCategoryStatus'); if(st) st.textContent=e.message; } });
+  if($('saveEquipmentPresetBtn'))$('saveEquipmentPresetBtn').addEventListener('click',()=>openLoadoutPresetDialog('create','equipment'));
+  if($('saveCarryPresetBtn'))$('saveCarryPresetBtn').addEventListener('click',()=>openLoadoutPresetDialog('create','carry'));
+  if($('loadoutPresetDialogPrimaryBtn'))$('loadoutPresetDialogPrimaryBtn').addEventListener('click',handleLoadoutPresetDialogPrimary);
+  if($('loadoutPresetDialogCloseBtn'))$('loadoutPresetDialogCloseBtn').addEventListener('click',closeLoadoutPresetDialog);
+  if($('loadoutPresetDialog')){
+    $('loadoutPresetDialog').addEventListener('click',e=>{if(e.target===$('loadoutPresetDialog'))closeLoadoutPresetDialog();});
+    $('loadoutPresetDialog').addEventListener('close',()=>{loadoutPresetDialogContext={mode:'',type:'equipment',id:''};});
+  }
+  document.addEventListener('click',e=>{const btn=e.target.closest?.('[data-loadout-preset-action]');if(!btn||['save-equipment','save-carry'].includes(btn.dataset.loadoutPresetAction||''))return;const type=btn.dataset.presetType||'',id=btn.dataset.presetId||'',action=btn.dataset.loadoutPresetAction||'';if(['apply','overwrite','delete'].includes(action))openLoadoutPresetDialog(action,type,id);});
   $('chooseCloudBtn').addEventListener('click', startCloudList);
   $('backHomeBtn').addEventListener('click', () => setView('home'));
   $('changeCloudKeyBtn').addEventListener('click', async () => {
@@ -8980,7 +9308,7 @@ function run(){
     const all=candidates();
     const cats=['すべて',...new Set(all.map(x=>x.category))];
     if(!cats.includes(activeCategory))activeCategory='すべて';
-    tabs.innerHTML=cats.map(c=>`<button type="button" data-ra-category="${escHtml(c)}" class="${c===activeCategory?'active':''}">${escHtml(c)}</button>`).join('');
+    tabs.innerHTML=cats.map(c=>`<button type="button" data-ra-category="${escHtml(c)}" class="${c===activeCategory?'active':''}">${escHtml(c==='すべて'?'全て':c)}</button>`).join('');
     const q=txt(search.value).normalize('NFKC').toLocaleLowerCase('ja');
     const rows=all.filter(x=>activeCategory==='すべて'||x.category===activeCategory).filter(x=>!q||[x.name,x.category,x.item?.description,x.item?.effect,x.item?.power].map(txt).join(' ').normalize('NFKC').toLocaleLowerCase('ja').includes(q));
     list.innerHTML=rows.length?rows.map(x=>`<article class="ra-picker-card ${target?.value===x.key?'current':''}"><div><div class="ra-picker-name">${escHtml(x.name)}</div><div class="ra-picker-meta">${escHtml([x.category,x.item?.rank?`★${x.item.rank}`:'',x.item?.power||''].filter(Boolean).join(' / '))}</div></div><div class="ra-picker-actions"><button type="button" class="ghost" data-ra-detail="${escHtml(x.key)}">詳細</button><button type="button" data-ra-choose="${escHtml(x.key)}">選択</button></div></article>`).join(''):'<div class="ra-picker-empty">条件に一致する装備がありません。</div>';
