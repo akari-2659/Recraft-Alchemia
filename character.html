@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.528</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.531</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1111,10 +1111,10 @@ body.public-view .loadout-preset-panel{display:none!important}
 @media(max-width:720px){.loadout-preset-head,.loadout-preset-row{grid-template-columns:1fr}.loadout-preset-head{display:grid}.loadout-preset-head .button-row,.loadout-preset-row .button-row{justify-content:flex-start}.loadout-preset-meta{grid-column:1}}
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.528-boss-reward-chest-rule">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.531-upgrade-slot-scope-fix">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.528｜更新：2026年8月13日</div>
+<div class="ra-build-info">v90.8.531｜更新：2026年8月13日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -1589,7 +1589,7 @@ body.public-view .loadout-preset-panel{display:none!important}
       <div class="field" data-inventory-kind-field="weapon item spell"><label for="inventoryFormPower">威力</label><input id="inventoryFormPower" type="text" placeholder="例：1D6+1 / 武器依存 / 1D6" /></div>
       <div class="field" data-inventory-kind-field="weapon"><label for="inventoryFormOffhand">副手追撃値</label><input id="inventoryFormOffhand" type="text" placeholder="例：+2" /></div>
       <div class="field" data-inventory-kind-field="weapon"><label for="inventoryFormReloadTurns">装填ターン</label><input id="inventoryFormReloadTurns" type="number" min="0" max="9" value="" placeholder="例：1" /></div>
-      <div class="field" data-inventory-kind-field="weapon armor accessory"><label for="inventoryFormUpgradeLimit">強化枠上限</label><input id="inventoryFormUpgradeLimit" type="number" min="0" max="9" value="" placeholder="例：2" /></div>
+      <div class="field" data-inventory-kind-field="weapon armor"><label for="inventoryFormUpgradeLimit">強化枠上限</label><input id="inventoryFormUpgradeLimit" type="number" min="0" max="9" value="" placeholder="例：2" /></div>
       <div class="field inventory-wide" data-inventory-kind-field="weapon armor accessory">
         <label>装備固有の補正値</label>
         <textarea id="inventoryFormModifiers" class="hidden internal-raw-field" hidden aria-hidden="true" tabindex="-1" style="display:none!important"></textarea>
@@ -2341,16 +2341,16 @@ function renderStatic() {
                 <div id="equip_${slot.key}_modifierRows" class="equipment-modifier-preview small">補正なし</div>
                 <div class="small">選択中の装備に登録された固有値を自動適用します。</div>
               </div>
-              <div class="field equipment-upgrade-limit-field">
+              <div class="field equipment-upgrade-limit-field"${slot.kind==='accessory'?' hidden':''}>
                 <label for="equip_${slot.key}_upgradeLimit">強化枠上限</label>
                 <input id="equip_${slot.key}_upgradeLimit" data-equipment-input="1" type="number" min="0" max="9" value="" placeholder="例：2" />
               </div>
-              <details id="equip_${slot.key}_upgradeDetails" class="equipment-upgrade-details equipment-wide">
+              <details id="equip_${slot.key}_upgradeDetails" class="equipment-upgrade-details equipment-wide"${slot.kind==='accessory'?' hidden':''}>
                 <summary>強化内容</summary>
                 <div id="equip_${slot.key}_upgradeUsage" class="small"></div>
                 <div id="equip_${slot.key}_upgradeSlots" class="equipment-upgrade-list" data-equipment-input="1"></div>
                 <input id="equip_${slot.key}_upgradeLines" data-equipment-input="1" type="hidden" value="" />
-                <div class="small">選択中の武器・防具・装飾品に使用できる強化を共通DBから表示します。装備の「強化素材最低ランク」未満の素材による強化は表示しません。消費枠は強化内容から自動設定されます。</div>
+                <div class="small">選択中の武器・鎧・盾に使用できる強化を共通DBから表示します。魔導書・祈祷書は武器として扱います。装備の「強化素材最低ランク」未満の素材による強化は表示しません。消費枠は強化内容から自動設定されます。</div>
               </details>
               <input id="equip_${slot.key}_description" data-equipment-input="1" type="hidden" value="" />
               <input id="equip_${slot.key}_note" data-equipment-input="1" type="hidden" value="" />
@@ -3530,7 +3530,7 @@ function specialUpgradeTargetTokensForSlot(slotKey=''){
   const tokens=new Set();
   if(['盾','大盾'].includes(type)||String(item?.itemType||'')==='盾')tokens.add('盾');
   else if(kind==='防具'||slotKey==='armor')tokens.add('防具');
-  else if(kind==='装飾品'||/^accessory/.test(slotKey))tokens.add('装飾品');
+  else if(kind==='装飾品'||/^accessory/.test(slotKey))return tokens;
   else if(spellContainerKind(type)){
     if(/祈祷/.test(type))tokens.add('祈祷書');
     else tokens.add('魔導書');
@@ -4068,9 +4068,15 @@ function getEquipmentState() {
       base.modifiers = selectedInventoryItem
         ? serializeModifierRows(equipmentModifierRows(selectedInventoryItem))
         : ($('equip_' + slot.key + '_modifiers')?.value?.trim() || '');
-      base.upgradeLimit = $('equip_' + slot.key + '_upgradeLimit')?.value?.trim() || '';
-      base.upgradeEntries = collectUpgradeEntries(slot.key).slice(0, equipmentUpgradeLimit(slot.key)).map(upgradeEntryForStorage);
-      base.upgradeLines = serializeUpgradeEntries(base.upgradeEntries);
+      if(slot.kind==='accessory'){
+        base.upgradeLimit='';
+        base.upgradeEntries=[];
+        base.upgradeLines='';
+      }else{
+        base.upgradeLimit = $('equip_' + slot.key + '_upgradeLimit')?.value?.trim() || '';
+        base.upgradeEntries = collectUpgradeEntries(slot.key).slice(0, equipmentUpgradeLimit(slot.key)).map(upgradeEntryForStorage);
+        base.upgradeLines = serializeUpgradeEntries(base.upgradeEntries);
+      }
       if (spellContainerKind(base.type)) {
         base.knownSpells = '';
         base.setSpells = selectedSpellNames(slot.key).join('\n');
@@ -4090,6 +4096,7 @@ function migrateLegacyEquippedUpgradesToInventoryItem(selectedId='',equipmentIte
   const index=inventoryItemIndexForEquipmentKey(key);
   if(index<0)return null;
   const current=normalizeInventoryItem(inventoryItemsState[index]||{});
+  if(!inventoryKindSupportsUpgradeLimit(current.kind))return current;
   const currentEntries=parseUpgradeLines(current.upgradeEntries||current.upgradeLines||'');
   const legacyEntries=parseUpgradeLines(equipmentItem.upgradeEntries||equipmentItem.upgradeLines||'').map(upgradeEntryForStorage);
   if(currentEntries.length||!legacyEntries.length)return current;
@@ -4109,6 +4116,11 @@ function migrateLegacyEquippedUpgradesToInventoryItem(selectedId='',equipmentIte
   return normalizeInventoryItem(inventoryItemsState[index]);
 }
 function resolvedEquipmentUpgradeLimit(item={}) {
+  const kind=String(item?.kind||dbItemTypeToInventoryKind(item||{})||'').trim();
+  if(!inventoryKindSupportsUpgradeLimit(kind)){
+    if(item&&typeof item==='object'){item.upgradeLimit='';item.upgradeEntries=[];item.upgradeLines='';item.upgradeMaterialMinRank='';}
+    return '0';
+  }
   const own=String(item&&item.upgradeLimit||'').trim();
   const same=(a,b)=>String(a??'').trim()&&String(a??'').trim()===String(b??'').trim();
   let master=typeof inventoryMasterRowForClassification==='function'?inventoryMasterRowForClassification(item):null;
@@ -4216,8 +4228,8 @@ function setEquipmentState(equipment={}) {
       if ($('equip_' + slot.key + '_modifiers')) $('equip_' + slot.key + '_modifiers').value = restoredModifiers;
       renderModifierReadOnly('equip_' + slot.key + '_modifierRows', restoredModifiers);
       // 強化内容も装備個体単位。選択中の倉庫装備がある場合は装備枠の旧値を一切引き継がない。
-      const upgradeSource = selectedRow ? (selectedRow.upgradeEntries || selectedRow.upgradeLines || []) : (item.upgradeEntries || item.upgradeLines || []);
-      const upgradeLimitValue = selectedRow ? resolvedEquipmentUpgradeLimit(selectedRow) : (item.upgradeLimit || '');
+      const upgradeSource = slot.kind==='accessory' ? [] : (selectedRow ? (selectedRow.upgradeEntries || selectedRow.upgradeLines || []) : (item.upgradeEntries || item.upgradeLines || []));
+      const upgradeLimitValue = slot.kind==='accessory' ? '' : (selectedRow ? resolvedEquipmentUpgradeLimit(selectedRow) : (item.upgradeLimit || ''));
       if ($('equip_' + slot.key + '_upgradeLimit')) $('equip_' + slot.key + '_upgradeLimit').value = upgradeLimitValue;
       if ($('equip_' + slot.key + '_upgradeLines')) $('equip_' + slot.key + '_upgradeLines').value = serializeUpgradeEntries(parseUpgradeLines(upgradeSource));
       renderEquipmentUpgradeSlots(slot.key, upgradeSource);
@@ -5008,7 +5020,7 @@ function defaultInventoryKind() {
 }
 function normalizeInventoryLocation(location) { return '倉庫'; }
 function inventoryKindSupportsUpgradeLimit(kind='') {
-  return ['武器','防具','装飾品','術式'].includes(String(kind || '').trim());
+  return ['武器','防具'].includes(String(kind || '').trim());
 }
 function normalizeInventoryKind(kind) {
   const raw = String(kind || '').trim();
@@ -6221,7 +6233,7 @@ function collectInventoryDialogItem() {
     offhand: $('inventoryFormOffhand')?.value || '',
     reloadTurns: $('inventoryFormReloadTurns')?.value || '',
     modifiers: $('inventoryFormModifiers')?.value || '',
-    upgradeLimit: $('inventoryFormUpgradeLimit')?.value || '',
+    upgradeLimit: inventoryKindSupportsUpgradeLimit(kind) ? ($('inventoryFormUpgradeLimit')?.value || '') : '',
     spellSlots: $('inventoryFormSpellSlots')?.value || '',
     target: $('inventoryFormTarget')?.value || '',
     checkType: kind === '武器' ? '' : ($('inventoryFormCheckType')?.value || ''),
