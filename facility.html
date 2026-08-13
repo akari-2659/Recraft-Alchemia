@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>リクラフト・アルケミア 施設カタログ v90.8.466</title>
+<title>リクラフト・アルケミア 施設カタログ v90.8.531</title>
 <style>
 :root{--bg:#f6efe2;--paper:#fffaf0;--ink:#2f251c;--muted:#766757;--line:#d9c5a8;--accent:#98612f;--green:#58765f;--danger:#a54d43;--shadow:0 14px 36px rgba(78,50,22,.13)}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:system-ui,-apple-system,"Yu Gothic","Hiragino Sans",sans-serif;color:var(--ink);background:radial-gradient(circle at 10% 0,#ffe8bf 0,transparent 28rem),linear-gradient(180deg,#fff9ee,var(--bg));min-height:100svh}
@@ -74,8 +74,9 @@ html{scrollbar-gutter:stable}
 .weapon-category-select-wrap{display:grid;gap:6px}.weapon-category-select-wrap label{font-size:12px;font-weight:800;color:var(--muted)}
 select{width:100%;border:1px solid var(--line);border-radius:12px;background:#fffdf8;padding:10px 36px 10px 12px;font:inherit;color:var(--ink)}
 .branch-graph-scroll{max-height:min(76vh,820px);overflow:auto;border:1px solid #dec8a9;border-radius:16px;background:#fffdf8;scrollbar-gutter:stable both-edges;overscroll-behavior:contain}
-.branch-graph-canvas{--branch-label-width:96px;position:relative;display:grid;width:max-content;min-width:100%;justify-content:center;gap:12px 28px;padding:10px 22px 28px 8px;isolation:isolate}
+.branch-graph-canvas{--branch-label-width:138px;position:relative;display:grid;width:max-content;min-width:100%;justify-content:center;gap:12px 28px;padding:10px 22px 28px 8px;isolation:isolate}
 .branch-graph-label{position:sticky;left:0;z-index:7;align-self:stretch;display:flex;align-items:center;justify-content:center;width:100%;min-width:0;max-width:none;padding:7px 4px;border:1px solid #dec8a9;border-left:0;border-radius:0 10px 10px 0;background:rgba(246,232,212,.97);font-size:12px;line-height:1.2;text-align:center;font-weight:1000;white-space:nowrap;word-break:keep-all;overflow-wrap:normal;writing-mode:horizontal-tb;text-orientation:mixed;box-shadow:4px 0 9px rgba(80,50,20,.07)}
+.branch-graph-label>span{display:block;min-width:max-content;white-space:nowrap;word-break:keep-all;overflow-wrap:normal;writing-mode:horizontal-tb;text-orientation:mixed}
 .branch-graph-label.base{background:rgba(239,226,207,.98)}.branch-graph-label.boss{border-color:#b78665;background:rgba(247,224,211,.98);color:#713c2b}.branch-graph-node.boss-branch{border-color:#c19170;background:#fff6ef}
 .branch-graph-svg{position:absolute;inset:0;z-index:1;pointer-events:none;overflow:visible}
 .branch-graph-edge{fill:none;stroke:#9a7652;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 1px 0 #fff)}.branch-graph-trunk,.branch-graph-branch{stroke-linecap:butt}.branch-graph-edge-route{stroke:transparent;filter:none;opacity:0}
@@ -94,7 +95,7 @@ select{width:100%;border:1px solid var(--line);border-radius:12px;background:#ff
 .branch-graph-scroll.branch-labels-collapsed .branch-graph-label{font-size:0;padding:0;border-radius:0 5px 5px 0}
 .branch-graph-scroll.branch-labels-collapsed .branch-graph-label::after{content:'◆';font-size:8px;line-height:1;color:#7b5d3e}
 .branch-graph-scroll.branch-labels-collapsed .branch-graph-label.base::after{content:'◇'}
-@media(max-width:720px){.branch-controls{grid-template-columns:1fr}.branch-graph-canvas{--branch-label-width:74px;gap:10px 22px}.branch-graph-label{padding:6px 2px;font-size:11px}.branch-graph-node{width:150px}.weapon-modal-details{grid-template-columns:1fr}.weapon-modal-link{align-items:flex-start;flex-direction:column}.weapon-modal-link button{width:100%}}
+@media(max-width:720px){.branch-controls{grid-template-columns:1fr}.branch-graph-canvas{--branch-label-width:112px;gap:10px 22px}.branch-graph-label{padding:6px 2px;font-size:11px}.branch-graph-node{width:150px}.weapon-modal-details{grid-template-columns:1fr}.weapon-modal-link{align-items:flex-start;flex-direction:column}.weapon-modal-link button{width:100%}}
 
 
 /* v90.8.404: 派生図の表示座標・タップ判定と素材入手先表示 */
@@ -138,10 +139,27 @@ button.weapon-material-part:hover{background:#e2f2f5;transform:none}
 @media(max-width:620px){.facility-unlock-grid{grid-template-columns:1fr auto}.facility-unlock-grid .field{grid-column:1/2}.facility-unlock-grid button{width:auto}.facility-unlock-grid #resetKey{grid-column:1/3;justify-self:start}}
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.466-event-check-copy-layout1">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.531-upgrade-slot-scope-fix">
+
+<style id="raFortuneCommunityV474">
+.community-rule{grid-column:1/-1;border:1px solid var(--line);border-radius:14px;background:#fffaf3;padding:12px;line-height:1.7}
+.community-card .community-head{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:8px}.community-status{font-size:12px;font-weight:900;border:1px solid var(--line);border-radius:999px;padding:3px 8px;background:#f5ead8}.community-status.complete{background:#f0fff6;color:#356346;border-color:#9bcdad}
+.community-progress{height:10px;border-radius:999px;background:#eadfce;overflow:hidden;margin:10px 0}.community-progress>span{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:inherit}
+.community-reqs{display:grid;gap:6px;margin-top:10px}.community-req{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed #e4d3bb;padding-bottom:4px}.community-req:last-child{border-bottom:0}.community-output{border:1px solid #b8d5c1;background:#f4fff7;border-radius:12px;padding:10px;margin-top:10px;line-height:1.65}
+</style>
+
+<style id="raAccessoryBranchStyle">
+/* v90.8.531: 全装飾品の作成・段階強化を、★ランク列を固定した単一の横スクロール派生図で表示する。 */
+.catalog-wide{display:block;width:100%;min-width:0}.accessory-branch-scroll{width:100%;max-width:100%;max-height:min(76vh,820px);overflow:auto;border:1px solid #dec8a9;border-radius:16px;background:#fffdf8;scrollbar-gutter:stable both-edges;overscroll-behavior:contain}.accessory-branch-canvas{position:relative;display:grid;width:100%;justify-content:stretch;align-items:center;gap:12px 30px;padding:10px 24px 28px;isolation:isolate}.accessory-branch-svg{position:absolute;inset:0;z-index:1;pointer-events:none;overflow:visible}.accessory-branch-edge{fill:none;stroke:#9a7652;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 1px 0 #fff)}
+.accessory-branch-node{position:relative;z-index:2;width:min(220px,calc(100% - 16px));min-width:150px;min-height:88px;justify-self:center;border:1px solid #c9ad86;border-radius:13px;background:#fffaf3;box-shadow:0 4px 11px rgba(80,50,20,.09);overflow:hidden}
+body.ra-facility .accessory-branch-node button{width:100%!important;height:100%!important;min-height:88px!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:center!important;gap:4px!important;padding:9px 11px!important;border:0!important;border-radius:inherit!important;background:#fffaf3!important;color:#273746!important;box-shadow:none!important;text-align:left!important;transform:none!important}
+body.ra-facility .accessory-branch-node button:hover{background:#f5e6d1!important;color:#1f2f3d!important;box-shadow:none!important;transform:none!important}body.ra-facility .accessory-branch-node button:focus-visible{background:#f5e6d1!important;color:#1f2f3d!important;outline:3px solid rgba(169,111,55,.42)!important;outline-offset:-3px!important;box-shadow:none!important}
+.accessory-branch-rank{font-size:11px;font-weight:900;color:#735d46!important}.accessory-branch-name{font-weight:1000;line-height:1.35;color:#273746!important}.accessory-branch-effect{font-size:11px;line-height:1.35;color:#5d6670!important;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.accessory-upgrade-dialog{width:min(720px,calc(100vw - 24px))}.accessory-upgrade-dialog dl{display:grid;grid-template-columns:auto 1fr;gap:8px 12px}.accessory-upgrade-dialog dt{font-weight:900;color:var(--muted)}.accessory-upgrade-dialog dd{margin:0;white-space:pre-wrap}
+@media(max-width:720px){.accessory-branch-canvas{gap:10px 22px;padding:10px 18px 24px}.accessory-branch-node{width:min(180px,calc(100% - 10px));min-width:140px}.accessory-upgrade-dialog dl{grid-template-columns:1fr}.accessory-upgrade-dialog dd{margin-bottom:7px}}
+</style>
 </head>
 <body class="ra-app ra-player ra-facility">
-<header><div class="hero"><div class="hero-head"><div><div class="build">v90.8.466｜更新：2026年8月10日</div><h1>施設カタログ</h1></div><div class="hero-brand" aria-label="Recraft Alchemia">RECRAFT ALCHEMIA</div></div><p class="subtitle">鍛冶屋・薬屋・骨董屋・食事処の商品、作成、素材加工、料理を確認できます。装備強化の実行はこのページでは扱いません。</p></div></header>
+<header><div class="hero"><div class="hero-head"><div><div class="build">v90.8.531｜更新：2026年8月13日</div><h1>施設カタログ</h1></div><div class="hero-brand" aria-label="Recraft Alchemia">RECRAFT ALCHEMIA</div></div><p class="subtitle">鍛冶屋・薬屋・骨董屋・食事処と、広場の共同採取設備を確認できます。装備強化の実行はこのページでは扱いません。</p></div></header>
 <main>
 <details class="panel unlock-panel" id="unlockPanel" open>
   <summary><span>プレイヤー別の解放設定</span><span id="unlockSummary">確認中</span></summary>
@@ -159,7 +177,7 @@ button.weapon-material-part:hover{background:#e2f2f5;transform:none}
 </details>
 <section class="panel facility-catalog-panel">
   <div class="facility-nav-stack">
-    <div class="facility-switch"><button type="button" data-facility="smith" class="active">鍛冶屋</button><button type="button" data-facility="apothecary">薬屋</button><button type="button" data-facility="antique">骨董屋</button><button type="button" data-facility="eatery">食事処</button></div>
+    <div class="facility-switch"><button type="button" data-facility="smith" class="active">鍛冶屋</button><button type="button" data-facility="apothecary">薬屋</button><button type="button" data-facility="antique">骨董屋</button><button type="button" data-facility="eatery">食事処</button><button type="button" data-facility="plaza">広場</button></div>
     <div id="sectionTabs" class="section-tabs"></div>
   </div>
   <div class="summary-line">
@@ -170,6 +188,10 @@ button.weapon-material-part:hover{background:#e2f2f5;transform:none}
   <div id="branchControls" class="branch-controls" hidden>
     <div class="branch-search"><label for="branchSearch">名前・素材検索</label><input id="branchSearch" type="search" autocomplete="off" placeholder="派生名・武器名・元武器名・素材名で検索"></div>
     <div class="weapon-category-select-wrap"><label for="weaponCategorySelect">武器種</label><select id="weaponCategorySelect" aria-label="表示する武器種"></select></div>
+  </div>
+  <div id="catalogCategoryControls" class="catalog-category-controls" hidden>
+    <span class="catalog-filter-label">カテゴリ</span>
+    <button id="openCatalogCategoryPicker" class="catalog-category-picker-trigger" type="button"><span id="catalogCategoryPickerLabel">全て</span><span aria-hidden="true">▾</span></button>
   </div>
   <div id="catalogSearchControls" class="catalog-search-controls">
     <label for="catalogSearch">現在のタブを検索</label>
@@ -182,6 +204,12 @@ button.weapon-material-part:hover{background:#e2f2f5;transform:none}
   </div>
   <div id="cards" class="cards"></div>
 </section>
+<dialog id="catalogCategoryModal" class="ra-facility-picker catalog-category-modal">
+  <div class="ra-facility-picker-shell">
+    <header class="ra-facility-picker-head"><div><div class="muted">表示内容</div><h3>カテゴリを選択</h3></div><button type="button" class="ghost" data-close-catalog-category-modal aria-label="閉じる">×</button></header>
+    <div class="ra-facility-picker-body ra-category-only"><div id="catalogCategoryModalList" class="ra-facility-picker-list"></div></div>
+  </div>
+</dialog>
 <div id="weaponDetailModal" class="weapon-modal" hidden aria-hidden="true">
   <div class="weapon-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="weaponModalTitle">
     <header class="weapon-modal-header"><div><div class="muted">武器派生詳細</div><h3 id="weaponModalTitle">武器詳細</h3></div><button type="button" class="ghost weapon-modal-close" data-close-weapon-modal aria-label="閉じる">×</button></header>
@@ -194,32 +222,40 @@ button.weapon-material-part:hover{background:#e2f2f5;transform:none}
     <div id="materialSourceBody" class="material-source-body"></div>
   </div>
 </div>
+<div id="accessoryUpgradeDetailModal" class="material-source-modal" hidden aria-hidden="true">
+  <div class="material-source-dialog accessory-upgrade-dialog" role="dialog" aria-modal="true" aria-labelledby="accessoryUpgradeDetailTitle">
+    <header class="material-source-header"><div><div class="muted">装飾品</div><h3 id="accessoryUpgradeDetailTitle">装飾品の詳細</h3></div><button type="button" class="ghost" data-close-accessory-upgrade aria-label="閉じる">×</button></header>
+    <div id="accessoryUpgradeDetailBody" class="material-source-body"></div>
+  </div>
+</div>
 <div id="unlockedAreaModal" class="unlock-area-modal" hidden aria-hidden="true">
   <div class="unlock-area-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="unlockedAreaModalTitle">
     <header class="unlock-area-modal-header"><h3 id="unlockedAreaModalTitle">解放済みエリア</h3><button type="button" class="ghost" data-close-unlocked-area-modal aria-label="閉じる">×</button></header>
     <ul id="unlockedAreaModalList" class="unlocked-area-modal-list"><li>初期エリア</li></ul>
   </div>
 </div>
-</main><footer>固定マスターと解放キー照合用ハッシュはGitHub共通DBから取得します。解放済みエリアは端末へ即時保存し、GASにはエリアIDだけをクラウド同期します。</footer>
+</main><footer>固定マスターと解放キー照合用ハッシュはGitHub共通DBから取得します。解放済みエリアは端末へ即時保存し、GASにはエリアIDだけをクラウド同期します。共同採取設備の納品進捗はGASで全員共有します。</footer>
 <script>
 'use strict';
 const DEFAULT_GAS_WEB_APP_URL='https://script.google.com/macros/s/AKfycbyjIIKXTXZGf8RFOt7wQcenYEuVP68ijTU83e6rioqX21EKW075xjDjB5pTucyVcrc/exec';
 const PLAYER_KEY_STORAGE_KEY='recraft_alchemia.player_facility.player_key';
 const UNLOCK_STATE_STORAGE_PREFIX='recraft_alchemia.player_facility.unlocked_area_ids:';
 const SECTION_DEFS={
- smith:[['sales','販売商品','鍛冶屋で購入できる品と、その段階で解放される常設店売りレシピです。宝箱限定レシピはここには表示しません。'],['craft','装備・道具作成','武器・防具・盾・バッグ・矢筒・装飾品・仕掛けなどの作成です。'],['materials','素材加工','自作はレシピ不要で、対応する鍛冶道具と判定成功が必要です。施設依頼は判定不要ですが加工依頼費が必要です。'],['crystal','クリスタル強化','現在の解放エリアで利用できる、スキルクリスタルの強化段階・必要素材・費用です。'],['branches','武器派生','武器種を選び、大枠の素材系統と順当強化・分岐を矢印でつないだ派生図を確認できます。武器の詳細では強化枠、必要素材、派生元、次の派生先を確認できます。未解放の派生先は「？？？」で表示します。']],
+ smith:[['sales','販売商品','鍛冶屋で購入できる品と、その段階で解放される常設店売りレシピです。宝箱限定レシピはここには表示しません。'],['craft','装備・道具作成','武器・防具・盾・バッグ・矢筒・仕掛けなどの作成です。装飾品は「装飾品」の派生図へまとめています。'],['accessory','装飾品','作成できる装飾品と段階強化を、★ランク列に揃えたひとつの派生図で確認できます。各装飾品を選ぶと必要素材・費用・難易度などの詳細を確認できます。'],['materials','素材加工','自作はレシピ不要で、対応する鍛冶道具と判定成功が必要です。施設依頼は判定不要ですが加工依頼費が必要です。'],['crystal','クリスタル強化','現在の解放エリアで利用できる、スキルクリスタルの強化段階・必要素材・費用です。'],['branches','武器派生','武器種を選び、大枠の素材系統と順当強化・分岐を矢印でつないだ派生図を確認できます。武器の詳細では強化枠、必要素材、派生元、次の派生先を確認できます。未解放の派生先は「？？？」で表示します。']],
  apothecary:[['sales','販売商品','薬屋で購入できる調合品・調合道具と、その段階で解放される常設店売りレシピです。宝箱限定レシピはここには表示しません。'],['alchemy','調合品作成','薬品・香・爆弾・瓶などの調合です。'],['materials','素材加工','一般の加工素材はレシピ不要です。魔導インク・祈祷紙は対応レシピが必要な特殊加工としてここに表示します。施設依頼はどちらもレシピ不要・判定不要です。']],
  antique:[['sales','常設販売','骨董屋で常時購入できる品と店売りレシピです。'],['scrolls','未鑑定スクロール価格','販売内容はランダムのため、各ランクの価格だけを表示します。']],
- eatery:[['meals','食材持ち込み料理','必要食材と調理代を確認できます。食事効果は次の探索・依頼から帰還するまで継続し、同時に1種類のみ有効です。']]
+ eatery:[['meals','食材持ち込み料理','必要食材と調理代を確認できます。食事効果は次の探索・依頼から帰還するまで継続し、同時に1種類のみ有効です。']],
+ plaza:[['gathering','共同採取設備','通常エリアの到達に応じて整備計画が増えます。全員で納品数を共有し、完成後は1人1日1回、卓上で採取量を決定できます。異界では共同採取設備は増えません。']]
 };
-let catalog={smith:{sales:[],craft:[],materials:[],crystal:[],branches:[]},apothecary:{sales:[],alchemy:[],materials:[]},antique:{sales:[],scrolls:[]},eatery:{meals:[]}};
+let catalog={smith:{sales:[],craft:[],accessory:[],materials:[],crystal:[],branches:[]},apothecary:{sales:[],alchemy:[],materials:[]},antique:{sales:[],scrolls:[]},eatery:{meals:[]},plaza:{gathering:[]}};
 const BRANCH_LABEL_COLLAPSE_STORAGE_KEY='recraft_alchemia.player_facility.branch_labels_collapsed';
 const raStorage={
   get(key){try{return window.localStorage?window.localStorage.getItem(key):null;}catch(error){console.warn('保存情報を読み込めませんでした。',error);return null;}},
   set(key,value){try{if(window.localStorage)window.localStorage.setItem(key,value);}catch(error){console.warn('保存情報を書き込めませんでした。',error);}},
   remove(key){try{if(window.localStorage)window.localStorage.removeItem(key);}catch(error){console.warn('保存情報を削除できませんでした。',error);}}
 };
-let currentFacility='smith',currentSection='sales',currentPlayerKey='',currentUnlockState={unlockedAreaIds:[],unlockedAreas:[]},currentWeaponCategory=raStorage.get('recraft_alchemia.player_facility.weapon_category')||'',branchSearch='',currentRank='all',catalogSearch='',branchLabelsCollapsed=raStorage.get(BRANCH_LABEL_COLLAPSE_STORAGE_KEY)==='1';
+let currentFacility='smith',currentSection='sales',currentPlayerKey='',currentUnlockState={unlockedAreaIds:[],unlockedAreas:[]},currentWeaponCategory=raStorage.get('recraft_alchemia.player_facility.weapon_category')||'',branchSearch='',currentRank='all',catalogSearch='',currentCatalogCategory='all',branchLabelsCollapsed=raStorage.get(BRANCH_LABEL_COLLAPSE_STORAGE_KEY)==='1';
+const catalogCategoryByView=Object.create(null);
 const GM_ALL_AREAS_MARKER='__GM_ALL_AREAS__';
 const WEAPON_CATEGORY_STORAGE_KEY='recraft_alchemia.player_facility.weapon_category';
 let branchDetailIndex=Object.create(null),materialSourceIndex=Object.create(null),branchGraphFrame=0,weaponModalLastFocus=null,branchGraphResizeObserver=null,branchRouteHoverNode=null,branchRouteRestoredFocus=null;
@@ -252,7 +288,7 @@ function craftingToolName(craftSkill='',craftType=''){
   const type=String(craftType||'').trim();
   if(skill==='調合'||type==='調合') return '調合道具';
   if(type==='細工'||type==='仕掛け製作'||skill==='設計') return '細工道具';
-  if(['武器派生','防具製作','盾製作','装飾品製作','バッグ製作','矢筒製作','鍛冶製作','鍛冶'].includes(type)) return '鍛冶道具';
+  if(['武器派生','防具製作','盾製作','装飾品製作','装飾品強化','バッグ製作','矢筒製作','鍛冶製作','鍛冶'].includes(type)) return '鍛冶道具';
   if(skill==='細工') return '細工道具';
   return '対応道具';
 }
@@ -271,7 +307,7 @@ function weaponCraftSupportText(){
 function uniqueChips(values){const seen=new Set();return values.map(v=>String(v??'').trim()).filter(v=>{if(!v)return false;const key=v.normalize('NFKC').replace(/\s+/g,'');if(seen.has(key))return false;seen.add(key);return true;});}
 function rankMatches(row){return currentRank==='all'||rankValue(row&&row.rank)===Number(currentRank);}
 function collectRanks(rows,branches){const ranks=new Set();if(branches){(rows||[]).forEach(cat=>{(cat.baseWeapons||[]).forEach(w=>ranks.add(rankValue(w.rank)));(cat.branches||[]).forEach(branch=>(branch.lines||[]).forEach(line=>(line.nodes||[]).forEach(n=>ranks.add(rankValue(n.rank)))));});}else{(rows||[]).forEach(r=>ranks.add(rankValue(r.rank)));}return [...ranks].sort((a,b)=>a-b);}
-function renderRankControls(rows,branches){const ranks=collectRanks(rows,branches);const wrap=$('catalogRankControls'),box=$('rankFilterButtons');if(ranks.length<2){currentRank='all';wrap.hidden=true;box.innerHTML='';return;}if(currentRank!=='all'&&!ranks.includes(Number(currentRank)))currentRank='all';wrap.hidden=false;box.innerHTML=[`<button type="button" data-rank-filter="all" class="${currentRank==='all'?'active':''}">すべて</button>`,...ranks.map(rank=>`<button type="button" data-rank-filter="${rank}" class="${Number(currentRank)===rank?'active':''}">★${rank}</button>`)].join('');}
+function renderRankControls(rows,branches){const ranks=collectRanks(rows,branches);const wrap=$('catalogRankControls'),box=$('rankFilterButtons');if(ranks.length<2){currentRank='all';wrap.hidden=true;box.innerHTML='';return;}if(currentRank!=='all'&&!ranks.includes(Number(currentRank)))currentRank='all';wrap.hidden=false;box.innerHTML=[`<button type="button" data-rank-filter="all" class="${currentRank==='all'?'active':''}">全て</button>`,...ranks.map(rank=>`<button type="button" data-rank-filter="${rank}" class="${Number(currentRank)===rank?'active':''}">★${rank}</button>`)].join('');}
 function setStatus(text,kind=''){const el=$('unlockStatus');el.className='status'+(kind?' '+kind:'');el.textContent=text;}
 function normalizeFacilityUnlockKey(value=''){
   return String(value||'').normalize('NFKC').toUpperCase().replace(/[‐‑‒–—―−－]/g,'-').replace(/[\s\u200B-\u200D\uFEFF]/g,'');
@@ -365,15 +401,24 @@ function facilityBundle(row){
   return match?{count:Number(match[1])||0,price:Number(match[2])||0}:{count:0,price:0};
 }
 function facilityModifierLabel(key){
+  const raw=String(key||'').trim();
   const labels={
     hit:'命中',
-    'skill:force':'力業','skill:melee':'近接','skill:shoot':'射撃','skill:throw':'投擲',
-    'skill:guard':'防御技能','skill:evade':'回避','skill:resist':'抵抗',
+    'skill:athletics':'運動','skill:force':'力業','skill:melee':'近接','skill:guard':'防御技能',
+    'skill:gather':'採取','skill:craft':'細工','skill:shoot':'射撃','skill:throw':'投擲','skill:operate':'操作',
+    'skill:search':'探索','skill:detect':'感知','skill:evade':'回避','skill:track':'追跡',
+    'skill:alchemy':'調合','skill:appraise':'鑑定','skill:knowledge':'知識','skill:design':'設計',
+    'skill:resist':'抵抗','skill:focus':'集中','skill:magic':'魔法','skill:prayer':'祈祷',
+    'skill:negotiate':'交渉','skill:service':'共感','skill:art':'社交','skill:leadership':'鼓舞',
     'combat:defense':'防御','combat:guardAction':'防御行動値','combat:evasion':'回避',
-    'combat:initiative':'先制値',combatGuardAction:'防御行動値',guardAction:'防御行動値',
-    combatDefense:'防御','resource:maxHp':'最大HP','resource:maxMp':'最大MP'
+    combatGuardAction:'防御行動値',guardAction:'防御行動値',combatDefense:'防御',
+    'resource:maxHp':'最大HP','resource:maxMp':'最大MP'
   };
-  return labels[String(key||'').trim()]||String(key||'').trim();
+  if(labels[raw])return labels[raw];
+  if(raw.startsWith('skill:'))return '技能補正';
+  if(raw.startsWith('combat:'))return '戦闘補正';
+  if(raw.startsWith('resource:'))return '能力補正';
+  return raw.includes(':')?'補正':raw;
 }
 function facilityPerformance(item){
   const rows=[];
@@ -614,6 +659,10 @@ function buildFacilityCatalogFromGithub(commonMaster,unlockState={}){
   function sales(facilityName){
     const saleItems=items.filter(r=>{
       if(!String(r.name||'').trim()||!facilityMatch(r,facilityName)||!unlocked(r))return false;
+      // 販売先が明示されている品は、その施設だけで販売する。
+      // source に「薬屋（素材加工）」等の加工先が併記されていても、販売先として解釈しない。
+      const explicitSaleFacility=String(r.unlockFacility||'').trim();
+      if(explicitSaleFacility&&explicitSaleFacility!==facilityName)return false;
       if(facilityName==='鍛冶屋'&&branchResultNames[String(r.name||'')])return false;
       if(String(r.materialType||'').trim()==='加工素材'&&!processedMaterialCanBeSold(r))return false;
       if(facilityName==='骨董屋'&&(isRandomUnidentifiedScroll(r)||isSkillCrystalItem(r)))return false;
@@ -697,6 +746,16 @@ function buildFacilityCatalogFromGithub(commonMaster,unlockState={}){
         const resultItem=items.find(item=>String(item.name||'')===String(r.resultItem||r.name||''))||null;
         return facilitySafeRecipe({...r,_facilityUnlockOrder:requiredOrder(r),_facilityUnlockAreaId:requiredAreaId(r),_facilityUnlockAreaName:String(areaById[requiredAreaId(r)]?.name||'初期エリア')},false,r.baseItem||'',resultItem);
       });
+  }
+  function recipesByResultItemType(facilityName,itemType){
+    const target=String(itemType||'').trim();
+    return recipes.filter(r=>!isRecipeBasedSpecialProcessing(r)&&facilityMatch(r,facilityName)&&unlocked(r))
+      .sort(sortRows)
+      .map(r=>{
+        const resultItem=items.find(item=>String(item.name||'')===String(r.resultItem||r.name||''))||null;
+        return facilitySafeRecipe({...r,_facilityUnlockOrder:requiredOrder(r),_facilityUnlockAreaId:requiredAreaId(r),_facilityUnlockAreaName:String(areaById[requiredAreaId(r)]?.name||'初期エリア')},false,r.baseItem||'',resultItem);
+      })
+      .filter(r=>String(r.itemType||'').trim()===target);
   }
   function processingMaterials(facilityName){
     const ordinary=items.filter(row=>String(row.materialType||'').trim()==='加工素材'&&String(row.processingRequiredMaterials||'').trim()&&facilityMatch(row,facilityName)&&unlocked(row))
@@ -898,7 +957,8 @@ function buildFacilityCatalogFromGithub(commonMaster,unlockState={}){
     catalog:{
       smith:{
         sales:sales('鍛冶屋'),
-        craft:normalRecipes('鍛冶屋',['鍛冶','防具製作','バッグ製作','細工']),
+        craft:normalRecipes('鍛冶屋',['鍛冶','防具製作','バッグ製作','細工']).filter(r=>String(r.itemType||'').trim()!=='装飾品'),
+        accessory:recipesByResultItemType('鍛冶屋','装飾品'),
         materials:processingMaterials('鍛冶屋'),
         crystal:normalRecipes('鍛冶屋',['クリスタル強化']),
         branches:branchRows
@@ -990,6 +1050,98 @@ function itemTextRows(r){
 function itemCard(r){const chips=uniqueChips([rankLabel(r.rank),r.dataKind==='素材'?(r.materialType||'素材'):(r.itemType||r.dataKind||''),r.dataKind==='素材'?(r.materialCategory||''):(r.itemCategory||r.materialCategory||''),r.equipSlot?`枠:${r.equipSlot}`:'']);const bundleCount=Number(r.bundleCount)||0,bundlePrice=Number(r.bundlePrice)||0;const isRecipe=String(r.itemType||'')==='レシピ';const buy=String(r.buyPrice||r.price||'');const sell=String(r.sellPrice||'');const rows=[[bundleCount?'単品買値':'買値',buy?`${buy}G`:'未設定'],...(sell?[['売値',`${sell}G`]]:[]),...(bundleCount&&bundlePrice?[['まとめ買い',`${bundleCount}本セット ${bundlePrice}G`]]:[]),...itemTextRows(r)];return `<article class="card"><h3>${esc(r.name)}</h3><div class="chips">${chips.map(c=>`<span class="chip">${esc(c)}</span>`).join('')}</div>${performanceHtml(r.performance)}<dl>${rows.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl></article>`;}
 function scrollPriceCard(r){const price=String(r.price||'')?`${r.price}G`:'未設定';const title=String(r.name||`未鑑定の${r.type||'術式'}スクロール`).trim();return `<article class="card"><h3>${esc(title)}：${esc(rankLabel(r.rank))}</h3><div class="chips"><span class="chip">${esc(r.type||'術式')}</span><span class="chip">${esc(rankLabel(r.rank))}</span><span class="chip">ランダム販売</span></div><dl><dt>価格</dt><dd>${esc(price)}</dd></dl></article>`;}
 function crystalCard(r){const chips=uniqueChips([rankLabel(r.rank),'スキルクリスタル',r.craftType]);const pairs=[['強化段階',`${r.baseItem||'?'} → ${r.resultItem||'?'}`],['必要素材',r.requiredMaterials||'未設定'],['強化費用',String(r.price||'')?`${r.price}G`:'未設定']];if(r.description)pairs.push(['説明',r.description]);if(r.effect)pairs.push(['効果',r.effect]);return `<article class="card"><h3>${esc(r.name||'クリスタル強化')}</h3><div class="chips">${chips.map(c=>`<span class="chip">${esc(c)}</span>`).join('')}</div><dl>${pairs.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl></article>`;}
+let accessoryDetailIndex=Object.create(null);
+function accessoryUpgradeDetailPairs(r={}){
+  const isUpgrade=String(r.craftType||'').trim()==='装飾品強化';
+  const pairs=[];
+  pairs.push(['区分',isUpgrade?'段階強化':'新規製作']);
+  if(isUpgrade)pairs.push(['強化段階',`${r.baseItem||'?'} → ${r.resultItem||'?'}`]);
+  else pairs.push(['完成品',r.resultItem||r.name||'未設定']);
+  if(r.effect)pairs.push(['効果',r.effect]);
+  if(Array.isArray(r.performance)&&r.performance.length)pairs.push(['性能',r.performance.map(x=>`${x.label} ${x.value}`).join(' / ')]);
+  pairs.push(['必要素材',r.requiredMaterials||'未設定']);
+  if(String(r.price||''))pairs.push(['施設依頼',`${r.price}G・判定不要`]);
+  if(r.difficulty){
+    pairs.push(['自作技能',r.craftSkill||'細工']);
+    pairs.push(['基礎作成難易度',r.difficulty]);
+    pairs.push(['使用道具',craftingToolName(r.craftSkill,r.craftType)]);
+  }
+  if(r.unlockAreaName)pairs.push(['解放',r.unlockAreaName]);
+  if(r.description)pairs.push(['説明',r.description]);
+  return pairs.filter(([,v])=>String(v||'').trim());
+}
+function openAccessoryUpgradeModal(name){
+  const row=accessoryDetailIndex[String(name||'').trim()];
+  const modal=$('accessoryUpgradeDetailModal'),title=$('accessoryUpgradeDetailTitle'),body=$('accessoryUpgradeDetailBody');
+  if(!row||!modal||!title||!body)return;
+  const display=String(row.resultItem||row.name||'装飾品').trim();
+  title.textContent=display;
+  const pairs=accessoryUpgradeDetailPairs(row);
+  body.innerHTML=`<div class="chips">${uniqueChips([rankLabel(row.rank),row.branchType||row.itemCategory||'装飾品',String(row.craftType||'').trim()==='装飾品強化'?'段階強化':'新規製作']).map(c=>`<span class="chip">${esc(c)}</span>`).join('')}</div><dl>${pairs.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>`;
+  modal.hidden=false;modal.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';
+}
+function closeAccessoryUpgradeModal(){const modal=$('accessoryUpgradeDetailModal');if(!modal)return;modal.hidden=true;modal.setAttribute('aria-hidden','true');document.body.style.overflow='';}
+function accessoryUpgradeCatalog(rows=[]){
+  accessoryDetailIndex=Object.create(null);
+  const list=(rows||[]).filter(Boolean);
+  if(!list.length)return '<div class="empty">装飾品は登録されていません。</div>';
+  const entryName=r=>String(r&&r.resultItem||r&&r.name||'').trim();
+  list.forEach(r=>{const name=entryName(r);if(name)accessoryDetailIndex[name]=r;});
+  const byResult=new Map(list.map(r=>[entryName(r),r]).filter(([name])=>name));
+  const sameRankStageCache=Object.create(null);
+  function sameRankStage(entry,visiting=new Set()){
+    const name=entryName(entry);if(name&&Object.prototype.hasOwnProperty.call(sameRankStageCache,name))return sameRankStageCache[name];
+    if(name&&visiting.has(name))return 0;
+    const next=new Set(visiting);if(name)next.add(name);
+    const parent=byResult.get(String(entry&&entry.baseItem||'').trim())||null;
+    const stage=parent&&rankValue(parent.rank)===rankValue(entry&&entry.rank)?sameRankStage(parent,next)+1:0;
+    if(name)sameRankStageCache[name]=stage;return stage;
+  }
+  function rootName(entry){
+    let current=entry,root=entryName(entry),seen=new Set();
+    while(current){
+      const name=entryName(current);if(name){if(seen.has(name))break;seen.add(name);root=name;}
+      const base=String(current.baseItem||'').trim();if(!base||!byResult.has(base))break;current=byResult.get(base);
+    }
+    return root;
+  }
+  const rootOrder=[];const rowsByRoot=new Map();
+  list.slice().sort((a,b)=>rankValue(a.rank)-rankValue(b.rank)||entryName(a).localeCompare(entryName(b),'ja')).forEach(r=>{
+    const root=rootName(r)||entryName(r);if(!rowsByRoot.has(root)){rowsByRoot.set(root,[]);rootOrder.push(root);}rowsByRoot.get(root).push(r);
+  });
+  const placements=[];const rankSlots=new Map();
+  rootOrder.forEach((root,rowIndex)=>{
+    const occupiedByRank=new Map();
+    (rowsByRoot.get(root)||[]).slice().sort((a,b)=>rankValue(a.rank)-rankValue(b.rank)||sameRankStage(a)-sameRankStage(b)||entryName(a).localeCompare(entryName(b),'ja')).forEach(entry=>{
+      const rank=rankValue(entry.rank),used=occupiedByRank.get(rank)||new Set();let slot=sameRankStage(entry);while(used.has(slot))slot+=1;used.add(slot);occupiedByRank.set(rank,used);rankSlots.set(rank,Math.max(rankSlots.get(rank)||1,slot+1));placements.push({entry,row:rowIndex+2,rank,slot});
+    });
+  });
+  const visibleRanks=[...rankSlots.keys()].sort((a,b)=>a-b);const rankStart=new Map();let cursor=1;
+  visibleRanks.forEach(rank=>{rankStart.set(rank,cursor);cursor+=rankSlots.get(rank)||1;});
+  const totalNodeCols=Math.max(1,cursor-1),totalRows=Math.max(1,rootOrder.length);
+  const minColumnWidth=176,columnGap=30,horizontalPadding=48;
+  const minCanvasWidth=totalNodeCols*minColumnWidth+Math.max(0,totalNodeCols-1)*columnGap+horizontalPadding;
+  const style=`min-width:${minCanvasWidth}px;grid-template-columns:repeat(${totalNodeCols},minmax(${minColumnWidth}px,1fr));grid-template-rows:30px repeat(${totalRows},minmax(88px,auto))`;
+  const rankBands=visibleRanks.map(rank=>{const start=rankStart.get(rank)||1,span=rankSlots.get(rank)||1;return `<div class="branch-rank-band" style="grid-column:${start} / span ${span};grid-row:1 / ${totalRows+2}"><span>★${rank}</span></div>`;}).join('');
+  const nodes=placements.map(p=>{const r=p.entry,name=entryName(r),parent=String(r.baseItem||'').trim(),parentVisible=parent&&byResult.has(parent);const col=(rankStart.get(p.rank)||1)+p.slot;return `<article class="accessory-branch-node" style="grid-column:${col};grid-row:${p.row}" data-accessory-node="${esc(name)}" ${parentVisible?`data-parent-accessory="${esc(parent)}"`:''}><button type="button" data-open-accessory-upgrade="${esc(name)}" aria-label="${esc(`${name}の詳細を開く`)}"><span class="accessory-branch-rank">${esc(rankLabel(r.rank))}</span><span class="accessory-branch-name">${esc(name)}</span>${r.effect?`<span class="accessory-branch-effect">${esc(r.effect)}</span>`:''}</button></article>`;}).join('');
+  return `<div class="accessory-branch-scroll"><div class="accessory-branch-canvas" style="${style}">${rankBands}<svg class="accessory-branch-svg" aria-hidden="true"></svg>${nodes}</div></div>`;
+}
+function drawAccessoryConnections(){
+  document.querySelectorAll('.accessory-branch-canvas').forEach((canvas,index)=>{
+    const svg=canvas.querySelector('.accessory-branch-svg');if(!svg)return;
+    const rect=canvas.getBoundingClientRect(),width=Math.max(canvas.scrollWidth,canvas.clientWidth),height=Math.max(canvas.scrollHeight,canvas.clientHeight);svg.setAttribute('width',width);svg.setAttribute('height',height);svg.setAttribute('viewBox',`0 0 ${width} ${height}`);
+    const markerId=`accessoryArrow${index}`;const paths=[];
+    canvas.querySelectorAll('.accessory-branch-node[data-parent-accessory]').forEach(child=>{
+      const parentName=String(child.dataset.parentAccessory||''),parent=[...canvas.querySelectorAll('.accessory-branch-node[data-accessory-node]')].find(el=>String(el.dataset.accessoryNode||'')===parentName);if(!parent)return;
+      const pr=parent.getBoundingClientRect(),cr=child.getBoundingClientRect();const sx=pr.right-rect.left,sy=pr.top-rect.top+pr.height/2,ex=cr.left-rect.left,ey=cr.top-rect.top+cr.height/2,mid=Math.max(sx+14,(sx+ex)/2);
+      paths.push(`<path class="accessory-branch-edge" d="M ${sx} ${sy} H ${mid} V ${ey} H ${ex}" marker-end="url(#${markerId})"></path>`);
+    });
+    svg.innerHTML=`<defs><marker id="${markerId}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#9a7652"></path></marker></defs>${paths.join('')}`;
+  });
+}
+let accessoryConnectionFrame=0;
+function scheduleAccessoryConnections(){cancelAnimationFrame(accessoryConnectionFrame);accessoryConnectionFrame=requestAnimationFrame(()=>requestAnimationFrame(drawAccessoryConnections));}
+
 function recipeCard(r){
   const chips=uniqueChips([rankLabel(r.rank),r.craftType,r.category,r.itemType,r.itemCategory]);
   const pairs=[];
@@ -1062,12 +1214,8 @@ function salesCategoryOrder(label){
   const index=list.indexOf(label);
   return index<0?999:index;
 }
-function salesCatalog(rows){
-  const groups=new Map();
-  rows.forEach(row=>{const label=salesCategoryLabel(row);if(!groups.has(label))groups.set(label,[]);groups.get(label).push(row);});
-  const entries=[...groups.entries()].sort((a,b)=>salesCategoryOrder(a[0])-salesCategoryOrder(b[0])||String(a[0]).localeCompare(String(b[0]),'ja'));
-  return `<div class="sales-category-groups">${entries.map(([label,list],idx)=>`<details class="sales-category-group" ${idx===0?'open':''}><summary>${esc(label)}（${list.length}）</summary><div class="sales-category-body">${list.map(itemCard).join('')}</div></details>`).join('')}</div>`;
-}
+function salesCatalog(rows){return rows.map(itemCard).join('');}
+
 function recipeCategoryLabel(r){
   const type=String(r.itemType||'').trim(), cat=String(r.itemCategory||r.category||'').trim();
   if(type==='武器'||type==='術式装備')return '武器';
@@ -1079,11 +1227,30 @@ function recipeCategoryLabel(r){
   if(String(r.craftType||'')==='素材加工')return cat||'素材加工';
   return cat||type||'その他';
 }
-function recipeCatalog(rows){
-  const groups=new Map();
-  rows.forEach(r=>{const key=recipeCategoryLabel(r);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);});
-  return `<div class="recipe-category-groups">${[...groups.entries()].map(([label,list],idx)=>`<details class="recipe-category-group" ${idx===0?'open':''}><summary>${esc(label)}（${list.length}）</summary><div class="recipe-category-body">${list.map(recipeCard).join('')}</div></details>`).join('')}</div>`;
+function recipeCatalog(rows){return rows.map(recipeCard).join('');}
+
+function catalogCategoryViewKey(){return `${currentFacility}:${currentSection}`;}
+function catalogCategoryLabelForRow(row){
+  if(currentSection==='sales')return salesCategoryLabel(row);
+  if(currentSection==='scrolls')return String(row.type||row.itemCategory||'スクロール').trim()||'スクロール';
+  if(currentSection==='crystal')return String(row.itemCategory||row.category||'スキルクリスタル').trim()||'スキルクリスタル';
+  if(currentSection==='accessory')return String(row.itemCategory||row.branchType||row.category||'装飾品').trim()||'装飾品';
+  return recipeCategoryLabel(row);
 }
+function catalogCategoryOptions(rows){
+  const seen=new Set(),out=[];
+  (rows||[]).forEach(row=>{const label=catalogCategoryLabelForRow(row);if(label&&!seen.has(label)){seen.add(label);out.push(label);}});
+  if(currentSection==='sales')return out.sort((a,b)=>salesCategoryOrder(a)-salesCategoryOrder(b)||String(a).localeCompare(String(b),'ja'));
+  return out;
+}
+function syncCatalogCategoryState(rows){
+  const key=catalogCategoryViewKey(),options=catalogCategoryOptions(rows);
+  const saved=catalogCategoryByView[key]||'all';
+  currentCatalogCategory=saved==='all'||options.includes(saved)?saved:'all';
+  catalogCategoryByView[key]=currentCatalogCategory;
+  return options;
+}
+function catalogCategoryMatches(row){return currentCatalogCategory==='all'||catalogCategoryLabelForRow(row)===currentCatalogCategory;}
 function searchNorm(v){return String(v||'').normalize('NFKC').toLocaleLowerCase('ja').replace(/\s+/g,'');}
 function branchSearchText(branch){const parts=[branch.label];(branch.lines||[]).forEach(line=>(line.nodes||[]).forEach(n=>{parts.push(n.resultItem,n.requiredMaterials);}));return searchNorm(parts.filter(Boolean).join(' '));}
 function branchMatches(branch,query){return !query||branchSearchText(branch).includes(query);}
@@ -1241,55 +1408,36 @@ function branchGraphCatalog(current){
   return `<div class="branch-graph-scroll ${branchLabelsCollapsed?'branch-labels-collapsed':''}"><div class="branch-graph-canvas" style="${style}">${labelToggle}${labels.join('')}${rankBands}<svg class="branch-graph-svg" aria-hidden="true"></svg>${nodes}</div></div>`;
 }
 function drawBranchConnections(){
-  const canvas=document.querySelector('.branch-graph-canvas'),svg=canvas&&canvas.querySelector('.branch-graph-svg');if(!canvas||!svg)return;
-  const width=Math.max(canvas.scrollWidth,canvas.clientWidth),height=Math.max(canvas.scrollHeight,canvas.clientHeight);
-  svg.setAttribute('width',String(width));svg.setAttribute('height',String(height));svg.setAttribute('viewBox',`0 0 ${width} ${height}`);
-  const nodeMap=Object.create(null),childrenByParent=new Map();
-  canvas.querySelectorAll('[data-weapon-node]').forEach(el=>{const name=String(el.dataset.weaponNode||'').trim();if(name&&!nodeMap[name])nodeMap[name]=el;});
-  Object.values(nodeMap).forEach(child=>{
-    const parentName=String(child.dataset.parentWeapon||'').trim(),parent=nodeMap[parentName];if(!parent)return;
-    if(!childrenByParent.has(parentName))childrenByParent.set(parentName,{parent,children:[]});
-    childrenByParent.get(parentName).children.push(child);
-  });
-  const paths=[],routePaths=[],nodeGap=14,rowTolerance=7;
-  childrenByParent.forEach(({parent,children},parentName)=>{
-    const right=parent.offsetLeft+parent.offsetWidth,sy=parent.offsetTop+parent.offsetHeight/2;
-    const points=children.map(child=>({
-      child,ey:child.offsetTop+child.offsetHeight/2,endX:child.offsetLeft-nodeGap
-    })).sort((a,b)=>a.ey-b.ey||a.endX-b.endX);
-    const same=points.filter(p=>Math.abs(p.ey-sy)<=rowTolerance);
-    const above=points.filter(p=>p.ey<sy-rowTolerance);
-    const below=points.filter(p=>p.ey>sy+rowTolerance);
-
-    same.forEach(({child,endX})=>{
-      const childName=String(child.dataset.weaponNode||'').trim();
-      const d=`M ${right} ${sy} H ${endX}`;
-      paths.push(`<path class="branch-graph-edge branch-graph-branch" d="${d}" marker-end="url(#branchArrow)"></path>`);
-      routePaths.push(`<path class="branch-graph-edge branch-graph-edge-route" data-edge-from="${esc(parentName)}" data-edge-to="${esc(childName)}" d="${d}"></path>`);
+  document.querySelectorAll('.branch-graph-canvas').forEach((canvas,canvasIndex)=>{
+    const svg=canvas.querySelector('.branch-graph-svg');if(!svg)return;
+    const width=Math.max(canvas.scrollWidth,canvas.clientWidth),height=Math.max(canvas.scrollHeight,canvas.clientHeight);
+    svg.setAttribute('width',String(width));svg.setAttribute('height',String(height));svg.setAttribute('viewBox',`0 0 ${width} ${height}`);
+    const nodeMap=Object.create(null),childrenByParent=new Map();
+    canvas.querySelectorAll('[data-weapon-node]').forEach(el=>{const name=String(el.dataset.weaponNode||'').trim();if(name&&!nodeMap[name])nodeMap[name]=el;});
+    Object.values(nodeMap).forEach(child=>{
+      const parentName=String(child.dataset.parentWeapon||'').trim(),parent=nodeMap[parentName];if(!parent)return;
+      if(!childrenByParent.has(parentName))childrenByParent.set(parentName,{parent,children:[]});
+      childrenByParent.get(parentName).children.push(child);
     });
-
-    function drawGroup(group){
-      if(!group.length)return;
-      const trunkX=right+12;
-      const endY=group[0].ey<sy?Math.min(...group.map(p=>p.ey)):Math.max(...group.map(p=>p.ey));
-      paths.push(`<path class="branch-graph-edge branch-graph-trunk" d="M ${right} ${sy} H ${trunkX} V ${endY}"></path>`);
-      group.forEach(({child,ey,endX})=>{
-        const childName=String(child.dataset.weaponNode||'').trim();
-        paths.push(`<path class="branch-graph-edge branch-graph-branch" d="M ${trunkX} ${ey} H ${endX}" marker-end="url(#branchArrow)"></path>`);
-        routePaths.push(`<path class="branch-graph-edge branch-graph-edge-route" data-edge-from="${esc(parentName)}" data-edge-to="${esc(childName)}" d="M ${right} ${sy} H ${trunkX} V ${ey} H ${endX}"></path>`);
-      });
-    }
-    drawGroup(above);drawGroup(below);
+    const paths=[],routePaths=[],nodeGap=14,rowTolerance=7,markerId=`branchArrow_${canvasIndex}`;
+    childrenByParent.forEach(({parent,children},parentName)=>{
+      const right=parent.offsetLeft+parent.offsetWidth,sy=parent.offsetTop+parent.offsetHeight/2;
+      const points=children.map(child=>({child,ey:child.offsetTop+child.offsetHeight/2,endX:child.offsetLeft-nodeGap})).sort((a,b)=>a.ey-b.ey||a.endX-b.endX);
+      const same=points.filter(p=>Math.abs(p.ey-sy)<=rowTolerance),above=points.filter(p=>p.ey<sy-rowTolerance),below=points.filter(p=>p.ey>sy+rowTolerance);
+      same.forEach(({child,endX})=>{const childName=String(child.dataset.weaponNode||'').trim(),d=`M ${right} ${sy} H ${endX}`;paths.push(`<path class="branch-graph-edge branch-graph-branch" d="${d}" marker-end="url(#${markerId})"></path>`);routePaths.push(`<path class="branch-graph-edge branch-graph-edge-route" data-edge-from="${esc(parentName)}" data-edge-to="${esc(childName)}" d="${d}"></path>`);});
+      function drawGroup(group){if(!group.length)return;const trunkX=right+12,endY=group[0].ey<sy?Math.min(...group.map(p=>p.ey)):Math.max(...group.map(p=>p.ey));paths.push(`<path class="branch-graph-edge branch-graph-trunk" d="M ${right} ${sy} H ${trunkX} V ${endY}"></path>`);group.forEach(({child,ey,endX})=>{const childName=String(child.dataset.weaponNode||'').trim();paths.push(`<path class="branch-graph-edge branch-graph-branch" d="M ${trunkX} ${ey} H ${endX}" marker-end="url(#${markerId})"></path>`);routePaths.push(`<path class="branch-graph-edge branch-graph-edge-route" data-edge-from="${esc(parentName)}" data-edge-to="${esc(childName)}" d="M ${right} ${sy} H ${trunkX} V ${ey} H ${endX}"></path>`);});}
+      drawGroup(above);drawGroup(below);
+    });
+    svg.innerHTML=`<defs><marker id="${markerId}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#496675"></path></marker></defs>${paths.join('')}${routePaths.join('')}`;
   });
-  svg.innerHTML=`<defs><marker id="branchArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#496675"></path></marker></defs>${paths.join('')}${routePaths.join('')}`;
 }
 function scheduleBranchConnections(){
   cancelAnimationFrame(branchGraphFrame);
   branchGraphFrame=requestAnimationFrame(()=>requestAnimationFrame(()=>{
     drawBranchConnections();
-    const canvas=document.querySelector('.branch-graph-canvas');
+    const canvases=[...document.querySelectorAll('.branch-graph-canvas')];
     if(branchGraphResizeObserver){branchGraphResizeObserver.disconnect();branchGraphResizeObserver=null;}
-    if(canvas&&window.ResizeObserver){branchGraphResizeObserver=new ResizeObserver(()=>{cancelAnimationFrame(branchGraphFrame);branchGraphFrame=requestAnimationFrame(drawBranchConnections);});branchGraphResizeObserver.observe(canvas);}
+    if(canvases.length&&window.ResizeObserver){branchGraphResizeObserver=new ResizeObserver(()=>{cancelAnimationFrame(branchGraphFrame);branchGraphFrame=requestAnimationFrame(drawBranchConnections);});canvases.forEach(canvas=>branchGraphResizeObserver.observe(canvas));}
   }));
 }
 function clearBranchRouteFocus(scroll=document.querySelector('.branch-graph-scroll')){
@@ -1363,8 +1511,7 @@ function weaponMaterialPartsHtml(text){
 function materialSourceRowHtml(row){
   if(row.kind==='event')return `<article class="material-source-row"><strong>${esc(row.areaName)}：エリアイベント</strong></article>`;
   const heading=`${row.areaName}：${row.detail}`;
-  const meta=`魔物ドロップ${row.rate?` / ${row.rate}`:''}${row.quantity?` / ${row.quantity}`:''}`;
-  return `<article class="material-source-row"><strong>${esc(heading)}</strong><div class="material-source-meta">${esc(meta)}</div></article>`;
+  return `<article class="material-source-row"><strong>${esc(heading)}</strong></article>`;
 }
 function openMaterialSourceModal(name){
   const modal=$('materialSourceModal'),body=$('materialSourceBody');if(!modal||!body)return;
@@ -1380,9 +1527,9 @@ function weaponModalHtml(entry){
   const isBase=!!entry.isBase;
   const chips=uniqueChips([rankLabel(entry.rank),isBase?'基礎武器':`${entry.branchLabel||''}派生`,entry.itemCategory]);
   let pairs=[];
-  if(isBase){pairs=itemTextRows(entry);if(String(entry.sellPrice||entry.price||'').trim())pairs.unshift(['売値',`${entry.sellPrice||entry.price}G`]);if(String(entry.buyPrice||entry.price||'').trim())pairs.unshift(['買値',`${entry.buyPrice||entry.price}G`]);if(String(entry.upgradeLimit||'').trim())pairs.unshift(['強化枠',`${entry.upgradeLimit}枠`]);}
+  if(isBase){pairs=itemTextRows(entry);if(String(entry.sellPrice||entry.price||'').trim())pairs.unshift(['売値',`${entry.sellPrice||entry.price}G`]);if(String(entry.buyPrice||entry.price||'').trim())pairs.unshift(['買値',`${entry.buyPrice||entry.price}G`]);if(Number(entry.upgradeLimit||0)>0)pairs.unshift(['強化枠',`${entry.upgradeLimit}枠`]);}
   else{
-    if(String(entry.upgradeLimit||'').trim())pairs.push(['強化枠',`${entry.upgradeLimit}枠`]);
+    if(Number(entry.upgradeLimit||0)>0)pairs.push(['強化枠',`${entry.upgradeLimit}枠`]);
     pairs.push(['必要素材',weaponMaterialPartsHtml(entry.requiredMaterials||'未設定'),true]);
     if(String(entry.price||''))pairs.push(['施設依頼',`${entry.price}G`]);
     if(String(entry.buyPrice||'').trim())pairs.push(['買値',`${entry.buyPrice}G`]);
@@ -1459,10 +1606,21 @@ function branchCatalog(categories){
     return {...cat,source:cat,baseWeapons,matched,count};
   }).filter(cat=>cat.count>0);
   if(!available.length){select.innerHTML='';branchDetailIndex=Object.create(null);return '<div class="empty">検索・★ランク条件に一致する武器派生はありません。</div>';}
-  if(!available.some(cat=>cat.category===currentWeaponCategory))currentWeaponCategory=available[0].category;
+  if(currentWeaponCategory!=='all'&&!available.some(cat=>cat.category===currentWeaponCategory))currentWeaponCategory=available[0].category;
+  if(!currentWeaponCategory)currentWeaponCategory='all';
   raStorage.set(WEAPON_CATEGORY_STORAGE_KEY,currentWeaponCategory);
-  select.innerHTML=available.map(cat=>`<option value="${esc(cat.category)}" ${cat.category===currentWeaponCategory?'selected':''}>${esc(cat.category)}（${cat.count}）</option>`).join('');
-  const current=available.find(cat=>cat.category===currentWeaponCategory)||available[0];rebuildBranchDetailIndex(current.source||current);return branchGraphCatalog(current);
+  const total=available.reduce((sum,cat)=>sum+cat.count,0);
+  select.innerHTML=[`<option value="all" ${currentWeaponCategory==='all'?'selected':''}>全て（${total}）</option>`,...available.map(cat=>`<option value="${esc(cat.category)}" ${cat.category===currentWeaponCategory?'selected':''}>${esc(cat.category)}（${cat.count}）</option>`)].join('');
+  if(currentWeaponCategory==='all'){
+    rebuildBranchDetailIndex({
+      baseWeapons:available.flatMap(cat=>(cat.source?.baseWeapons||[])),
+      branches:available.flatMap(cat=>(cat.source?.branches||[]))
+    });
+    return `<div class="branch-category-all">${available.map(cat=>`<section class="branch-category-block"><div class="branch-category-heading"><h3>${esc(cat.category)}</h3><span>${cat.count}件</span></div>${branchGraphCatalog(cat)}</section>`).join('')}</div>`;
+  }
+  const current=available.find(cat=>cat.category===currentWeaponCategory)||available[0];
+  rebuildBranchDetailIndex(current.source||current);
+  return branchGraphCatalog(current);
 }
 function focusPendingBranchNode(){scheduleBranchConnections();}
 function syncBranchLabelToggle(){
@@ -1476,17 +1634,55 @@ function syncBranchLabelToggle(){
     button.setAttribute('title',label);
   });
 }
+
+let communityGatheringState={facilities:[],error:''};
+async function loadCommunityGatheringState({quiet=false}={}){
+  try{
+    const result=await jsonpAction('communityGatheringState',{}, {attempts:quiet?1:2,timeoutMs:20000});
+    if(!result||!result.ok)throw new Error(result&&result.error?result.error:'共同設備進捗を取得できませんでした。');
+    communityGatheringState={facilities:Array.isArray(result.facilities)?result.facilities:[],error:''};
+  }catch(error){communityGatheringState={facilities:communityGatheringState.facilities||[],error:String(error&&error.message||error||'共同設備進捗を取得できませんでした。')};}
+  if(currentFacility==='plaza')render();
+  return communityGatheringState;
+}
+function communityAreaUnlocked(areaId){
+  const ids=Array.isArray(currentUnlockState?.unlockedAreaIds)?currentUnlockState.unlockedAreaIds:[];
+  return !!currentUnlockState?.gmAllAreas || ids.includes(areaId);
+}
+function communityGatheringCatalog(){
+  if(communityGatheringState.error&&!communityGatheringState.facilities.length)return `<div class="empty">共有進捗を取得できませんでした。<br>${esc(communityGatheringState.error)}</div>`;
+  const visible=(communityGatheringState.facilities||[]).filter(row=>communityAreaUnlocked(String(row.areaId||'')));
+  if(!visible.length)return '<div class="empty">現在の解放エリアでは共同採取設備がありません。</div>';
+  const rule='<div class="community-rule"><b>共同採取設備</b><br>通常エリアの到達に応じて整備計画が追加されます。納品数は全プレイヤーで共有されます。完成後の採取は1人1日1回・判定不要。採取量のダイスは卓上で振ります。異界到達では設備は追加されません。</div>';
+  return rule+visible.map(row=>{
+    if(row.complete){return `<article class="card community-card"><div class="community-head"><h3>${esc(row.name)}</h3><span class="community-status complete">解放済み</span></div><div class="muted">${esc(row.areaName||'')}</div><p>${esc(row.description||'')}</p><div class="community-output"><b>採取素材：${esc(row.output?.name||'')}</b><br>利用回数：${esc(row.usage||'1人につき1日1回')}<br>採取量：${esc(row.output?.amount||'')}</div></article>`;}
+    const reqs=(row.requirements||[]).map(req=>`<div class="community-req"><span>${esc(req.name)}</span><b>${Number(req.current)||0} / ${Number(req.required)||0}</b></div>`).join('');
+    return `<article class="card community-card"><div class="community-head"><h3>${esc(row.name)}</h3><span class="community-status">整備中 ${Number(row.percent)||0}%</span></div><div class="muted">${esc(row.areaName||'')}</div><p>${esc(row.description||'')}</p><div class="community-progress" aria-label="整備進行度 ${Number(row.percent)||0}%"><span style="width:${Math.max(0,Math.min(100,Number(row.percent)||0))}%"></span></div><div class="community-reqs">${reqs}</div></article>`;
+  }).join('');
+}
+function renderSpecialFacility(){
+  if(currentFacility!=='plaza')return false;
+  $('branchControls').hidden=true;$('catalogSearchControls').hidden=true;$('catalogRankControls').hidden=true;if($('catalogCategoryControls'))$('catalogCategoryControls').hidden=true;
+  if($('catalogSearchCount'))$('catalogSearchCount').textContent='';
+  $('cards').className='cards';
+  $('cards').innerHTML=communityGatheringCatalog();
+  return true;
+}
 function renderTabs(){document.body.dataset.facility=currentFacility;syncBranchLabelToggle();const defs=SECTION_DEFS[currentFacility];if(!defs.some(d=>d[0]===currentSection))currentSection=defs[0][0];$('sectionTabs').innerHTML=defs.map(([id,label])=>`<button type="button" data-section="${esc(id)}" class="${id===currentSection?'active':''}">${esc(label)}</button>`).join('');const cur=defs.find(d=>d[0]===currentSection);$('sectionTitle').textContent=cur[1];$('sectionDescription').textContent=cur[2];}
-function catalogRowMatches(row){const q=searchNorm(catalogSearch);if(!q)return true;return searchNorm(Object.values(row||{}).filter(v=>typeof v!=='object').join(' ')).includes(q);}function render(){renderTabs();const rows=(catalog[currentFacility]&&catalog[currentFacility][currentSection])||[];const branches=currentSection==='branches',scrolls=currentSection==='scrolls',crystal=currentSection==='crystal';$('branchControls').hidden=!branches;$('catalogSearchControls').hidden=branches;renderRankControls(rows,branches);const filtered=branches?rows:rows.filter(rankMatches).filter(catalogRowMatches);if($('catalogSearchCount'))$('catalogSearchCount').textContent=branches?'':`${filtered.length}件表示`;$('cards').className=branches?'':'cards';$('cards').innerHTML=branches?branchCatalog(rows):(filtered.length?(scrolls?filtered.map(scrollPriceCard).join(''):currentSection==='sales'?salesCatalog(filtered):crystal?filtered.map(crystalCard).join(''):recipeCatalog(filtered)):'<div class="empty">現在の検索・★ランク条件に一致する内容はありません。</div>');if(branches)focusPendingBranchNode();}
+function catalogRowMatches(row){const q=searchNorm(catalogSearch);if(!q)return true;return searchNorm(Object.values(row||{}).filter(v=>typeof v!=='object').join(' ')).includes(q);}function render(){renderTabs();if(renderSpecialFacility())return;const rows=(catalog[currentFacility]&&catalog[currentFacility][currentSection])||[];const branches=currentSection==='branches',scrolls=currentSection==='scrolls',crystal=currentSection==='crystal',accessory=currentSection==='accessory';$('branchControls').hidden=!branches;$('catalogSearchControls').hidden=branches;renderRankControls(rows,branches);const categoryBase=branches?[]:rows.filter(rankMatches).filter(catalogRowMatches);const categoryOptions=branches?[]:syncCatalogCategoryState(categoryBase);if($('catalogCategoryControls'))$('catalogCategoryControls').hidden=branches||accessory||categoryOptions.length<2;if($('catalogCategoryPickerLabel'))$('catalogCategoryPickerLabel').textContent=currentCatalogCategory==='all'?'全て':currentCatalogCategory;const filtered=branches?rows:(accessory?categoryBase:categoryBase.filter(catalogCategoryMatches));if($('catalogSearchCount'))$('catalogSearchCount').textContent=branches?'':`${filtered.length}件表示`;$('cards').className=(branches||accessory)?'catalog-wide':'cards';$('cards').innerHTML=branches?branchCatalog(rows):(filtered.length?(scrolls?filtered.map(scrollPriceCard).join(''):currentSection==='sales'?salesCatalog(filtered):crystal?filtered.map(crystalCard).join(''):accessory?accessoryUpgradeCatalog(filtered):recipeCatalog(filtered)):'<div class="empty">現在の検索・★ランク・カテゴリ条件に一致する内容はありません。</div>');if(branches)focusPendingBranchNode();if(accessory)scheduleAccessoryConnections();}
+let facilityCloudSyncGeneration=0;
+function facilityUnlockIdsEqual(a=[],b=[]){
+  const aa=normalizeStoredUnlockIds(a).slice().sort(),bb=normalizeStoredUnlockIds(b).slice().sort();
+  return aa.length===bb.length&&aa.every((value,index)=>value===bb[index]);
+}
 async function loadCatalog(playerKey,{unlockKey='',force=false,reset=false}={}){
   const viewState=captureFacilityViewState();
   const cleanPlayerKey=String(playerKey||'').trim();
-  setStatus(cleanPlayerKey?'GitHub共通DBと保存済みの解放状態を確認しています。':'初期エリアの施設データを読み込んでいます。');
+  const generation=++facilityCloudSyncGeneration;
+  setStatus(cleanPlayerKey?'GitHub共通DBと端末保存の解放状態を読み込んでいます。':'初期エリアの施設データを読み込んでいます。');
   ['applyKey','loadState','resetKey','reloadDb'].forEach(id=>{if($(id))$(id).disabled=true;});
   try{
-    const masterTask=fetchGithubCommonMaster({force});
-    const cloudTask=cleanPlayerKey&&!reset?loadUnlockState(cleanPlayerKey):Promise.resolve({unlockedAreaIds:[],unlockedAreas:[]});
-    const commonMaster=await masterTask;
+    const commonMaster=await fetchGithubCommonMaster({force});
     let mergedIds=cleanPlayerKey?readLocalUnlockedAreaIds(cleanPlayerKey):[];
     let addedAreaName='';
     if(reset){
@@ -1502,7 +1698,7 @@ async function loadCatalog(playerKey,{unlockKey='',force=false,reset=false}={}){
       }
     }
 
-    // キー照合はGitHub公開DBだけで完結させ、GASの応答を待たず端末へ即時反映する。
+    // 表示はGitHub共通DB＋端末保存だけで完了させる。GAS同期は読み込みを止めずバックグラウンドで行う。
     let displayState=unlockStateFromIds(commonMaster,mergedIds,addedAreaName);
     if(cleanPlayerKey)writeLocalUnlockedAreaIds(cleanPlayerKey,storageUnlockIds(displayState));
     let built=buildFacilityCatalogFromGithub(commonMaster,displayState);
@@ -1513,6 +1709,7 @@ async function loadCatalog(playerKey,{unlockKey='',force=false,reset=false}={}){
     if(cleanPlayerKey)raStorage.set(PLAYER_KEY_STORAGE_KEY,cleanPlayerKey);
     renderUnlockedAreas(displayState);
     render();
+    loadCommunityGatheringState({quiet:true});
     if(unlockKey)$('unlockKey').value='';
 
     if(!cleanPlayerKey){
@@ -1520,56 +1717,74 @@ async function loadCatalog(playerKey,{unlockKey='',force=false,reset=false}={}){
       return true;
     }
 
+    const prefix=addedAreaName==='GM全エリア解放'?`GM全エリア解放キーを登録しました。現在存在する全エリアを解放し、今後追加されるエリアにも自動追従します。 `:(addedAreaName?`「${addedAreaName}」を解放しました。 `:'');
+    setStatus(`${prefix}${Math.max(1,displayState.unlockedAreas.length)}エリアを表示しました。クラウド同期はバックグラウンドで確認します。`,'ok');
+
     if(reset){
-      setStatus('解放状態を端末上で初期エリアだけに戻しました。クラウドへ同期しています。','ok');
-      try{
-        const synced=await resetUnlockState(cleanPlayerKey);
-        const syncedState=unlockStateFromIds(commonMaster,synced.unlockedAreaIds||[],'');
-        writeLocalUnlockedAreaIds(cleanPlayerKey,storageUnlockIds(syncedState));
-        currentUnlockState=syncedState;renderUnlockedAreas(syncedState);
-        setStatus('解放状態を初期エリアだけに戻し、クラウド保存へ同期しました。','ok');
-      }catch(error){
-        setStatus(`端末上の解放状態は初期化しましたが、クラウド保存への同期に失敗しました：${String(error&&error.message||error)}`,'bad');
-      }
+      void (async()=>{
+        try{
+          const synced=await resetUnlockState(cleanPlayerKey);
+          if(generation!==facilityCloudSyncGeneration)return;
+          const syncedState=unlockStateFromIds(commonMaster,synced.unlockedAreaIds||[],'');
+          writeLocalUnlockedAreaIds(cleanPlayerKey,storageUnlockIds(syncedState));
+          currentUnlockState=syncedState;renderUnlockedAreas(syncedState);
+          setStatus('解放状態を初期エリアだけに戻し、クラウド保存へ同期しました。','ok');
+        }catch(error){
+          if(generation!==facilityCloudSyncGeneration)return;
+          setStatus(`初期エリアの表示は完了しています。クラウド保存への同期だけ失敗しました：${String(error&&error.message||error)}`,'bad');
+        }
+      })();
       return true;
     }
 
-    const prefix=addedAreaName==='GM全エリア解放'?`GM全エリア解放キーを登録しました。現在存在する全エリアを解放し、今後追加されるエリアにも自動追従します。 `:(addedAreaName?`「${addedAreaName}」を解放しました。 `:'');
-    setStatus(`${prefix}${Math.max(1,displayState.unlockedAreas.length)}エリアを端末へ保存しました。クラウド状態を確認しています。`,'ok');
-
-    let cloudState={unlockedAreaIds:[],unlockedAreas:[]},cloudError=null;
-    try{cloudState=await cloudTask;}catch(error){cloudError=error;}
-    if(!cloudError){
-      const merged=mergeStoredUnlockIds(storageUnlockIds(displayState),cloudState.unlockedAreaIds||[]);
-      displayState=unlockStateFromIds(commonMaster,merged,addedAreaName);
-      writeLocalUnlockedAreaIds(cleanPlayerKey,storageUnlockIds(displayState));
-      built=buildFacilityCatalogFromGithub(commonMaster,displayState);
+    const localAtDisplay=storageUnlockIds(displayState);
+    void (async()=>{
+      let cloudState=null;
+      try{
+        cloudState=await loadUnlockState(cleanPlayerKey);
+      }catch(error){
+        if(generation!==facilityCloudSyncGeneration)return;
+        setStatus(`${prefix}${Math.max(1,currentUnlockState?.unlockedAreas?.length||displayState.unlockedAreas.length)}エリアは表示済みです。クラウド解放状態の確認だけ完了しませんでした：${String(error&&error.message||error)}`,'bad');
+        return;
+      }
+      if(generation!==facilityCloudSyncGeneration)return;
+      const cloudIds=storageUnlockIds({gmAllAreas:!!cloudState.gmAllAreas,unlockedAreaIds:cloudState.unlockedAreaIds||[]});
+      const merged=mergeStoredUnlockIds(localAtDisplay,cloudIds);
+      let reconciled=unlockStateFromIds(commonMaster,merged,addedAreaName);
+      writeLocalUnlockedAreaIds(cleanPlayerKey,storageUnlockIds(reconciled));
+      built=buildFacilityCatalogFromGithub(commonMaster,reconciled);
       catalog=built.catalog||catalog;
-      displayState={...displayState,gmAllAreas:!!built.gmAllAreas,storedUnlockAreaIds:built.storedUnlockAreaIds||storageUnlockIds(displayState),unlockedAreaIds:built.unlockedAreaIds||[],unlockedAreas:built.unlockedAreas||[]};
-      currentUnlockState=displayState;renderUnlockedAreas(displayState);render();
-    }
-
-    try{
-      const synced=await syncUnlockState(cleanPlayerKey,storageUnlockIds(displayState));
-      const syncedState=unlockStateFromIds(commonMaster,mergeStoredUnlockIds(storageUnlockIds(displayState),synced.unlockedAreaIds||[]),addedAreaName);
-      writeLocalUnlockedAreaIds(cleanPlayerKey,storageUnlockIds(syncedState));
-      currentUnlockState=syncedState;renderUnlockedAreas(syncedState);
-      setStatus(`${prefix}${Math.max(1,syncedState.unlockedAreas.length)}エリアを表示し、クラウド保存へ同期しました。 / GitHub共通DB${built.version?' v'+built.version:''}${commonMaster.versionWarning?'（更新反映待ち）':''}`,commonMaster.versionWarning?'':'ok');
-    }catch(error){
-      const cloudReadNote=cloudError?` クラウド読込にも失敗しています：${String(cloudError&&cloudError.message||cloudError)}`:'';
-      setStatus(`${prefix}端末への保存と表示は完了しましたが、クラウド保存への同期に失敗しました：${String(error&&error.message||error)}${cloudReadNote}`,'bad');
-    }
+      reconciled={...reconciled,gmAllAreas:!!built.gmAllAreas,storedUnlockAreaIds:built.storedUnlockAreaIds||storageUnlockIds(reconciled),unlockedAreaIds:built.unlockedAreaIds||[],unlockedAreas:built.unlockedAreas||[]};
+      currentUnlockState=reconciled;renderUnlockedAreas(reconciled);render();
+      const mergedIdsForCloud=storageUnlockIds(reconciled);
+      if(facilityUnlockIdsEqual(cloudIds,mergedIdsForCloud)){
+        setStatus(`${prefix}${Math.max(1,reconciled.unlockedAreas.length)}エリアを表示しました。 / GitHub共通DB${built.version?' v'+built.version:''}${commonMaster.versionWarning?'（更新反映待ち）':''}`,commonMaster.versionWarning?'':'ok');
+        return;
+      }
+      try{
+        const synced=await syncUnlockState(cleanPlayerKey,mergedIdsForCloud);
+        if(generation!==facilityCloudSyncGeneration)return;
+        const syncedState=unlockStateFromIds(commonMaster,mergeStoredUnlockIds(mergedIdsForCloud,synced.unlockedAreaIds||[]),addedAreaName);
+        writeLocalUnlockedAreaIds(cleanPlayerKey,storageUnlockIds(syncedState));
+        currentUnlockState=syncedState;renderUnlockedAreas(syncedState);
+        setStatus(`${prefix}${Math.max(1,syncedState.unlockedAreas.length)}エリアを表示し、変更分だけクラウド保存へ同期しました。 / GitHub共通DB${built.version?' v'+built.version:''}${commonMaster.versionWarning?'（更新反映待ち）':''}`,commonMaster.versionWarning?'':'ok');
+      }catch(error){
+        if(generation!==facilityCloudSyncGeneration)return;
+        setStatus(`${prefix}${Math.max(1,reconciled.unlockedAreas.length)}エリアは表示済みです。クラウドへの変更分同期だけ失敗しました：${String(error&&error.message||error)}`,'bad');
+      }
+    })();
     return true;
   }catch(error){
-    console.warn('施設の解放状態または共通DBの読み込みに失敗しました。',error);
+    console.warn('施設の共通DB読み込みに失敗しました。',error);
     const text=String(error&&error.message||error||'施設データを読み込めませんでした。');
-    setStatus(text==='通信がタイムアウトしました。'?'解放状態の通信が完了しませんでした。数秒待ってもう一度実行してください。':text,'bad');
+    setStatus(text,'bad');
     return false;
   }finally{
     ['applyKey','loadState','resetKey','reloadDb'].forEach(id=>{if($(id))$(id).disabled=false;});
     restoreFacilityViewState(viewState);
   }
 }
+
 function playerKeyValue(){return String($('playerKey')?.value||'').trim();}
 $('loadState').addEventListener('click',()=>loadCatalog(playerKeyValue()));
 $('playerKey').addEventListener('keydown',e=>{if(e.key==='Enter')loadCatalog(playerKeyValue());});
@@ -1642,6 +1857,9 @@ document.addEventListener('click',e=>{
     scheduleBranchConnections();
     return;
   }
+  const accessoryDetail=e.target.closest('[data-open-accessory-upgrade]');if(accessoryDetail){openAccessoryUpgradeModal(accessoryDetail.dataset.openAccessoryUpgrade||'');return;}
+  if(e.target.closest('[data-close-accessory-upgrade]')){closeAccessoryUpgradeModal();return;}
+  const accessoryModal=$('accessoryUpgradeDetailModal');if(e.target===accessoryModal){closeAccessoryUpgradeModal();return;}
   const materialSource=e.target.closest('[data-material-source]');if(materialSource){openMaterialSourceModal(materialSource.dataset.materialSource||'');return;}
   if(e.target.closest('[data-close-material-source]')){closeMaterialSourceModal();return;}
   const sourceModal=$('materialSourceModal');if(e.target===sourceModal){closeMaterialSourceModal();return;}
@@ -1650,16 +1868,20 @@ document.addEventListener('click',e=>{
   const modalLink=e.target.closest('[data-modal-weapon]');if(modalLink){openWeaponModal(modalLink.dataset.modalWeapon||'',modalLink);return;}
   if(e.target.closest('[data-close-weapon-modal]')){closeWeaponModal();return;}
   const modal=$('weaponDetailModal');if(e.target===modal){closeWeaponModal();return;}
-  const f=e.target.closest('.facility-switch [data-facility]');if(f){closeWeaponModal();currentFacility=f.dataset.facility;currentSection=SECTION_DEFS[currentFacility][0][0];currentRank='all';document.querySelectorAll('.facility-switch [data-facility]').forEach(b=>b.classList.toggle('active',b===f));render();return;}
-  const sectionButton=e.target.closest('[data-section]');if(sectionButton){closeWeaponModal();currentSection=sectionButton.dataset.section;currentRank='all';render();return;}
+  const f=e.target.closest('.facility-switch [data-facility]');if(f){closeWeaponModal();closeAccessoryUpgradeModal();currentFacility=f.dataset.facility;currentSection=SECTION_DEFS[currentFacility][0][0];currentRank='all';document.querySelectorAll('.facility-switch [data-facility]').forEach(b=>b.classList.toggle('active',b===f));render();if(currentFacility==='plaza')loadCommunityGatheringState({quiet:true});return;}
+  const sectionButton=e.target.closest('[data-section]');if(sectionButton){closeWeaponModal();closeAccessoryUpgradeModal();currentSection=sectionButton.dataset.section;currentRank='all';render();return;}
   const r=e.target.closest('[data-rank-filter]');if(r){closeWeaponModal();currentRank=r.dataset.rankFilter||'all';render();return;}
 });
 $('weaponCategorySelect').addEventListener('change',e=>{closeWeaponModal();currentWeaponCategory=e.target.value||'';raStorage.set(WEAPON_CATEGORY_STORAGE_KEY,currentWeaponCategory);render();});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('materialSourceModal')?.hidden){closeMaterialSourceModal();return;}closeWeaponModal();closeUnlockedAreaModal();}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('accessoryUpgradeDetailModal')?.hidden){closeAccessoryUpgradeModal();return;}if(!$('materialSourceModal')?.hidden){closeMaterialSourceModal();return;}closeWeaponModal();closeUnlockedAreaModal();}});
 $('openUnlockedAreas').addEventListener('click',openUnlockedAreaModal);
 $('unlockedAreaModal').addEventListener('click',e=>{if(e.target===$('unlockedAreaModal')||e.target.closest('[data-close-unlocked-area-modal]'))closeUnlockedAreaModal();});
-window.addEventListener('resize',scheduleBranchConnections,{passive:true});if(document.fonts&&document.fonts.ready)document.fonts.ready.then(scheduleBranchConnections);
+window.addEventListener('resize',()=>{scheduleBranchConnections();scheduleAccessoryConnections();},{passive:true});if(document.fonts&&document.fonts.ready)document.fonts.ready.then(scheduleBranchConnections);
 $('branchSearch').addEventListener('input',e=>{closeWeaponModal();branchSearch=e.target.value||'';render();});$('catalogSearch').addEventListener('input',e=>{catalogSearch=e.target.value||'';render();});
+const catalogCategoryModal=$('catalogCategoryModal'),catalogCategoryModalList=$('catalogCategoryModalList');
+function renderCatalogCategoryModal(){const rows=((catalog[currentFacility]&&catalog[currentFacility][currentSection])||[]).filter(rankMatches).filter(catalogRowMatches),options=catalogCategoryOptions(rows);catalogCategoryModalList.innerHTML=[`<button type="button" class="ra-category-choice ${currentCatalogCategory==='all'?'active':''}" data-catalog-category="all">全て</button>`,...options.map(label=>`<button type="button" class="ra-category-choice ${currentCatalogCategory===label?'active':''}" data-catalog-category="${esc(label)}">${esc(label)}</button>`)].join('');}
+$('openCatalogCategoryPicker')?.addEventListener('click',()=>{renderCatalogCategoryModal();catalogCategoryModal.showModal();});
+catalogCategoryModal?.addEventListener('click',e=>{if(e.target===catalogCategoryModal||e.target.closest('[data-close-catalog-category-modal]')){catalogCategoryModal.close();return;}const b=e.target.closest('[data-catalog-category]');if(!b)return;currentCatalogCategory=b.dataset.catalogCategory||'all';catalogCategoryByView[catalogCategoryViewKey()]=currentCatalogCategory;catalogCategoryModal.close();render();});
 const savedPlayerKey=raStorage.get(PLAYER_KEY_STORAGE_KEY)||'';$('playerKey').value=savedPlayerKey;loadCatalog(savedPlayerKey);
 </script>
 
@@ -1680,6 +1902,7 @@ const savedPlayerKey=raStorage.get(PLAYER_KEY_STORAGE_KEY)||'';$('playerKey').va
 .ra-area-filter-tabs button{flex:0 0 auto;background:transparent;color:var(--accent2);border:1px solid var(--line);box-shadow:none;padding:7px 11px}
 .ra-area-filter-tabs button.active{background:var(--accent);color:#fff;border-color:transparent}
 .ra-category-picker-trigger{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;background:#fffdf8;color:var(--ink);border:1px solid var(--line);box-shadow:none;text-align:left;border-radius:12px}
+.catalog-category-controls{display:grid;grid-template-columns:auto minmax(160px,280px);align-items:center;gap:10px;margin:0 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:#fffdf8}.catalog-category-controls[hidden]{display:none}.catalog-category-picker-trigger{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fffdf8;color:var(--ink);border:1px solid var(--line);box-shadow:none;text-align:left;white-space:nowrap}.branch-category-all{display:grid;gap:22px}.branch-category-block{min-width:0}.branch-category-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 8px;padding:9px 12px;border:1px solid var(--line);border-radius:12px;background:#f6e8d4}.branch-category-heading h3{margin:0;font-size:16px}.branch-category-heading span{font-size:12px;font-weight:800;color:var(--muted)}
 #weaponCategorySelect.ra-picker-native{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important}
 .ra-facility-picker{width:min(1040px,calc(100vw - 24px));max-height:88vh;border:1px solid var(--line);border-radius:20px;background:var(--paper);color:var(--ink);padding:0;box-shadow:0 24px 70px rgba(35,22,12,.38)}
 .ra-facility-picker::backdrop{background:rgba(28,18,10,.5)}
@@ -1689,7 +1912,7 @@ const savedPlayerKey=raStorage.get(PLAYER_KEY_STORAGE_KEY)||'';$('playerKey').va
 .ra-facility-picker-search{padding:11px 15px 0}.ra-facility-picker-tabs{display:flex;gap:7px;overflow-x:auto;padding:10px 15px}
 .ra-facility-picker-tabs button{flex:0 0 auto;background:transparent;color:var(--accent2);border:1px solid var(--line);box-shadow:none}.ra-facility-picker-tabs button.active{background:var(--accent);color:white}
 .ra-facility-picker-body{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,.75fr);min-height:0;border-top:1px solid var(--line)}
-.ra-facility-picker-body.ra-category-only{grid-template-columns:1fr}.ra-category-only .ra-facility-picker-list{grid-template-columns:repeat(auto-fit,minmax(220px,1fr));padding:16px}.ra-category-choice{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;background:#fffdf8;color:var(--ink);border:1px solid var(--line);box-shadow:none}.ra-category-choice.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.ra-facility-picker-body.ra-category-only{grid-template-columns:1fr}.ra-category-only .ra-facility-picker-list{grid-template-columns:repeat(auto-fit,minmax(130px,1fr));padding:16px}.ra-category-choice{width:100%;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-align:center;background:#fffdf8;color:var(--ink);border:1px solid var(--line);box-shadow:none;white-space:nowrap!important;word-break:keep-all!important;overflow-wrap:normal!important;writing-mode:horizontal-tb!important;text-orientation:mixed!important}.ra-category-choice>*{white-space:nowrap!important;word-break:keep-all!important;writing-mode:horizontal-tb!important}.ra-category-choice.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 .ra-facility-picker-list{overflow:auto;padding:12px;display:grid;align-content:start;gap:8px}.ra-facility-picker-detail{overflow:auto;padding:14px;border-left:1px solid var(--line)}
 .ra-facility-picker-card{border:1px solid var(--line);border-radius:14px;background:#fffdf8;padding:10px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}.ra-facility-picker-card b{color:var(--accent2)}
 .ra-facility-picker-meta{font-size:.8rem;color:var(--muted)}.ra-facility-picker-actions{display:flex;gap:6px}.ra-facility-picker-actions button{padding:7px 10px}
@@ -1709,9 +1932,9 @@ function run(){
    let wrap=document.getElementById('catalogAreaControls');
    const searchControls=document.getElementById('catalogSearchControls');
    if(!wrap){wrap=document.createElement('div');wrap.id='catalogAreaControls';wrap.className='ra-area-filter';wrap.innerHTML='<div class="ra-area-filter-label">解放エリアで絞り込み</div><div class="ra-area-filter-tabs"></div>';(searchControls?.parentNode||document.getElementById('catalogPanel')||document.querySelector('main'))?.insertBefore(wrap,searchControls?.nextSibling||null)}
-   const branches=typeof currentSection!=='undefined'&&currentSection==='branches';wrap.hidden=branches;if(branches)return;
+   const branches=typeof currentSection!=='undefined'&&currentSection==='branches';const special=String(currentFacility||'')==='plaza';wrap.hidden=branches||special;if(branches||special)return;
    const rows=areaRows();const ids=new Set(rows.map(a=>txt(a.id)));if(currentCatalogArea!=='all'&&!ids.has(currentCatalogArea))currentCatalogArea='all';
-   wrap.querySelector('.ra-area-filter-tabs').innerHTML=[`<button type="button" data-ra-area="all" class="${currentCatalogArea==='all'?'active':''}">すべて</button>`,...rows.map(a=>`<button type="button" data-ra-area="${escHtml(a.id)}" class="${currentCatalogArea===txt(a.id)?'active':''}">${escHtml(a.name||'名称未設定')}</button>`)].join('');
+   wrap.querySelector('.ra-area-filter-tabs').innerHTML=[`<button type="button" data-ra-area="all" class="${currentCatalogArea==='all'?'active':''}">全て</button>`,...rows.map(a=>`<button type="button" data-ra-area="${escHtml(a.id)}" class="${currentCatalogArea===txt(a.id)?'active':''}">${escHtml(a.name||'名称未設定')}</button>`)].join('');
  }
  if(typeof render==='function'&&!render.__raArea398){
    const originalRender=render;
@@ -1739,11 +1962,10 @@ function run(){
  }
  function pickerRender(){
    const rows=categoryRows();
-   pList.innerHTML=rows.length?rows.map(row=>`<button type="button" class="ra-category-choice ${row.value===currentWeaponCategory?'active':''}" data-ra-facility-category-choose="${escHtml(row.value)}"><span>${escHtml(row.label||row.value)}</span><span>表示</span></button>`).join(''):'<p class="muted">表示できる武器種がありません。</p>';
+   pList.innerHTML=rows.length?rows.map(row=>`<button type="button" class="ra-category-choice ${row.value===currentWeaponCategory?'active':''}" data-ra-facility-category-choose="${escHtml(row.value)}">${escHtml(row.label||row.value)}</button>`).join(''):'<p class="muted">表示できる武器種がありません。</p>';
  }
  function chooseCategory(category){
-   if(!category)return;
-   currentWeaponCategory=category;
+   currentWeaponCategory=category||'all';
    try{raStorage.set(WEAPON_CATEGORY_STORAGE_KEY,currentWeaponCategory)}catch(_){}
    if(select)select.value=currentWeaponCategory;
    render();
@@ -1751,8 +1973,8 @@ function run(){
  }
  if(select){
    select.classList.add('ra-picker-native');
-   const trigger=document.createElement('button');trigger.type='button';trigger.className='ra-category-picker-trigger';trigger.innerHTML='<span data-ra-category-label>武器種を選択</span><span>一覧を開く ▾</span>';select.insertAdjacentElement('afterend',trigger);
-   const sync=()=>{trigger.querySelector('[data-ra-category-label]').textContent=currentWeaponCategory?`武器種：${currentWeaponCategory}`:'武器種を選択'};
+   const trigger=document.createElement('button');trigger.type='button';trigger.className='ra-category-picker-trigger';trigger.innerHTML='<span data-ra-category-label>全て</span><span aria-hidden="true">▾</span>';select.insertAdjacentElement('afterend',trigger);
+   const sync=()=>{trigger.querySelector('[data-ra-category-label]').textContent=currentWeaponCategory==='all'?'全て':(currentWeaponCategory||'全て')};
    trigger.addEventListener('click',()=>{pickerRender();dialog.showModal()});
    select.addEventListener('change',sync);sync();
    if(typeof render==='function'){const old=render;render=function(){const result=old();requestAnimationFrame(sync);return result}}
