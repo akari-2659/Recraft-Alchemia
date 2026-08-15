@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.541</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.542</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1109,12 +1109,43 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
 .loadout-preset-dialog .dialog-inner{width:min(680px,calc(100vw - 32px))}.loadout-preset-modal-summary{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fffdf8;line-height:1.6}.loadout-preset-shortages{display:grid;gap:7px;margin-top:10px}.loadout-preset-shortage{padding:9px 10px;border:1px solid rgba(173,91,57,.28);border-radius:10px;background:rgba(255,243,236,.8);color:#7d3828;font-weight:800}.loadout-preset-ok{padding:9px 10px;border:1px solid rgba(66,128,87,.25);border-radius:10px;background:rgba(238,249,241,.8);color:#315f41;font-weight:800}.loadout-preset-dialog .field{margin-top:10px}.loadout-preset-dialog .field input{width:100%}
 body.public-view .loadout-preset-panel{display:none!important}
 @media(max-width:720px){.loadout-preset-head,.loadout-preset-row{grid-template-columns:1fr}.loadout-preset-head{display:grid}.loadout-preset-head .button-row,.loadout-preset-row .button-row{justify-content:flex-start}.loadout-preset-meta{grid-column:1}}
+/* v90.8.542: プリセット行では共通 .button-row の全幅グリッド指定を打ち消す。 */
+.loadout-preset-head .button-row,
+.loadout-preset-row .button-row{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  width:auto!important;
+  min-width:0!important;
+  grid-template-columns:none!important;
+  gap:6px!important;
+}
+.loadout-preset-head .button-row{flex:0 0 auto!important;justify-content:flex-end!important}
+.loadout-preset-row .button-row{justify-content:flex-end!important}
+.loadout-preset-head .button-row>button,
+.loadout-preset-row .button-row>button{
+  width:auto!important;
+  min-width:0!important;
+  flex:0 0 auto!important;
+  padding:7px 10px!important;
+  text-align:center!important;
+  white-space:nowrap!important;
+}
+@media(max-width:720px){
+  .loadout-preset-head .button-row,
+  .loadout-preset-row .button-row{justify-content:flex-start!important}
+}
+@media(max-width:430px){
+  .loadout-preset-row{grid-template-columns:1fr!important}
+  .loadout-preset-row .button-row{width:100%!important}
+  .loadout-preset-row .button-row>button{flex:1 1 auto!important}
+}
+
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.541-upgrade-slot-scope-fix">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.542-upgrade-slot-scope-fix">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.541｜更新：2026年8月15日</div>
+<div class="ra-build-info">v90.8.542｜更新：2026年8月15日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -1406,7 +1437,7 @@ body.public-view .loadout-preset-panel{display:none!important}
       <details class="big-section" open>
         <summary>装備</summary>
         <div class="section-body">
-          <p class="hint">右手・左手・鎧・装飾品は、倉庫に登録済みの装備から選択して反映します。必要な装備は先に倉庫へ登録してください。</p>
+          <p class="hint">右手・左手・鎧・装飾品は、倉庫に登録済みの装備から選択して反映します。必要な装備は先に倉庫へ登録してください。同じ武器を右手・左手へ重複装備したり、同じ装飾品を装飾品1・2へ重複装備することはできません。</p>
           <div class="button-row compact-toolbar">
             <button id="loadEquipmentCategoriesBtn" type="button" class="ghost">共通DBを再読込</button>
             <span id="equipmentCategoryStatus" class="small">GitHub共通DBを確認しています。取得できない場合はGASへ切り替えます。</span>
@@ -4249,6 +4280,8 @@ function setEquipmentState(equipment={}) {
     const item = eq[slot.key] || {};
     card.open = !!String(item.name || item.itemId || '').trim();
   }
+  enforceUniqueWeaponAccessoryEquipment({notify:true});
+  refreshEquipmentItemSelects({slotKinds:['hand','accessory']});
   updateEquipmentHandLocks(false);
   updateSpellSlotHints();
   updateEquipmentSummaries();
@@ -4868,21 +4901,26 @@ function deleteLoadoutPresetFromDialog(){
   loadoutPresetsState[type]=(loadoutPresetsState[type]||[]).filter(row=>row.id!==id);renderLoadoutPresetList(type);updateSummary();closeLoadoutPresetDialog();showToast(`「${p.name}」を削除しました。`,'ok');
 }
 function applyEquipmentLoadoutPreset(preset){
-  const data=preset?.data||{}, current=getEquipmentState(), defaults=defaultEquipment(), missing=[], remaining=new Map();
+  const data=preset?.data||{}, current=getEquipmentState(), defaults=defaultEquipment(), missing=[], remaining=new Map(), usedRestricted=new Set();
   for(const slot of BASE_EQUIPMENT_SLOTS){
     const saved=data.slots?.[slot.key]||{};
     const row=saved.itemId||saved.name ? presetInventoryRow(saved, r=>['武器','防具','装飾品'].includes(normalizeInventoryKind(r.kind||''))) : null;
     const key=row?inventoryItemKey(row):'';
+    const restrictedKey=row?duplicateRestrictedEquipmentIdentity(row):'';
+    const duplicateRestricted=!!restrictedKey&&usedRestricted.has(restrictedKey);
     if(row&&!remaining.has(key))remaining.set(key,Math.max(0,presetTotalOwnedCount(row)));
-    const canUse=!!row&&Number(remaining.get(key)||0)>0;
-    if((saved.itemId||saved.name)&&!canUse)missing.push(saved.name||saved.itemId);
-    if(canUse)remaining.set(key,Number(remaining.get(key)||0)-1);
+    const canUse=!!row&&Number(remaining.get(key)||0)>0&&!duplicateRestricted;
+    if((saved.itemId||saved.name)&&!canUse)missing.push(duplicateRestricted?`${saved.name||saved.itemId}（同一品重複）`:(saved.name||saved.itemId));
+    if(canUse){
+      remaining.set(key,Number(remaining.get(key)||0)-1);
+      if(restrictedKey)usedRestricted.add(restrictedKey);
+    }
     current[slot.key]={...defaults[slot.key],itemId:canUse?key:'',name:canUse?row.name:'',setSpells:canUse?String(saved.setSpells||''):''};
   }
   setEquipmentState(current);
-  const learned=presetLearnedSpellNames();
+  const applied=getEquipmentState(), learned=presetLearnedSpellNames();
   for(const slot of BASE_EQUIPMENT_SLOTS){
-    const saved=data.slots?.[slot.key]||{}, equipped=current[slot.key]||{};if(!String(saved.setSpells||'').trim()||!String(equipped.itemId||equipped.name||'').trim())continue;
+    const saved=data.slots?.[slot.key]||{}, equipped=applied[slot.key]||{};if(!String(saved.setSpells||'').trim()||!String(equipped.itemId||equipped.name||'').trim())continue;
     const validSpells=splitFormulaList(saved.setSpells||'').filter(name=>learned.has(String(name||'').trim()));
     if(validSpells.length<splitFormulaList(saved.setSpells||'').length)missing.push('セット術式');
     setSpellSelectValues(slot.key,validSpells);syncEquippedSpellSetToInventoryItem(slot.key);
@@ -7591,6 +7629,53 @@ function applyCsItemMaster(rows, {save=false, silent=false}={}) {
   return true;
 }
 function loadCachedCsItems() { /* v50: 倉庫を候補にするためDBアイテム候補キャッシュは使いません。 */ }
+
+function duplicateRestrictedEquipmentIdentity(row={}){
+  const kind=normalizeInventoryKind(row.kind||row.itemType||row.itemCategory||row.category||'');
+  if(!['武器','装飾品'].includes(kind))return '';
+  const master=String(row.masterId||'').trim();
+  const publicId=String(row.publicId||'').trim().toUpperCase();
+  const name=String(row.name||'').trim().normalize('NFKC');
+  const fallbackId=String(row.id||'').trim();
+  const identity=master||publicId||name||fallbackId;
+  return identity?`${kind}:${identity}`:'';
+}
+function duplicateRestrictedEquipmentOtherSlot(slotKey='',row={}){
+  const key=duplicateRestrictedEquipmentIdentity(row);
+  if(!key)return null;
+  for(const slot of BASE_EQUIPMENT_SLOTS){
+    if(slot.key===slotKey)continue;
+    const selectedKey=String($('equip_'+slot.key+'_itemSelect')?.value||'').trim();
+    if(!selectedKey)continue;
+    const selected=findCsItemById(selectedKey);
+    if(selected&&duplicateRestrictedEquipmentIdentity(selected)===key)return slot;
+  }
+  return null;
+}
+function enforceUniqueWeaponAccessoryEquipment({notify=false}={}){
+  const seen=new Map(), cleared=[];
+  for(const slot of BASE_EQUIPMENT_SLOTS){
+    const select=$('equip_'+slot.key+'_itemSelect');
+    const selectedKey=String(select?.value||'').trim();
+    if(!selectedKey)continue;
+    const row=findCsItemById(selectedKey);
+    const key=row?duplicateRestrictedEquipmentIdentity(row):'';
+    if(!key)continue;
+    if(seen.has(key)){
+      cleared.push({slot,row,first:seen.get(key)});
+      if(select){select.value='';select.dataset.previousItemKey='';}
+      clearEquipmentSlotFields(slot.key,{keepSelection:true});
+      if(typeof window.raSyncEquipmentPickerTrigger==='function'&&select)window.raSyncEquipmentPickerTrigger(select);
+      continue;
+    }
+    seen.set(key,slot);
+  }
+  if(cleared.length&&notify){
+    showToast('同じ武器・同じ装飾品は2つ同時に装備できないため、重複分を外しました。','warn');
+  }
+  return cleared;
+}
+
 function refreshEquipmentItemSelects({slotKinds=null}={}) {
   const cache=inventoryDerived();
   const allowed=slotKinds ? new Set(Array.isArray(slotKinds)?slotKinds:[slotKinds]) : null;
@@ -7602,8 +7687,9 @@ function refreshEquipmentItemSelects({slotKinds=null}={}) {
     const items = cache.equipmentBySlotKind[slot.kind] || [];
     const options = [`<option value="">${slot.kind === 'carry' ? '未選択（倉庫へ戻す）' : '未選択'}</option>`].concat(items.map(row => {
       const key = inventoryItemKey(row);
-      const label = [row.name, row.kind, row.category, slot.kind === 'carry' ? '倉庫:' + row.count : '', row.element ? '属性:' + row.element : ''].filter(Boolean).join(' / ');
-      return `<option value="${esc(key)}">${esc(label)}</option>`;
+      const duplicateSlot = slot.kind!=='carry' ? duplicateRestrictedEquipmentOtherSlot(slot.key,row) : null;
+      const label = [row.name, row.kind, row.category, slot.kind === 'carry' ? '倉庫:' + row.count : '', row.element ? '属性:' + row.element : '', duplicateSlot ? `${duplicateSlot.name}に装備中` : ''].filter(Boolean).join(' / ');
+      return `<option value="${esc(key)}"${duplicateSlot?' disabled':''}>${esc(label)}</option>`;
     }));
     select.innerHTML = options.join('');
     let fallbackId='';
@@ -7707,12 +7793,25 @@ function applyCsItemToEquipmentSlot(slotKey) {
   const select = $('equip_' + slotKey + '_itemSelect');
   const previousItemKey = String(select?.dataset.previousItemKey || '').trim();
   const nextItemKey = String(select?.value || '').trim();
+  const row = findCsItemById(nextItemKey);
+  if(row&&!isCarrySlotKey(slotKey)){
+    const duplicateSlot=duplicateRestrictedEquipmentOtherSlot(slotKey,row);
+    if(duplicateSlot){
+      if(select){
+        select.value=previousItemKey&&Array.from(select.options).some(o=>o.value===previousItemKey)?previousItemKey:'';
+        if(typeof window.raSyncEquipmentPickerTrigger==='function')window.raSyncEquipmentPickerTrigger(select);
+      }
+      showToast(`同じ${normalizeInventoryKind(row.kind||row.itemType||'装備')}「${row.name||''}」は2つ同時に装備できません。`,'warn');
+      const slotKind=EQUIPMENT_SLOTS.find(v=>v.key===slotKey)?.kind;
+      if(slotKind)refreshEquipmentItemSelects({slotKinds:[slotKind]});
+      return;
+    }
+  }
   if (previousItemKey && previousItemKey !== nextItemKey) {
     syncEquipmentModifiersToInventoryItem(slotKey, previousItemKey);
     syncEquipmentUpgradeToInventoryItem(slotKey, previousItemKey);
     syncEquippedSpellSetToInventoryItem(slotKey, previousItemKey);
   }
-  const row = findCsItemById(nextItemKey);
   if (isCarrySlotKey(slotKey)) {
     if (row && isSpellInventoryItem(row)) {
       if (select) select.value = '';
@@ -7728,6 +7827,8 @@ function applyCsItemToEquipmentSlot(slotKey) {
     // 装備枠の表示値は倉庫で選択した装備からのみ読み込む。
     if (previousItemKey) clearEquipmentSlotFields(slotKey, {keepSelection:true});
     if(select) select.dataset.previousItemKey='';
+    const emptiedSlot=EQUIPMENT_SLOTS.find(v=>v.key===slotKey);
+    if(emptiedSlot&&['hand','accessory'].includes(emptiedSlot.kind))refreshEquipmentItemSelects({slotKinds:[emptiedSlot.kind]});
     updateEquipmentHandLocks(true);
     updateCombatStats();
     updateSpellSlotHints();
@@ -7771,6 +7872,8 @@ function applyCsItemToEquipmentSlot(slotKey) {
     refreshSpellSetSelect(slotKey, spellContainerKind(typeValue));
   }
   if (select) select.dataset.previousItemKey = select.value || '';
+  const equippedSlot=EQUIPMENT_SLOTS.find(v=>v.key===slotKey);
+  if(equippedSlot&&['hand','accessory'].includes(equippedSlot.kind))refreshEquipmentItemSelects({slotKinds:[equippedSlot.kind]});
   updateEquipmentHandLocks(true);
   updateCombatStats();
   updateSpellSlotHints();
@@ -9360,6 +9463,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
 .ra-picker-list{overflow:auto;padding:12px;display:grid;align-content:start;gap:9px}
 .ra-picker-card{border:1px solid var(--line);border-radius:14px;background:var(--paper2);padding:11px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
 .ra-picker-card.current{border-color:var(--accent);box-shadow:0 0 0 2px rgba(184,119,56,.14)}
+.ra-picker-card.unavailable{opacity:.58}
+.ra-picker-card.unavailable .ra-picker-name::after{content:' / 同一品を装備中';font-size:.76rem;font-weight:800;color:var(--muted)}
 .ra-picker-name{font-weight:900;color:var(--accent2)}
 .ra-picker-meta{font-size:.82rem;color:var(--muted)}
 .ra-picker-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
@@ -9395,7 +9500,7 @@ function run(){
   function categoryOf(item,option){return txt(item?.itemCategory||item?.category||item?.type||item?.kind||option?.dataset?.category||'その他')||'その他'}
   function candidates(){
     if(!target)return[];
-    return [...target.options].filter(o=>o.value).map((option,index)=>{const item=itemForOption(option)||{};return{key:String(option.value),option,item,index,name:txt(item.name)||txt(option.textContent),category:categoryOf(item,option)}});
+    return [...target.options].filter(o=>o.value).map((option,index)=>{const item=itemForOption(option)||{};return{key:String(option.value),option,item,index,name:txt(item.name)||txt(option.textContent),category:categoryOf(item,option),disabled:!!option.disabled}});
   }
   function labelFor(select){if(!select)return'装備を選択';const opt=select.selectedOptions?.[0];return select.value&&opt?txt(opt.textContent):'未選択';}
   function syncTrigger(select){
@@ -9409,7 +9514,7 @@ function run(){
   window.raSyncEquipmentPickerTrigger=syncTrigger;
   window.raSyncAllEquipmentPickerTriggers=()=>document.querySelectorAll('select[id^="equip_"][id$="_itemSelect"]').forEach(syncTrigger);
   function choose(candidate){
-    if(!target||!candidate)return;
+    if(!target||!candidate||candidate.disabled)return;
     target.value=candidate.key;
     target.dispatchEvent(new Event('input',{bubbles:true}));
     target.dispatchEvent(new Event('change',{bubbles:true}));
@@ -9420,7 +9525,7 @@ function run(){
     if(!candidate)return'<div class="ra-picker-empty">詳細を表示する装備を選んでください。</div>';
     const x=candidate.item||{};
     const pairs=[['種類',candidate.category],['ランク',x.rank?`★${x.rank}`:''],['属性',x.element],['ダメージ／威力',x.power],['命中・補正',typeof modifierDisplayText==='function'?modifierDisplayText(x.modifiers||''):x.modifiers],['強化枠上限',typeof resolvedEquipmentUpgradeLimit==='function'?resolvedEquipmentUpgradeLimit(x):x.upgradeLimit],['対象',x.target],['使用技能',x.checkType],['説明',x.description],['効果',x.effect||x.note]].filter(([,v])=>txt(v));
-    return `<h4>${escHtml(candidate.name)}</h4><div class="ra-picker-meta">${escHtml(candidate.category)}</div><dl class="ra-picker-detail-grid">${pairs.map(([k,v])=>`<dt>${escHtml(k)}</dt><dd>${escHtml(v)}</dd>`).join('')}</dl><div class="button-row"><button type="button" data-ra-choose="${escHtml(candidate.key)}">この装備を選択</button></div>`;
+    return `<h4>${escHtml(candidate.name)}</h4><div class="ra-picker-meta">${escHtml(candidate.category)}</div><dl class="ra-picker-detail-grid">${pairs.map(([k,v])=>`<dt>${escHtml(k)}</dt><dd>${escHtml(v)}</dd>`).join('')}</dl><div class="button-row"><button type="button" data-ra-choose="${escHtml(candidate.key)}"${candidate.disabled?' disabled':''}>${candidate.disabled?'同一品を装備中':'この装備を選択'}</button></div>`;
   }
   function render(){
     const all=candidates();
@@ -9429,12 +9534,12 @@ function run(){
     tabs.innerHTML=cats.map(c=>`<button type="button" data-ra-category="${escHtml(c)}" class="${c===activeCategory?'active':''}">${escHtml(c==='すべて'?'全て':c)}</button>`).join('');
     const q=txt(search.value).normalize('NFKC').toLocaleLowerCase('ja');
     const rows=all.filter(x=>activeCategory==='すべて'||x.category===activeCategory).filter(x=>!q||[x.name,x.category,x.item?.description,x.item?.effect,x.item?.power].map(txt).join(' ').normalize('NFKC').toLocaleLowerCase('ja').includes(q));
-    list.innerHTML=rows.length?rows.map(x=>`<article class="ra-picker-card ${target?.value===x.key?'current':''}"><div><div class="ra-picker-name">${escHtml(x.name)}</div><div class="ra-picker-meta">${escHtml([x.category,x.item?.rank?`★${x.item.rank}`:'',x.item?.power||''].filter(Boolean).join(' / '))}</div></div><div class="ra-picker-actions"><button type="button" class="ghost" data-ra-detail="${escHtml(x.key)}">詳細</button><button type="button" data-ra-choose="${escHtml(x.key)}">選択</button></div></article>`).join(''):'<div class="ra-picker-empty">条件に一致する装備がありません。</div>';
+    list.innerHTML=rows.length?rows.map(x=>`<article class="ra-picker-card ${target?.value===x.key?'current':''} ${x.disabled?'unavailable':''}"><div><div class="ra-picker-name">${escHtml(x.name)}</div><div class="ra-picker-meta">${escHtml([x.category,x.item?.rank?`★${x.item.rank}`:'',x.item?.power||''].filter(Boolean).join(' / '))}</div></div><div class="ra-picker-actions"><button type="button" class="ghost" data-ra-detail="${escHtml(x.key)}">詳細</button><button type="button" data-ra-choose="${escHtml(x.key)}"${x.disabled?' disabled':''}>${x.disabled?'装備中':'選択'}</button></div></article>`).join(''):'<div class="ra-picker-empty">条件に一致する装備がありません。</div>';
     const selected=all.find(x=>x.key===detailKey)||all.find(x=>x.key===target?.value)||null;
     detail.innerHTML=detailHtml(selected);
     requestAnimationFrame(()=>{list.scrollTop=savedScroll;});
   }
-  function open(select){target=select;activeCategory='すべて';detailKey=select.value||'';search.value='';savedScroll=0;render();dialog.showModal();search.focus();}
+  function open(select){try{if(typeof refreshEquipmentItemSelects==='function')refreshEquipmentItemSelects();}catch(_){}target=select;activeCategory='すべて';detailKey=select.value||'';search.value='';savedScroll=0;render();dialog.showModal();search.focus();}
   function enhance(select){
     if(select.dataset.raPickerEnhanced||!/^equip_.+_itemSelect$/u.test(select.id))return;
     select.dataset.raPickerEnhanced='1';select.classList.add('ra-picker-native');
