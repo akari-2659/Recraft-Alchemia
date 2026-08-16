@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.559</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.560</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1109,7 +1109,7 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
 .loadout-preset-dialog .dialog-inner{width:min(680px,calc(100vw - 32px))}.loadout-preset-modal-summary{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fffdf8;line-height:1.6}.loadout-preset-shortages{display:grid;gap:7px;margin-top:10px}.loadout-preset-shortage{padding:9px 10px;border:1px solid rgba(173,91,57,.28);border-radius:10px;background:rgba(255,243,236,.8);color:#7d3828;font-weight:800}.loadout-preset-ok{padding:9px 10px;border:1px solid rgba(66,128,87,.25);border-radius:10px;background:rgba(238,249,241,.8);color:#315f41;font-weight:800}.loadout-preset-dialog .field{margin-top:10px}.loadout-preset-dialog .field input{width:100%}
 body.public-view .loadout-preset-panel{display:none!important}
 @media(max-width:720px){.loadout-preset-head,.loadout-preset-row{grid-template-columns:1fr}.loadout-preset-head{display:grid}.loadout-preset-head .button-row,.loadout-preset-row .button-row{justify-content:flex-start}.loadout-preset-meta{grid-column:1}}
-/* v90.8.559: プリセット行では共通 .button-row の全幅グリッド指定を打ち消す。 */
+/* v90.8.560: プリセット行では共通 .button-row の全幅グリッド指定を打ち消す。 */
 .loadout-preset-head .button-row,
 .loadout-preset-row .button-row{
   display:flex!important;
@@ -1142,10 +1142,10 @@ body.public-view .loadout-preset-panel{display:none!important}
 
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.559-upgrade-slot-scope-fix">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.560-upgrade-slot-scope-fix">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.559｜更新：2026年8月16日</div>
+<div class="ra-build-info">v90.8.560｜更新：2026年8月17日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -2978,8 +2978,14 @@ function computeEquipmentSkillModifiers(equipment=getEquipmentState()) {
   const mods = {};
   const dualHandSums = {};
   const add = (key, value) => addEquipmentSkillModifier(mods, key, value);
+  // 両手武器装備時に無効になるのは反対側の手だけ。
+  // 旧処理は両手武器を見つけた時点でループ自体をbreakしていたため、
+  // 右手に大鎌・両手剣などを装備すると、その後ろの鎧・装飾品の
+  // 回避補正を含む skill:* 補正がすべて集計から抜けていた。
+  const twoHandSlotKey = HAND_SLOT_KEYS.find(key => isPaletteTwoHandEquipment((equipment || {})[key] || {}, null)) || '';
   for (const slot of EQUIPMENT_SLOTS) {
     if (slot.kind === 'carry') continue;
+    if (twoHandSlotKey && HAND_SLOT_KEYS.includes(slot.key) && slot.key !== twoHandSlotKey) continue;
     const item = (equipment || {})[slot.key] || {};
     const type = normalizeEquipmentType(item.type || 'なし');
     if (!item.name && (!type || type === 'なし')) continue;
@@ -2991,7 +2997,6 @@ function computeEquipmentSkillModifiers(equipment=getEquipmentState()) {
       if (shouldHalfHandWeaponModifiers(slot.key, equipment)) addDualAdjustedModifier(dualHandSums, key, value);
       else add(key, value);
     }
-    if (HAND_SLOT_KEYS.includes(slot.key) && isPaletteTwoHandEquipment(item, null)) break;
   }
   applyDualAdjustedModifierSums(dualHandSums, add);
   return mods;
@@ -4559,8 +4564,26 @@ function renderSkillCrystalPanel(){
   if(inventoryDisplayMode==='learned'&&learnedContentType==='skill')renderInventory({refreshLinked:false});
   else if(inventoryDisplayMode==='learned')renderLearnedKindTabs();
 }
-function addSkillByPublicIds(){
-  const input=$('skillPublicIdInput'),status=$('skillPublicIdStatus');if(!input)return;const ids=String(input.value||'').split(/[\s,，、]+/).map(v=>v.trim()).filter(Boolean);if(!ids.length){if(status){status.className='status-box error';status.textContent='登録IDを入力してください。';}return;}
+async function ensureCharacterSkillMasterForRegistration(){
+  if(skillMasterRows().length)return true;
+  let master=lastCharacterSheetMasterResult;
+  if(!master){
+    try{master=await loadCharacterSheetMasterFromDbForInitial();}
+    catch(_){return false;}
+  }
+  // fetchだけ済んで lastCharacterSheetMasterResult に入っていても、
+  // DB_SKILL_MASTER へまだ適用されていない経路があるため明示的に同期する。
+  if(lastAppliedCharacterSheetMasterRef!==master || !DB_SKILL_MASTER.length){
+    setDbCharacterSheetMaster(master||{}, {refreshUi:false});
+  }
+  return skillMasterRows().length>0;
+}
+async function addSkillByPublicIds(){
+  const input=$('skillPublicIdInput'),status=$('skillPublicIdStatus');if(!input)return;
+  const ids=String(input.value||'').split(/[\s,，、]+/).map(v=>canonicalRegistrationId(v)||String(v||'').trim().toUpperCase()).filter(Boolean);
+  if(!ids.length){if(status){status.className='status-box error';status.textContent='登録IDを入力してください。';}return;}
+  const ready=await ensureCharacterSkillMasterForRegistration();
+  if(!ready){if(status){status.className='status-box error';status.textContent='スキルマスターを読み込めませんでした。DB同期状態を確認してください。';}return;}
   const state=normalizeSkillGachaState(skillGachaState||{}),owned=new Set(state.acquiredSkillIds);let added=0,duplicate=0;const missing=[],fragmentAwards={};
   ids.forEach(id=>{const skill=characterSkillByPublicId(id);if(!skill){missing.push(id);return;}if(owned.has(skill.id)){const rank=Math.max(1,Math.floor(Number(skill.rank)||1));duplicate++;fragmentAwards[String(rank)]=(fragmentAwards[String(rank)]||0)+1;return;}owned.add(skill.id);added++;});
   Object.entries(fragmentAwards).forEach(([rank,count])=>addSkillDuplicateFragments(state,rank,count));
@@ -7015,6 +7038,9 @@ async function addInventoryByPublicIdPaste(){
       return;
     }
   }
+  if(lastAppliedCharacterSheetMasterRef!==master || !DB_SKILL_MASTER.length){
+    setDbCharacterSheetMaster(master||{}, {refreshUi:false});
+  }
   const loadedSkill=characterSkillByPublicId(publicId);
   if(loadedSkill){
     const state=normalizeSkillGachaState(skillGachaState||{}),copies=Math.max(1,count),rank=Math.max(1,Math.floor(Number(loadedSkill.rank)||1));
@@ -7875,11 +7901,8 @@ function applyCsItemToEquipmentSlot(slotKey) {
   const equippedSlot=EQUIPMENT_SLOTS.find(v=>v.key===slotKey);
   if(equippedSlot&&['hand','accessory'].includes(equippedSlot.kind))refreshEquipmentItemSelects({slotKinds:[equippedSlot.kind]});
   updateEquipmentHandLocks(true);
-  updateCombatStats();
-  updateSpellSlotHints();
-  updateEquipmentSummaries();
-  applyBagCapacityToEquipmentSlots();
-  updateSummary();
+  // 装備変更は回避などの技能「その他」にも影響するため、派生値をまとめて更新する。
+  updateAll();
 }
 function selectedCsItemIsTwoHand(slotKey) {
   const row = findCsItemById($('equip_' + slotKey + '_itemSelect')?.value || '');

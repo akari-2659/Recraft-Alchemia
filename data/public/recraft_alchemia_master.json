@@ -1,9 +1,9 @@
 {
   "format": "recraft-alchemia-public-master",
-  "version": "90.8.559",
+  "version": "90.8.560",
   "updatedAt": "2026-08-17",
   "generatedAt": "2026-08-16T18:41:46+09:00",
-  "description": "Recraft-Alchemia master v90.8.559（反照の水庭素材価格を難度帯に合わせて再調整、反照の雷弱点偏重を緩和し、高原解放で雷属性の矢・ボルト・大型ボルトを追加）",
+  "description": "Recraft-Alchemia master v90.8.560（キャラシの両手武器装備時に鎧・装飾品の回避等技能補正が欠落する不具合と、スキル登録IDのマスター同期不具合を修正）",
   "recordCount": 2783,
   "data": {
     "item_types": [
