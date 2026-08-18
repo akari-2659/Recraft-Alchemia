@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.567</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.571</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1109,7 +1109,7 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
 .loadout-preset-dialog .dialog-inner{width:min(680px,calc(100vw - 32px))}.loadout-preset-modal-summary{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fffdf8;line-height:1.6}.loadout-preset-shortages{display:grid;gap:7px;margin-top:10px}.loadout-preset-shortage{padding:9px 10px;border:1px solid rgba(173,91,57,.28);border-radius:10px;background:rgba(255,243,236,.8);color:#7d3828;font-weight:800}.loadout-preset-ok{padding:9px 10px;border:1px solid rgba(66,128,87,.25);border-radius:10px;background:rgba(238,249,241,.8);color:#315f41;font-weight:800}.loadout-preset-dialog .field{margin-top:10px}.loadout-preset-dialog .field input{width:100%}
 body.public-view .loadout-preset-panel{display:none!important}
 @media(max-width:720px){.loadout-preset-head,.loadout-preset-row{grid-template-columns:1fr}.loadout-preset-head{display:grid}.loadout-preset-head .button-row,.loadout-preset-row .button-row{justify-content:flex-start}.loadout-preset-meta{grid-column:1}}
-/* v90.8.567: プリセット行では共通 .button-row の全幅グリッド指定を打ち消す。 */
+/* v90.8.571: プリセット行では共通 .button-row の全幅グリッド指定を打ち消す。 */
 .loadout-preset-head .button-row,
 .loadout-preset-row .button-row{
   display:flex!important;
@@ -1142,10 +1142,10 @@ body.public-view .loadout-preset-panel{display:none!important}
 
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.567-upgrade-slot-scope-fix">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.571-upgrade-slot-scope-fix">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.567｜更新：2026年8月17日</div>
+<div class="ra-build-info">v90.8.571｜更新：2026年8月18日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -8748,42 +8748,75 @@ function collectCheckPaletteLines(data={}, totals={}) {
     if (isPaletteTwoHandEquipment(merged, source)) break;
   }
 
-  for (const item of items) {
-    const row = normalizeInventoryItem(item);
-    if (!row.checkType || row.checkType === 'なし') continue;
-    if (row.kind === '術式' || row.kind === '武器' || isNonWeaponEquipmentPaletteItem(row)) continue;
-    const label = row.name || row.category || '判定';
-    const forcedSkill = /祈祷|聖|神/.test(String(row.category || row.kind || ''))
-      ? '祈祷'
-      : (/魔法|魔導/.test(String(row.category || row.kind || '')) ? '魔法' : '');
-    const line = paletteCheckLineFromExpression(checkTypeOrDefault(row, forcedSkill, '目標値'), label, totals, '', globalMod);
-    if (!line || used.has(line)) continue;
-    used.add(line);
-    result.push(line);
-  }
   return result;
 }
 
 function paletteCarryItemType(item={}){return String(item.itemType||item.kind||'').trim();}
 function paletteCarryItemCategory(item={}){return String(item.itemCategory||item.category||'').trim();}
 function paletteItemHasDirectDamage(item={}){
-  const type=paletteCarryItemType(item),cat=paletteCarryItemCategory(item),effect=String(item.effect||item.note||'');
-  if(type==='調合品'&&cat==='攻撃')return true;
-  if(type==='道具'&&cat==='罠')return /(?:直接ダメージ|ダメージを与|属性\d*D|属性ダメージ|命中時[^。]*ダメージ)/.test(effect)&&!/毒蓄積[^。]*ダメージ/.test(effect);
+  const type=paletteCarryItemType(item),cat=paletteCarryItemCategory(item);
+  const power=normalizePaletteFormula(item.power||'');
+  if(type==='調合品'&&cat==='攻撃')return /\d*D\d+/i.test(power);
+  if(type==='道具'&&cat==='罠')return /\d*D\d+/i.test(power);
   return false;
 }
 function paletteContextBonusLabel(target=''){
   return modifierTargetDisplayName(target)||target;
 }
+function paletteCarryCheckParts(checkType='', defaultRight='目標値'){
+  const raw=normalizeCheckExpression(checkType||'');
+  if(!raw||raw==='なし')return {options:[],right:''};
+  const m=raw.match(/^(.+?)>=(.+)$/);
+  const left=(m?m[1]:raw).trim();
+  const right=String(m?m[2]:defaultRight||'目標値').trim()||'目標値';
+  const options=left.split(/(?:または|\/|／)/).map(v=>v.trim()).filter(Boolean).map(token=>{
+    const mm=token.match(/^(.+?)([+-]\d+)?$/);
+    if(!mm)return null;
+    const skillName=String(mm[1]||'').trim();
+    if(!CHECK_SKILL_NAME_TO_KEY[skillName])return null;
+    return {skillName,modifier:Number(mm[2]||0)||0};
+  }).filter(Boolean);
+  return {options,right};
+}
+function paletteCarryCheckLines(item={},totals={},globalMod=0){
+  const name=String(item.name||item.category||'判定').trim()||'判定';
+  const defaultRight=paletteItemHasDirectDamage(item)?'回避値':'目標値';
+  const parsed=paletteCarryCheckParts(item.checkType||'',defaultRight);
+  const multiple=parsed.options.length>1;
+  return parsed.options.map(option=>{
+    const parts=paletteSkillValueParts(totals,option.skillName);
+    if(!parts)return '';
+    const label=multiple?`${name}（${option.skillName}）`:name;
+    return `2D6+${paletteSkillFormulaValue(parts,[signedNumberText(option.modifier),signedNumberText(globalMod)])}>=${parsed.right} 【${label}】`;
+  }).filter(Boolean);
+}
+function paletteCarryItemMetaLine(item={}){
+  const name=String(item.name||'名称未設定').trim()||'名称未設定';
+  const target=String(item.target||'').trim();
+  const element=String(item.element||'').trim();
+  const power=String(item.power||'').trim();
+  const meta=[];
+  if(target)meta.push(`対象：${target}`);
+  if(element)meta.push(`属性：${element}`);
+  if(power)meta.push(`威力：${power}`);
+  return `// 【${name}】${meta.length?` / ${meta.join(' / ')}`:''}`;
+}
+function paletteCarryItemEffectLine(item={}){
+  const effect=String(item.effect||'').trim().replace(/\s*\n+\s*/g,' ');
+  return `// 効果：${effect||'なし'}`;
+}
 function collectCarryItemPaletteLines(data={},totals={}){
   const equipment=data.equipment||{},items=paletteInventoryItems(data),result=[],seen=new Set();
+  const globalMod=fatiguePenaltyForData(data);
   const bonusMap={alchemyAttack:'damage:alchemyAttack',trap:'damage:trap',alchemyHeal:'healing:alchemy'};
   for(const slot of EQUIPMENT_SLOTS){
     if(slot.kind!=='carry')continue;
     const eq=equipment[slot.key]||{},source=findPaletteInventoryItem(items,eq);
     const item=normalizeInventoryItem({...(source||{}),...(eq||{})});
     const name=String(item.name||'').trim();if(!name)continue;
-    const power=normalizePaletteFormula(item.power||'');if(!power)continue;
+    const identity=String(source?inventoryItemKey(source):(eq.itemId||item.masterId||item.publicId||name)).trim()||name;
+    if(seen.has(identity))continue;seen.add(identity);
+
     const type=paletteCarryItemType(item),cat=paletteCarryItemCategory(item);
     let context='';
     if(type==='調合品'&&cat==='攻撃'&&paletteItemHasDirectDamage(item))context='alchemyAttack';
@@ -8791,11 +8824,21 @@ function collectCarryItemPaletteLines(data={},totals={}){
     else if(type==='調合品'&&cat==='回復')context='alchemyHeal';
     const target=context?bonusMap[context]:'';
     const bonus=target?equipmentContextModifierTotal(equipment,target):0;
-    const formula=formulaWithSeparatedTerms(power,[bonus||'']);
-    const key=`${name}::${formula}::${slot.key}`;if(seen.has(key))continue;seen.add(key);
-    const count=Math.max(1,Number(eq.count||1)||1);
-    const role=context==='alchemyHeal'?'回復':(context==='trap'?'罠ダメージ':(context==='alchemyAttack'?'攻撃調合品':'道具'));
-    const block=[`${formula} 【${name} / ${role}${count>1?` / ×${count}`:''}】`];
+    const rawPower=normalizePaletteFormula(item.power||'');
+    const formula=rawPower?formulaWithSeparatedTerms(rawPower,[bonus||'']):'';
+
+    const block=[paletteCarryItemMetaLine(item),paletteCarryItemEffectLine(item)];
+    if(item.checkType&&item.checkType!=='なし')block.push(...paletteCarryCheckLines(item,totals,globalMod));
+
+    if(formula&&/\d*D\d+/i.test(formula)){
+      if(context==='alchemyAttack'||context==='trap'){
+        block.push(`${formula} 【${name}/${String(item.element||'無').trim()||'無'}】`);
+      }else if(context==='alchemyHeal'){
+        block.push(`${formula} 【${name}/回復】`);
+      }else{
+        block.push(`${formula} 【${name}】`);
+      }
+    }
     if(bonus){
       const sources=equipmentContextModifierSources(equipment,target).map(row=>`${row.name||row.slotLabel}${signedNumberText(row.value)}`).join('、');
       block.push(`// 装飾品補正：${paletteContextBonusLabel(target)} ${signedNumberText(bonus)}${sources?`（${sources}）`:''}`);
@@ -8812,6 +8855,35 @@ function resolvePaletteSpecialUpgradeDetail(entry={},items=[]){
   const found=rows.find(item=>item.kind==='素材'&&specialUpgradeEffectNameForMaterial(item)===name&&String(item.equipmentUpgradeDetail||'').trim());
   return String(found?.equipmentUpgradeDetail||'').trim();
 }
+function aggregatePaletteModifierRows(rows=[]){
+  const order=[];
+  const grouped=new Map();
+  for(const raw of rows||[]){
+    const row=normalizeModifierRow(raw);if(!row)continue;
+    const target=String(row.target||'').trim();if(!target)continue;
+    if(!grouped.has(target)){grouped.set(target,[]);order.push(target);}
+    grouped.get(target).push(row);
+  }
+  const out=[];
+  for(const target of order){
+    const same=grouped.get(target)||[];
+    if(target==='combat:guardAction'){
+      const value=combineGuardActionValues(same.map(row=>String(row.value||'').trim()).filter(Boolean));
+      if(value&&value!=='0')out.push({target,value});
+      continue;
+    }
+    const numeric=same.map(row=>String(row.value??'').trim()).every(value=>/^[+-]?\d+$/.test(value));
+    if(numeric){
+      const value=same.reduce((sum,row)=>sum+modifierValue(row),0);
+      if(value)out.push({target,value:String(value)});
+      continue;
+    }
+    // 数値補正以外の未知形式は壊さず、同一文字列だけ重複除去する。
+    const values=[...new Set(same.map(row=>String(row.value??'').trim()).filter(Boolean))];
+    values.forEach(value=>out.push({target,value}));
+  }
+  return out;
+}
 function collectEquipmentEffectPaletteLines(data={}){
   const equipment=data.equipment||{},items=paletteInventoryItems(data),result=[],seen=new Set();
   for(const slot of EQUIPMENT_SLOTS){
@@ -8825,7 +8897,7 @@ function collectEquipmentEffectPaletteLines(data={}){
     const isShield=['盾','大盾'].includes(type)||String(merged.itemType||'')==='盾';
     const category=merged.kind==='装飾品'?'装飾品':(merged.kind==='防具'||isShield?'防具':'武器');
     const baseEffect=String(source?.effect||merged.effect||eq.note||'').trim();
-    const modifierRows=activeEquipmentModifierRows(merged);
+    const modifierRows=aggregatePaletteModifierRows(activeEquipmentModifierRows(merged));
     const upgrades=parseUpgradeLines(source?.upgradeEntries||eq.upgradeEntries||source?.upgradeLines||eq.upgradeLines||'').filter(entry=>normalizeUpgradeEntry(entry).content==='素材固有効果');
     if(!baseEffect&&!modifierRows.length&&!upgrades.length)continue;
     const block=[`// 【${category}・${slot.label}：${name}】`];
