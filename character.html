@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.577</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.582</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1109,7 +1109,7 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
 .loadout-preset-dialog .dialog-inner{width:min(680px,calc(100vw - 32px))}.loadout-preset-modal-summary{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fffdf8;line-height:1.6}.loadout-preset-shortages{display:grid;gap:7px;margin-top:10px}.loadout-preset-shortage{padding:9px 10px;border:1px solid rgba(173,91,57,.28);border-radius:10px;background:rgba(255,243,236,.8);color:#7d3828;font-weight:800}.loadout-preset-ok{padding:9px 10px;border:1px solid rgba(66,128,87,.25);border-radius:10px;background:rgba(238,249,241,.8);color:#315f41;font-weight:800}.loadout-preset-dialog .field{margin-top:10px}.loadout-preset-dialog .field input{width:100%}
 body.public-view .loadout-preset-panel{display:none!important}
 @media(max-width:720px){.loadout-preset-head,.loadout-preset-row{grid-template-columns:1fr}.loadout-preset-head{display:grid}.loadout-preset-head .button-row,.loadout-preset-row .button-row{justify-content:flex-start}.loadout-preset-meta{grid-column:1}}
-/* v90.8.577: プリセット行では共通 .button-row の全幅グリッド指定を打ち消す。 */
+/* v90.8.582: プリセット行では共通 .button-row の全幅グリッド指定を打ち消す。 */
 .loadout-preset-head .button-row,
 .loadout-preset-row .button-row{
   display:flex!important;
@@ -1142,10 +1142,10 @@ body.public-view .loadout-preset-panel{display:none!important}
 
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.577-time-cycle">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.582-time-cycle">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.577｜更新：2026年8月19日</div>
+<div class="ra-build-info">v90.8.582｜更新：2026年8月19日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -1510,7 +1510,7 @@ body.public-view .loadout-preset-panel{display:none!important}
             <p class="hint">GMや進行管理HTMLから受け取った登録IDを入力して追加します。装備・素材・道具・レシピなどは倉庫へ、術式・スキルは習得系へ反映されます。所持数を持つものは指定した個数で追加でき、0個でも登録・保存できます。</p>
             <div class="inventory-form-grid">
               <div class="field">
-                <label for="publicIdInput">登録ID</label>
+                <label for="publicIdInput">登録ID / 骨董装備コード</label>
                 <input id="publicIdInput" data-inventory-input="1" type="text" inputmode="latin" autocomplete="off" />
               </div>
               <div class="field">
@@ -1523,7 +1523,7 @@ body.public-view .loadout-preset-panel{display:none!important}
               <button id="clearPublicIdPasteBtn" type="button" class="ghost">入力欄をクリア</button>
               <button id="addInitialWeaponSetBtn" type="button" class="secondary">初期倉庫アイテムをDB同期</button>
             </div>
-            <div id="publicIdPasteStatus" class="status-box">登録IDと個数を入力してください。</div>
+            <div id="publicIdPasteStatus" class="status-box">登録ID、または骨董装備コードを入力してください。</div>
             </div>
           </details>
           <div id="inventoryModeTabs" class="inventory-mode-tabs" aria-label="所持・習得表示切り替え">
@@ -3715,8 +3715,18 @@ function applySpecialUpgradeSelection(row,slotKey='',maxSlotCost=Infinity){
 }
 function renderEquipmentUpgradeSlots(slotKey, sourceEntries=null){
   const list=$('equip_'+slotKey+'_upgradeSlots'),hidden=$('equip_'+slotKey+'_upgradeLines'),details=$('equip_'+slotKey+'_upgradeDetails');if(!list)return;
+  const selectedItem=selectedEquipmentInventoryItemForUpgrade(slotKey),antiqueLocked=isAntiqueIndividualItem(selectedItem);
   const limit=equipmentUpgradeLimit(slotKey),rawEntries=sourceEntries!==null?parseUpgradeLines(sourceEntries):collectUpgradeEntries(slotKey),entries=trimUpgradeEntriesToSlotLimit(rawEntries,limit),usage=$('equip_'+slotKey+'_upgradeUsage');
-  const used=equipmentUpgradeUsedSlots(entries),remaining=Math.max(0,limit-used);
+  const used=equipmentUpgradeUsedSlots(entries),remaining=Math.max(0,limit-used),limitInput=$('equip_'+slotKey+'_upgradeLimit');
+  if(antiqueLocked){
+    if(limitInput)limitInput.disabled=true;
+    if(usage)usage.textContent=`固定済み強化枠：${used} / ${limit}（追加・変更不可）`;
+    if(details)details.style.display=limit>0?'':'none';
+    if(limit<=0){list.innerHTML='<div class="small">固定強化なし（追加・変更不可）</div>';if(hidden)hidden.value='';return;}
+    list.innerHTML=entries.length?entries.map((rawEntry,i)=>{const entry=normalizeUpgradeEntry(rawEntry||{});const name=entry.content==='素材固有効果'?(entry.specialEffectName||'固有強化'):(entry.content||'強化');const detail=entry.content==='素材固有効果'?entry.specialEffectDetail:standardUpgradeDetailText(entry);return `<div class="equipment-upgrade-row"><div><b>固定強化 ${i+1}：${esc(name)}</b></div><div class="equipment-upgrade-slot-badge">使用枠：${Math.max(1,Number(entry.slotCost)||1)}枠</div>${detail?`<div class="equipment-upgrade-effect-detail">${esc(detail)}</div>`:''}</div>`;}).join(''):'<div class="small">固定強化なし（追加・変更不可）</div>';
+    if(hidden)hidden.value=serializeUpgradeEntries(entries);return;
+  }
+  if(limitInput)limitInput.disabled=currentMode==='view';
   if(usage)usage.textContent=`使用済み強化枠：${used} / ${limit}（残り${remaining}枠）`;if(details)details.style.display=limit>0?'':'none';
   if(limit<=0){list.innerHTML='<div class="small">この装備は強化できません。</div>';if(hidden)hidden.value='';return;}
   const rowEntries=entries.slice();if(remaining>0)rowEntries.push(normalizeUpgradeEntry({}));
@@ -3752,6 +3762,7 @@ function syncEquipmentUpgradeToInventoryItem(slotKey='', itemKey=''){
   if(index < 0) return false;
   const current = inventoryItemsState[index];
   if(!['武器','防具','装飾品'].includes(current.kind)) return false;
+  if(isAntiqueIndividualItem(current)) return false;
   const limit = equipmentUpgradeLimit(slotKey);
   const entries = trimUpgradeEntriesToSlotLimit(collectUpgradeEntries(slotKey),limit).map(upgradeEntryForStorage);
   const upgradeLimit=String($('equip_' + slotKey + '_upgradeLimit')?.value || '').trim();
@@ -4366,6 +4377,7 @@ function updateEquipmentFieldAvailability() {
     const type = normalizeEquipmentType($('equip_' + slot.key + '_type')?.value || 'なし');
     const card = document.querySelector(`[data-equipment-card="${slot.key}"]`);
     const baseDisabled = currentMode === 'view' || !!card?.classList.contains('hand-disabled');
+    const antiqueLocked=isAntiqueIndividualItem(selectedEquipmentInventoryItemForUpgrade(slot.key));
     const book = isSpellBookType(type);
     const shield = type==='盾' || type==='大盾';
     const weapon = slot.kind==='hand' && type!=='なし' && !book && !shield;
@@ -4384,7 +4396,7 @@ function updateEquipmentFieldAvailability() {
 
     for (const suffix of ['itemSelect','name','type','element','upgradeLimit','description','note']) {
       const el = $('equip_' + slot.key + '_' + suffix);
-      if (el) el.disabled = baseDisabled;
+      if (el) el.disabled = baseDisabled || (antiqueLocked&&suffix==='upgradeLimit');
     }
     for (const suffix of ['power','offhand','reloadTurns','target','checkType','modifiers']) {
       const el = $('equip_' + slot.key + '_' + suffix);
@@ -4400,7 +4412,7 @@ function updateEquipmentFieldAvailability() {
     const spellList = $('equip_' + slot.key + '_spellSlotList');
     if (spellList) spellList.querySelectorAll('select.spell-slot-select').forEach(sel => { sel.disabled = spellDisabled; });
     const upgradeList = $('equip_' + slot.key + '_upgradeSlots');
-    if (upgradeList) upgradeList.querySelectorAll('select,input').forEach(el => { el.disabled = baseDisabled; });
+    if (upgradeList) upgradeList.querySelectorAll('select,input').forEach(el => { el.disabled = baseDisabled || antiqueLocked; });
   }
 }
 function updateEquipmentHandLocks(clearOpposite=true) {
@@ -6049,6 +6061,10 @@ function inventoryWarehouseQuickText(item={}){
   return [
     `個数 ${item.count??0}`,
     inventoryRankLabel(item)||'',
+    (isAntiqueIndividualItem(item)||sameNameEquipmentCount(item)>1)?inventoryIndividualShortId(item):'',
+    (isAntiqueIndividualItem(item)||sameNameEquipmentCount(item)>1)&&item.power?`威力 ${item.power}`:'',
+    (isAntiqueIndividualItem(item)||sameNameEquipmentCount(item)>1)&&item.element?`属性 ${item.element}`:'',
+    (isAntiqueIndividualItem(item)||sameNameEquipmentCount(item)>1)?`${isAntiqueIndividualItem(item)?'固定強化':'強化'} ${equipmentUpgradeUsedSlots(parseUpgradeLines(item.upgradeEntries||item.upgradeLines||''))}/${resolvedEquipmentUpgradeLimit(item)||0}`:'',
     inventorySellPriceText(item.price)?`売値 ${inventorySellPriceText(item.price)}`:''
   ].filter(Boolean).join(' / ');
 }
@@ -6067,6 +6083,7 @@ function inventoryWarehouseCardHtml(item,index){
       <div><div class="inventory-title">${esc(title)}</div><div class="small">倉庫 / ${esc(displayType)} / ${esc(displayCategory)}<span data-inventory-quick-index="${index}">${quick?` / ${esc(quick)}`:''}</span></div></div>
       <div class="button-row" style="margin:0;">
         ${item.kind==='レシピ'?`<button type="button" class="secondary" data-inventory-action="learn-recipe" data-index="${index}" ${isRecipeLearned(item)?'disabled':''}>${isRecipeLearned(item)?'習得済み':'覚える'}</button>`:''}
+        <button type="button" class="secondary" data-inventory-action="edit" data-index="${index}">編集</button>
         <button type="button" class="ghost" data-inventory-action="duplicate" data-index="${index}">複製</button>
         <button type="button" class="danger" data-inventory-action="delete" data-index="${index}">削除</button>
       </div>
@@ -6104,6 +6121,7 @@ function inventoryWarehouseDetailHtml(item,index){
     <div class="meta-item"><span class="meta-label">個数</span><div class="inventory-count-editor"><input type="number" min="0" max="9999" inputmode="numeric" value="${esc(item.count??0)}" data-inventory-count-index="${index}" aria-label="${esc(title)}の個数" ${disabled}/></div></div>
     ${bagMeta?`<div class="meta-item"><span class="meta-label">バッグ容量</span>${esc(item.capacity||0)}</div>`:''}
     <div class="meta-item"><span class="meta-label">ランク</span>${esc(inventoryRankLabel(item)||'—')}</div>
+    ${(isAntiqueIndividualItem(item)||sameNameEquipmentCount(item)>1)?`<div class="meta-item"><span class="meta-label">個体識別</span>${esc(inventoryIndividualShortId(item))}</div>`:''}
     <div class="meta-item"><span class="meta-label">売値</span>${esc(inventorySellPriceText(item.price)||'—')}</div>
     <div class="meta-item meta-wide"><span class="meta-label">装備/使用データ</span><div class="inventory-note">${esc([equipMeta,spellSlotMeta].filter(Boolean).join('\n'))}</div></div>
     ${savedUpgradeMeta?`<div class="meta-item meta-wide"><span class="meta-label">保存済み強化内容</span><div class="inventory-note">${esc(savedUpgradeMeta)}</div></div>`:''}
@@ -6246,7 +6264,7 @@ function openInventoryDialog(index=-1) {
   if ($('inventoryFormReloadTurns')) $('inventoryFormReloadTurns').value = item.reloadTurns || '';
   if ($('inventoryFormModifiers')) $('inventoryFormModifiers').value = item.modifiers || '';
   renderModifierReadOnly('inventoryFormModifierRows', item.modifiers || '');
-  if ($('inventoryFormUpgradeLimit')) $('inventoryFormUpgradeLimit').value = item.upgradeLimit || '';
+  if ($('inventoryFormUpgradeLimit')) { $('inventoryFormUpgradeLimit').value = item.upgradeLimit || ''; $('inventoryFormUpgradeLimit').disabled=isAntiqueIndividualItem(item); }
   if ($('inventoryFormSpellSlots')) $('inventoryFormSpellSlots').value = item.spellSlots || '';
   if ($('inventoryFormTarget')) $('inventoryFormTarget').value = item.target || '';
   if ($('inventoryFormCheckType')) $('inventoryFormCheckType').value = item.checkType || '';
@@ -6263,7 +6281,7 @@ function openInventoryDialog(index=-1) {
   if ($('inventoryFormRecipeResult')) $('inventoryFormRecipeResult').value = item.recipeResult || '';
   if ($('inventoryFormMaterials')) $('inventoryFormMaterials').value = item.materials || '';
   updateInventoryFormVisibility();
-  if ($('inventoryDialogStatus')) { $('inventoryDialogStatus').className = 'status-box'; $('inventoryDialogStatus').textContent = '必要項目を入力してください。'; }
+  if ($('inventoryDialogStatus')) { $('inventoryDialogStatus').className = 'status-box'; $('inventoryDialogStatus').textContent = isAntiqueIndividualItem(item)?'骨董個体の基礎性能・強化枠・固定強化内容は抽選結果から変更できません。':'必要項目を入力してください。'; }
   $('inventoryDialog')?.showModal();
 }
 function collectInventoryDialogItem() {
@@ -6333,7 +6351,10 @@ function saveInventoryDialog() {
     item.masterId = oldItem.masterId || item.masterId || '';
     item.masterSheet = oldItem.masterSheet || item.masterSheet || '';
     item.masterSync = oldItem.masterSync || item.masterSync || '';
+    item.source = oldItem.source || item.source || '';
+    item.tags = oldItem.tags || item.tags || '';
     item.modifiers = oldItem.modifiers || '';
+    if(isAntiqueIndividualItem(oldItem)){item.power=oldItem.power||'';item.element=oldItem.element||'';item.upgradeLimit=oldItem.upgradeLimit||'';item.modifiers=oldItem.modifiers||'';}
     item.upgradeEntries = oldItem.upgradeEntries || [];
     item.upgradeLines = oldItem.upgradeLines || serializeUpgradeEntries(oldItem.upgradeEntries || []);
     inventoryItemsState[index] = normalizeInventoryItem(item);
@@ -7004,12 +7025,30 @@ function mergePublicIdInventoryItem(existing={}, preset={}, addCount=1){
     location: '倉庫'
   });
 }
+function isAntiqueIndividualItem(item={}){return /(?:^|[,、\s])骨董個体(?:$|[,、\s])/.test(String(item.tags||''))||String(item.source||'').includes('骨董装備ガチャ')||String(item.id||'').startsWith('antq_');}
+function antiqueIndividualShortId(item={}){const id=String(item.id||'').replace(/^antq_/,'');return id?`#${id.slice(-6).toUpperCase()}`:'';}
+function inventoryIndividualShortId(item={}){const id=String(item.id||item.masterId||'').replace(/^antq_/,'');return id?`#${id.slice(-6).toUpperCase()}`:'';}
+function sameNameEquipmentCount(item={}){const name=String(item.name||'').trim(),kind=normalizeInventoryKind(item.kind||item.itemType||'');if(!name||!['武器','防具'].includes(kind))return 0;return (inventoryItemsState||[]).filter(raw=>{const row=normalizeInventoryItem(raw||{});return normalizeInventoryKind(row.kind||row.itemType||'')===kind&&String(row.name||'').trim()===name;}).length;}
+function antiqueIndividualEnhancementSummary(item={}){const rows=parseUpgradeLines(item.upgradeEntries||item.upgradeLines||'');if(!rows.length)return '強化なし';return rows.map(e=>e.content==='素材固有効果'?(e.specialEffectName||'固有強化'):(e.content||'強化')).join('・');}
+function base64UrlToUtf8(value=''){let b64=String(value||'').replace(/-/g,'+').replace(/_/g,'/');while(b64.length%4)b64+='=';const bin=atob(b64),bytes=Uint8Array.from(bin,ch=>ch.charCodeAt(0));return new TextDecoder().decode(bytes);}
+function parseAntiqueGearCode(text=''){
+  const m=String(text||'').match(/RCA-ANTQ:([A-Za-z0-9_-]+)/);if(!m)return null;
+  try{const payload=JSON.parse(base64UrlToUtf8(m[1]));if(payload?.type!=='antiqueGear'||!payload.item)return null;return payload;}catch(_){return null;}
+}
+function addAntiqueGearCodeToWarehouse(rawText=''){
+  const payload=parseAntiqueGearCode(rawText);if(!payload)throw new Error('骨董装備コードを読み取れません。');
+  const raw=payload.item||{},localId='antq_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
+  const kind=dbItemTypeToInventoryKind(raw),item=normalizeInventoryItem({...raw,id:localId,masterId:'',publicId:'',masterSheet:'',masterSync:'',kind,count:1,location:'倉庫',source:'骨董屋（骨董装備ガチャ）',tags:mergeTextUnique(raw.tags||'','骨董屋,骨董装備,骨董個体')});
+  item.id=localId;item.masterId='';item.publicId='';item.masterSheet='';item.masterSync='';item.count=1;inventoryItemsState.push(item);invalidateInventoryDerivedCache();const index=inventoryItemsState.length-1;if(!refreshInventoryCardAt(index,{appendIfMissing:true}))renderInventory({refreshLinked:false});inventoryLinkedRefreshForItems(item);updateSummary();if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon();return item;
+}
 async function addInventoryByPublicIdPaste(){
   if(currentMode === 'view') return;
   const idInput = $('publicIdInput');
   const countInput = $('publicIdCountInput');
   const status = $('publicIdPasteStatus');
-  const rawId = String(idInput?.value || '').trim().toUpperCase();
+  const rawInput = String(idInput?.value || '').trim();
+  if(/RCA-ANTQ:/i.test(rawInput)){try{const item=addAntiqueGearCodeToWarehouse(rawInput);if(status){status.className='status-box ok';status.textContent=`骨董装備を追加しました：${item.name} ${antiqueIndividualShortId(item)}`;}if(idInput)idInput.value='';if(countInput)countInput.value='1';}catch(e){if(status){status.className='status-box error';status.textContent=String(e?.message||e);}}return;}
+  const rawId = rawInput.toUpperCase();
   const idMatch = rawId.match(/RCA-[A-Z0-9]{3,4}-[A-Z0-9]{3,8}/i);
   const publicId = canonicalRegistrationId(idMatch ? idMatch[0] : rawId);
   const rawCount = countInput?.value;
@@ -7062,26 +7101,15 @@ async function addInventoryByPublicIdPaste(){
     if(status){ status.className='status-box warn'; status.textContent='DBに登録IDが見つかりません：' + publicId; }
     return;
   }
-  const pid = String(preset.publicId || '').trim().toUpperCase();
-  const mid = String(preset.masterId || preset.id || '').trim();
-  let idx = pid ? inventoryIndexByLookup(pid,'') : -1;
-  if(idx<0 && mid)idx=inventoryIndexByLookup(mid,'');
-  const existed=idx>=0;
-  const previous=existed?inventoryItemsState[idx]:null;
-  if(existed){
-    inventoryItemsState[idx] = mergePublicIdInventoryItem(inventoryItemsState[idx], preset, count);
+  const equipmentInstance=['武器','防具'].includes(normalizeInventoryKind(preset.kind||dbItemTypeToInventoryKind(preset)));
+  let idx=-1,existed=false,previous=null,updated=null;
+  if(equipmentInstance){
+    const copies=Math.max(1,count);for(let i=0;i<copies;i++){const instanceId='inv_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);inventoryItemsState.push(normalizeInventoryItem({...preset,id:instanceId,count:1,location:'倉庫'}));idx=inventoryItemsState.length-1;}
+    invalidateInventoryDerivedCache();updated=inventoryItemsState[idx];renderInventory({refreshLinked:false});inventoryLinkedRefreshForItems(updated);updateSummary();if(status){status.className='status-box ok';status.textContent=`装備を個体として追加しました：${preset.name} x${copies}`;}
   }else{
-    inventoryItemsState.push(normalizeInventoryItem({...preset, count, location:'倉庫'}));
-    idx=inventoryItemsState.length-1;
-  }
-  invalidateInventoryDerivedCache();
-  const updated=inventoryItemsState[idx];
-  if(!refreshInventoryCardAt(idx,{appendIfMissing:true}))renderInventory({refreshLinked:false});
-  inventoryLinkedRefreshForItems(previous,updated);
-  updateSummary();
-  if(status){
-    status.className='status-box ok';
-    status.textContent = existed ? `加算しました：${preset.name} x${count}` : `追加しました：${preset.name} x${count}`;
+    const pid = String(preset.publicId || '').trim().toUpperCase();const mid = String(preset.masterId || preset.id || '').trim();idx = pid ? inventoryIndexByLookup(pid,'') : -1;if(idx<0 && mid)idx=inventoryIndexByLookup(mid,'');existed=idx>=0;previous=existed?inventoryItemsState[idx]:null;
+    if(existed)inventoryItemsState[idx] = mergePublicIdInventoryItem(inventoryItemsState[idx], preset, count);else{inventoryItemsState.push(normalizeInventoryItem({...preset, count, location:'倉庫'}));idx=inventoryItemsState.length-1;}
+    invalidateInventoryDerivedCache();updated=inventoryItemsState[idx];if(!refreshInventoryCardAt(idx,{appendIfMissing:true}))renderInventory({refreshLinked:false});inventoryLinkedRefreshForItems(previous,updated);updateSummary();if(status){status.className='status-box ok';status.textContent = existed ? `加算しました：${preset.name} x${count}` : `追加しました：${preset.name} x${count}`;}
   }
   if(idInput) idInput.value = '';
   if(countInput) countInput.value = '1';
@@ -7666,6 +7694,7 @@ function duplicateRestrictedEquipmentIdentity(row={}){
   const publicId=String(row.publicId||'').trim().toUpperCase();
   const name=String(row.name||'').trim().normalize('NFKC');
   const fallbackId=String(row.id||'').trim();
+  if(isAntiqueIndividualItem(row)){const individual=String(row.id||fallbackId||name).trim();return individual?`${kind}:個体:${individual}`:'';}
   const identity=master||publicId||name||fallbackId;
   return identity?`${kind}:${identity}`:'';
 }
@@ -7717,7 +7746,8 @@ function refreshEquipmentItemSelects({slotKinds=null}={}) {
     const options = [`<option value="">${slot.kind === 'carry' ? '未選択（倉庫へ戻す）' : '未選択'}</option>`].concat(items.map(row => {
       const key = inventoryItemKey(row);
       const duplicateSlot = slot.kind!=='carry' ? duplicateRestrictedEquipmentOtherSlot(slot.key,row) : null;
-      const label = [row.name, row.kind, row.category, slot.kind === 'carry' ? '倉庫:' + row.count : '', row.element ? '属性:' + row.element : '', duplicateSlot ? `${duplicateSlot.name}に装備中` : ''].filter(Boolean).join(' / ');
+      const multi=items.filter(other=>String(other.name||'').trim()===String(row.name||'').trim()).length>1;const individual=isAntiqueIndividualItem(row)||multi;const instance=individual?inventoryIndividualShortId(row):'';const individualStats=individual?[row.power?`威力:${row.power}`:'',row.defense?`防御:${row.defense}`:'',row.guard?`防御行動:${row.guard}`:'',`${isAntiqueIndividualItem(row)?'固定枠':'枠'}:${equipmentUpgradeUsedSlots(parseUpgradeLines(row.upgradeEntries||row.upgradeLines||''))}/${resolvedEquipmentUpgradeLimit(row)||0}`,antiqueIndividualEnhancementSummary(row)].filter(Boolean).join(' / '):'';
+      const label = [row.name,instance,row.kind,row.category,slot.kind === 'carry' ? '倉庫:' + row.count : '',row.element ? '属性:' + row.element : '',individualStats,duplicateSlot ? `${duplicateSlot.name}に装備中` : ''].filter(Boolean).join(' / ');
       return `<option value="${esc(key)}"${duplicateSlot?' disabled':''}>${esc(label)}</option>`;
     }));
     select.innerHTML = options.join('');
@@ -9194,7 +9224,7 @@ function bindEvents() {
   if ($('addInventoryItemBtn')) $('addInventoryItemBtn').addEventListener('click', () => addInventoryItem());
   if ($('addByPublicIdPasteBtn')) $('addByPublicIdPasteBtn').addEventListener('click', addInventoryByPublicIdPaste);
   if ($('publicIdInput')) $('publicIdInput').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); addInventoryByPublicIdPaste(); } });
-  if ($('clearPublicIdPasteBtn')) $('clearPublicIdPasteBtn').addEventListener('click', () => { if($('publicIdInput')) $('publicIdInput').value=''; if($('publicIdCountInput')) $('publicIdCountInput').value='1'; if($('publicIdPasteStatus')) { $('publicIdPasteStatus').className='status-box'; $('publicIdPasteStatus').textContent='登録IDと個数を入力してください。'; } });
+  if ($('clearPublicIdPasteBtn')) $('clearPublicIdPasteBtn').addEventListener('click', () => { if($('publicIdInput')) $('publicIdInput').value=''; if($('publicIdCountInput')) $('publicIdCountInput').value='1'; if($('publicIdPasteStatus')) { $('publicIdPasteStatus').className='status-box'; $('publicIdPasteStatus').textContent='登録ID、または骨董装備コードを入力してください。'; } });
   if ($('addInitialWeaponSetBtn')) $('addInitialWeaponSetBtn').addEventListener('click', addInitialWeaponSet);
   if ($('sortInventoryItemBtn')) $('sortInventoryItemBtn').addEventListener('click', sortInventoryItems);
   if ($('inventorySearchInput')) $('inventorySearchInput').addEventListener('input', e => setInventoryFilter('search', e.target.value || ''));
@@ -9212,7 +9242,7 @@ function bindEvents() {
     e.preventDefault();
     e.stopPropagation();
     const index = Number(btn.dataset.index || 0);
-    if (btn.dataset.inventoryAction === 'edit') return;
+    if (btn.dataset.inventoryAction === 'edit') { openInventoryDialog(index); return; }
     if (btn.dataset.inventoryAction === 'learn-recipe') { learnRecipeFromInventory(index); return; }
     if (btn.dataset.inventoryAction === 'delete') deleteInventoryItem(index);
     if (btn.dataset.inventoryAction === 'duplicate') duplicateInventoryItem(index);
