@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.587</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.589</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1109,7 +1109,7 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
 .loadout-preset-dialog .dialog-inner{width:min(680px,calc(100vw - 32px))}.loadout-preset-modal-summary{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fffdf8;line-height:1.6}.loadout-preset-shortages{display:grid;gap:7px;margin-top:10px}.loadout-preset-shortage{padding:9px 10px;border:1px solid rgba(173,91,57,.28);border-radius:10px;background:rgba(255,243,236,.8);color:#7d3828;font-weight:800}.loadout-preset-ok{padding:9px 10px;border:1px solid rgba(66,128,87,.25);border-radius:10px;background:rgba(238,249,241,.8);color:#315f41;font-weight:800}.loadout-preset-dialog .field{margin-top:10px}.loadout-preset-dialog .field input{width:100%}
 body.public-view .loadout-preset-panel{display:none!important}
 @media(max-width:720px){.loadout-preset-head,.loadout-preset-row{grid-template-columns:1fr}.loadout-preset-head{display:grid}.loadout-preset-head .button-row,.loadout-preset-row .button-row{justify-content:flex-start}.loadout-preset-meta{grid-column:1}}
-/* v90.8.587: プリセット行では共通 .button-row の全幅グリッド指定を打ち消す。 */
+/* v90.8.589: プリセット行では共通 .button-row の全幅グリッド指定を打ち消す。 */
 .loadout-preset-head .button-row,
 .loadout-preset-row .button-row{
   display:flex!important;
@@ -1142,10 +1142,10 @@ body.public-view .loadout-preset-panel{display:none!important}
 
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.587-time-cycle">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.588-time-cycle">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.587｜更新：2026年8月19日</div>
+<div class="ra-build-info">v90.8.589｜更新：2026年8月19日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -7039,11 +7039,11 @@ function mergePublicIdInventoryItem(existing={}, preset={}, addCount=1){
     location: '倉庫'
   });
 }
-function isAntiqueIndividualItem(item={}){return /(?:^|[,、\s])骨董個体(?:$|[,、\s])/.test(String(item.tags||''))||String(item.source||'').includes('骨董装備ガチャ')||String(item.id||'').startsWith('antq_');}
-function antiqueIndividualShortId(item={}){const pid=canonicalRegistrationId(item.publicId||'');if(pid)return pid;const id=String(item.id||'').replace(/^antq_/,'');return id?`#${id.slice(-6).toUpperCase()}`:'';}
-function inventoryIndividualShortId(item={}){if(isAntiqueIndividualItem(item)){const pid=canonicalRegistrationId(item.publicId||'');if(pid)return pid;}const id=String(item.id||item.masterId||'').replace(/^antq_/,'');return id?`#${id.slice(-6).toUpperCase()}`:'';}
-function sameNameEquipmentCount(item={}){const name=String(item.name||'').trim(),kind=normalizeInventoryKind(item.kind||item.itemType||'');if(!name||!['武器','防具'].includes(kind))return 0;return (inventoryItemsState||[]).filter(raw=>{const row=normalizeInventoryItem(raw||{});return normalizeInventoryKind(row.kind||row.itemType||'')===kind&&String(row.name||'').trim()===name;}).length;}
-function antiqueIndividualEnhancementSummary(item={}){const rows=parseUpgradeLines(item.upgradeEntries||item.upgradeLines||'');if(!rows.length)return '強化なし';return rows.map(e=>e.content==='素材固有効果'?(e.specialEffectName||'固有強化'):(e.content||'強化')).join('・');}
+function isAntiqueIndividualItem(item={}){item=item||{};return /(?:^|[,、\s])骨董個体(?:$|[,、\s])/.test(String(item.tags||''))||String(item.source||'').includes('骨董装備ガチャ')||String(item.id||'').startsWith('antq_');}
+function antiqueIndividualShortId(item={}){item=item||{};const pid=canonicalRegistrationId(item.publicId||'');if(pid)return pid;const id=String(item.id||'').replace(/^antq_/,'');return id?`#${id.slice(-6).toUpperCase()}`:'';}
+function inventoryIndividualShortId(item={}){item=item||{};if(isAntiqueIndividualItem(item)){const pid=canonicalRegistrationId(item.publicId||'');if(pid)return pid;}const id=String(item.id||item.masterId||'').replace(/^antq_/,'');return id?`#${id.slice(-6).toUpperCase()}`:'';}
+function sameNameEquipmentCount(item={}){item=item||{};const name=String(item.name||'').trim(),kind=normalizeInventoryKind(item.kind||item.itemType||'');if(!name||!['武器','防具'].includes(kind))return 0;return (inventoryItemsState||[]).filter(raw=>{const row=normalizeInventoryItem(raw||{});return normalizeInventoryKind(row.kind||row.itemType||'')===kind&&String(row.name||'').trim()===name;}).length;}
+function antiqueIndividualEnhancementSummary(item={}){item=item||{};const rows=parseUpgradeLines(item.upgradeEntries||item.upgradeLines||'');if(!rows.length)return '強化なし';return rows.map(e=>e.content==='素材固有効果'?(e.specialEffectName||'固有強化'):(e.content||'強化')).join('・');}
 function base64UrlToUtf8(value=''){let b64=String(value||'').replace(/-/g,'+').replace(/_/g,'/');while(b64.length%4)b64+='=';const bin=atob(b64),bytes=Uint8Array.from(bin,ch=>ch.charCodeAt(0));return new TextDecoder().decode(bytes);}
 function parseAntiqueGearCode(text=''){
   const m=String(text||'').match(/RCA-ANTQ:([A-Za-z0-9_-]+)/);if(!m)return null;
