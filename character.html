@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.582</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.584</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1109,7 +1109,7 @@ details.big-section[open]>summary::before,.skill-category-card[open]>.skill-cate
 .loadout-preset-dialog .dialog-inner{width:min(680px,calc(100vw - 32px))}.loadout-preset-modal-summary{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fffdf8;line-height:1.6}.loadout-preset-shortages{display:grid;gap:7px;margin-top:10px}.loadout-preset-shortage{padding:9px 10px;border:1px solid rgba(173,91,57,.28);border-radius:10px;background:rgba(255,243,236,.8);color:#7d3828;font-weight:800}.loadout-preset-ok{padding:9px 10px;border:1px solid rgba(66,128,87,.25);border-radius:10px;background:rgba(238,249,241,.8);color:#315f41;font-weight:800}.loadout-preset-dialog .field{margin-top:10px}.loadout-preset-dialog .field input{width:100%}
 body.public-view .loadout-preset-panel{display:none!important}
 @media(max-width:720px){.loadout-preset-head,.loadout-preset-row{grid-template-columns:1fr}.loadout-preset-head{display:grid}.loadout-preset-head .button-row,.loadout-preset-row .button-row{justify-content:flex-start}.loadout-preset-meta{grid-column:1}}
-/* v90.8.582: プリセット行では共通 .button-row の全幅グリッド指定を打ち消す。 */
+/* v90.8.584: プリセット行では共通 .button-row の全幅グリッド指定を打ち消す。 */
 .loadout-preset-head .button-row,
 .loadout-preset-row .button-row{
   display:flex!important;
@@ -1142,10 +1142,10 @@ body.public-view .loadout-preset-panel{display:none!important}
 
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.582-time-cycle">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.584-time-cycle">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.582｜更新：2026年8月19日</div>
+<div class="ra-build-info">v90.8.584｜更新：2026年8月19日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -1507,10 +1507,10 @@ body.public-view .loadout-preset-panel{display:none!important}
           <details class="mini-card inventory-registration-card" open>
             <summary>倉庫へ登録</summary>
             <div class="inventory-registration-body">
-            <p class="hint">GMや進行管理HTMLから受け取った登録IDを入力して追加します。装備・素材・道具・レシピなどは倉庫へ、術式・スキルは習得系へ反映されます。所持数を持つものは指定した個数で追加でき、0個でも登録・保存できます。</p>
+            <p class="hint">GMや進行管理HTMLから受け取った登録IDを入力して追加します。骨董装備も通常と同じ RCA-XXXX-XXXX 形式で登録できます。装備・素材・道具・レシピなどは倉庫へ、術式・スキルは習得系へ反映されます。所持数を持つものは指定した個数で追加でき、0個でも登録・保存できます。</p>
             <div class="inventory-form-grid">
               <div class="field">
-                <label for="publicIdInput">登録ID / 骨董装備コード</label>
+                <label for="publicIdInput">登録ID</label>
                 <input id="publicIdInput" data-inventory-input="1" type="text" inputmode="latin" autocomplete="off" />
               </div>
               <div class="field">
@@ -1523,7 +1523,7 @@ body.public-view .loadout-preset-panel{display:none!important}
               <button id="clearPublicIdPasteBtn" type="button" class="ghost">入力欄をクリア</button>
               <button id="addInitialWeaponSetBtn" type="button" class="secondary">初期倉庫アイテムをDB同期</button>
             </div>
-            <div id="publicIdPasteStatus" class="status-box">登録ID、または骨董装備コードを入力してください。</div>
+            <div id="publicIdPasteStatus" class="status-box">登録IDを入力してください。</div>
             </div>
           </details>
           <div id="inventoryModeTabs" class="inventory-mode-tabs" aria-label="所持・習得表示切り替え">
@@ -6121,7 +6121,7 @@ function inventoryWarehouseDetailHtml(item,index){
     <div class="meta-item"><span class="meta-label">個数</span><div class="inventory-count-editor"><input type="number" min="0" max="9999" inputmode="numeric" value="${esc(item.count??0)}" data-inventory-count-index="${index}" aria-label="${esc(title)}の個数" ${disabled}/></div></div>
     ${bagMeta?`<div class="meta-item"><span class="meta-label">バッグ容量</span>${esc(item.capacity||0)}</div>`:''}
     <div class="meta-item"><span class="meta-label">ランク</span>${esc(inventoryRankLabel(item)||'—')}</div>
-    ${(isAntiqueIndividualItem(item)||sameNameEquipmentCount(item)>1)?`<div class="meta-item"><span class="meta-label">個体識別</span>${esc(inventoryIndividualShortId(item))}</div>`:''}
+    ${(!isAntiqueIndividualItem(item)&&sameNameEquipmentCount(item)>1)?`<div class="meta-item"><span class="meta-label">個体識別</span>${esc(inventoryIndividualShortId(item))}</div>`:''}
     <div class="meta-item"><span class="meta-label">売値</span>${esc(inventorySellPriceText(item.price)||'—')}</div>
     <div class="meta-item meta-wide"><span class="meta-label">装備/使用データ</span><div class="inventory-note">${esc([equipMeta,spellSlotMeta].filter(Boolean).join('\n'))}</div></div>
     ${savedUpgradeMeta?`<div class="meta-item meta-wide"><span class="meta-label">保存済み強化内容</span><div class="inventory-note">${esc(savedUpgradeMeta)}</div></div>`:''}
@@ -6471,6 +6471,20 @@ function dbItemToInventoryItem(row) {
     note: row.notes || ''
   });
 }
+function dbAntiqueInstanceToInventoryItem(row={}) {
+  let upgrades=[];
+  try{const parsed=JSON.parse(String(row.upgradeEntries||'[]'));if(Array.isArray(parsed))upgrades=parsed;}catch(_){upgrades=[];}
+  return normalizeInventoryItem({
+    id:row.id||row.publicId||row.name,publicId:row.publicId||'',masterId:row.id||'',masterSheet:'antique_instances',masterSync:'',
+    name:row.name||'',kind:dbItemTypeToInventoryKind(row),itemType:row.itemType||'',itemCategory:row.itemCategory||'',
+    category:row.itemCategory||row.itemType||'',count:1,rank:row.rank||'',equipSlot:row.equipSlot||'',skill:row.skill||'',
+    power:row.power||'',element:row.element||'',modifiers:row.modifiers||'',upgradeLimit:row.upgradeLimit||'',
+    upgradeMaterialMinRank:row.upgradeMaterialMinRank||row.rank||'',upgradeEntries:upgrades,upgradeLines:'',
+    description:row.description||'',effect:row.effect||'',source:row.source||'骨董屋（骨董装備ガチャ）',
+    tags:mergeTextUnique(row.tags||'','骨董屋,骨董装備,骨董個体,骨董強化固定')
+  });
+}
+
 function dbSpellToInventoryItem(row) {
   return normalizeInventoryItem({
     id: row.id || row.name,
@@ -7026,8 +7040,8 @@ function mergePublicIdInventoryItem(existing={}, preset={}, addCount=1){
   });
 }
 function isAntiqueIndividualItem(item={}){return /(?:^|[,、\s])骨董個体(?:$|[,、\s])/.test(String(item.tags||''))||String(item.source||'').includes('骨董装備ガチャ')||String(item.id||'').startsWith('antq_');}
-function antiqueIndividualShortId(item={}){const id=String(item.id||'').replace(/^antq_/,'');return id?`#${id.slice(-6).toUpperCase()}`:'';}
-function inventoryIndividualShortId(item={}){const id=String(item.id||item.masterId||'').replace(/^antq_/,'');return id?`#${id.slice(-6).toUpperCase()}`:'';}
+function antiqueIndividualShortId(item={}){const pid=canonicalRegistrationId(item.publicId||'');if(pid)return pid;const id=String(item.id||'').replace(/^antq_/,'');return id?`#${id.slice(-6).toUpperCase()}`:'';}
+function inventoryIndividualShortId(item={}){if(isAntiqueIndividualItem(item)){const pid=canonicalRegistrationId(item.publicId||'');if(pid)return pid;}const id=String(item.id||item.masterId||'').replace(/^antq_/,'');return id?`#${id.slice(-6).toUpperCase()}`:'';}
 function sameNameEquipmentCount(item={}){const name=String(item.name||'').trim(),kind=normalizeInventoryKind(item.kind||item.itemType||'');if(!name||!['武器','防具'].includes(kind))return 0;return (inventoryItemsState||[]).filter(raw=>{const row=normalizeInventoryItem(raw||{});return normalizeInventoryKind(row.kind||row.itemType||'')===kind&&String(row.name||'').trim()===name;}).length;}
 function antiqueIndividualEnhancementSummary(item={}){const rows=parseUpgradeLines(item.upgradeEntries||item.upgradeLines||'');if(!rows.length)return '強化なし';return rows.map(e=>e.content==='素材固有効果'?(e.specialEffectName||'固有強化'):(e.content||'強化')).join('・');}
 function base64UrlToUtf8(value=''){let b64=String(value||'').replace(/-/g,'+').replace(/_/g,'/');while(b64.length%4)b64+='=';const bin=atob(b64),bytes=Uint8Array.from(bin,ch=>ch.charCodeAt(0));return new TextDecoder().decode(bytes);}
@@ -7096,12 +7110,21 @@ async function addInventoryByPublicIdPaste(){
     if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon();
     return;
   }
-  const preset = findPresetByPublicId(master, publicId);
+  let preset = findPresetByPublicId(master, publicId);
+  if(!preset){
+    try{
+      const resolved=await cloudRequest('resolveRegistrationId',{publicId});
+      if(resolved?.found&&resolved?.kind==='antiqueGear'&&resolved?.row)preset=dbAntiqueInstanceToInventoryItem(resolved.row);
+    }catch(e){console.warn('骨董個体登録IDの照会に失敗しました',e);}
+  }
   if(!preset){
     if(status){ status.className='status-box warn'; status.textContent='DBに登録IDが見つかりません：' + publicId; }
     return;
   }
   const equipmentInstance=['武器','防具'].includes(normalizeInventoryKind(preset.kind||dbItemTypeToInventoryKind(preset)));
+  if(isAntiqueIndividualItem(preset)&&inventoryItemsState.some(x=>String(x.publicId||'').trim().toUpperCase()===publicId)){
+    if(status){status.className='status-box warn';status.textContent=`この骨董個体は既に倉庫へ登録されています：${publicId}`;}return;
+  }
   let idx=-1,existed=false,previous=null,updated=null;
   if(equipmentInstance){
     const copies=Math.max(1,count);for(let i=0;i<copies;i++){const instanceId='inv_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);inventoryItemsState.push(normalizeInventoryItem({...preset,id:instanceId,count:1,location:'倉庫'}));idx=inventoryItemsState.length-1;}
@@ -7507,7 +7530,7 @@ function setGasUrl(url) { localStorage.setItem(GAS_URL_KEY, gasUrl()); }
 function masterAdminKey() { return ''; }
 function setMasterAdminKey(key) { /* v37: カテゴリ系マスタは管理キーに関係なく参照する */ }
 function equipmentScopeKey() { return 'global'; }
-const CLOUD_JSONP_ACTIONS = new Set(['list','load','equipmentCategories','equipmentCategoriesMeta','characterSheetMaster']);
+const CLOUD_JSONP_ACTIONS = new Set(['list','load','equipmentCategories','equipmentCategoriesMeta','characterSheetMaster','resolveRegistrationId']);
 function cloudJsonpRequest(action, payload={}) {
   return new Promise((resolve,reject)=>{
     const raw = gasUrl();
@@ -9224,7 +9247,7 @@ function bindEvents() {
   if ($('addInventoryItemBtn')) $('addInventoryItemBtn').addEventListener('click', () => addInventoryItem());
   if ($('addByPublicIdPasteBtn')) $('addByPublicIdPasteBtn').addEventListener('click', addInventoryByPublicIdPaste);
   if ($('publicIdInput')) $('publicIdInput').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); addInventoryByPublicIdPaste(); } });
-  if ($('clearPublicIdPasteBtn')) $('clearPublicIdPasteBtn').addEventListener('click', () => { if($('publicIdInput')) $('publicIdInput').value=''; if($('publicIdCountInput')) $('publicIdCountInput').value='1'; if($('publicIdPasteStatus')) { $('publicIdPasteStatus').className='status-box'; $('publicIdPasteStatus').textContent='登録ID、または骨董装備コードを入力してください。'; } });
+  if ($('clearPublicIdPasteBtn')) $('clearPublicIdPasteBtn').addEventListener('click', () => { if($('publicIdInput')) $('publicIdInput').value=''; if($('publicIdCountInput')) $('publicIdCountInput').value='1'; if($('publicIdPasteStatus')) { $('publicIdPasteStatus').className='status-box'; $('publicIdPasteStatus').textContent='登録IDを入力してください。'; } });
   if ($('addInitialWeaponSetBtn')) $('addInitialWeaponSetBtn').addEventListener('click', addInitialWeaponSet);
   if ($('sortInventoryItemBtn')) $('sortInventoryItemBtn').addEventListener('click', sortInventoryItems);
   if ($('inventorySearchInput')) $('inventorySearchInput').addEventListener('input', e => setInventoryFilter('search', e.target.value || ''));
