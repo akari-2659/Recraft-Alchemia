@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.593</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.595</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1142,10 +1142,10 @@ body.public-view .loadout-preset-panel{display:none!important}
 
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.593-antique-intrinsic">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.595-book-audit">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.593｜更新：2026年8月20日</div>
+<div class="ra-build-info">v90.8.595｜更新：2026年8月20日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -7571,6 +7571,35 @@ async function cloudNoCorsPost(action, payload={}) {
   await fetch(url, { method: 'POST', mode: 'no-cors', body });
   return { ok: true, sentNoCors: true };
 }
+function cloudPostMessageRequest(action, payload={}, timeoutMs=60000) {
+  return new Promise((resolve,reject)=>{
+    const url=gasUrl();
+    if(!url){reject(new Error('GAS WebアプリURLが未設定です。'));return;}
+    const token='charpost_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+    const frame=document.createElement('iframe');
+    const frameName='recraftCharPost_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+    frame.name=frameName;frame.style.display='none';frame.setAttribute('aria-hidden','true');
+    const form=document.createElement('form');
+    form.method='POST';form.action=url;form.target=frameName;form.style.display='none';
+    const add=(name,value)=>{const input=document.createElement('input');input.type='hidden';input.name=name;input.value=String(value??'');form.appendChild(input);};
+    add('action',action);add('responseMode','postMessage');add('token',token);add('payload',JSON.stringify({...payload,token}));
+    let settled=false;
+    const timer=setTimeout(()=>finishReject(new Error('クラウド保存の応答がタイムアウトしました。')),timeoutMs);
+    function cleanup(){clearTimeout(timer);window.removeEventListener('message',onMessage);setTimeout(()=>{try{form.remove();frame.remove();}catch(_e){}},0);}
+    function finishResolve(value){if(settled)return;settled=true;cleanup();resolve(value);}
+    function finishReject(error){if(settled)return;settled=true;cleanup();reject(error);}
+    function onMessage(event){
+      if(event.source!==frame.contentWindow)return;
+      const data=event.data||{};
+      if(data.type!=='recraft-db-post-result'||String(data.token||'')!==token)return;
+      const result=data.result||{ok:false,error:'クラウド保存結果が空です。'};
+      if(result.ok===false){finishReject(new Error(result.error||'クラウド保存に失敗しました。'));return;}
+      finishResolve({...result,acknowledged:true});
+    }
+    window.addEventListener('message',onMessage);document.body.appendChild(frame);document.body.appendChild(form);
+    try{form.submit();}catch(e){finishReject(e);}
+  });
+}
 async function cloudRequest(action, payload={}) {
   const url = gasUrl();
   if (!url) throw new Error('GAS WebアプリURLが未設定です。');
@@ -7584,7 +7613,13 @@ async function cloudRequest(action, payload={}) {
     return json;
   }
   if (action === 'save' || action === 'delete') {
-    return await cloudNoCorsPost(action, payload);
+    // v90.8.594: 1回の応答付きPOSTで完了する。旧no-cors経路は互換フォールバックのみ。
+    try{
+      return await cloudPostMessageRequest(action,payload);
+    }catch(postError){
+      console.warn('acknowledged cloud POST failed; fallback to no-cors POST',postError);
+      return await cloudNoCorsPost(action,payload);
+    }
   }
 
   const body = new URLSearchParams();
@@ -8143,15 +8178,17 @@ async function saveItem(data) {
   if (!auth.playerKey && !auth.newPlayerKey) throw new Error('クラウド保存にはプレイヤーキーが必要です。');
   const cleanData = stripRuntimeOnlyData(data);
   const effectivePlayerKey = auth.newPlayerKey || auth.playerKey;
-  await cloudRequest('save', { data: cleanData, playerKey: auth.playerKey, newPlayerKey: auth.newPlayerKey });
-  await verifyCloudCharacterSave(cleanData, effectivePlayerKey);
+  const saveResult=await cloudRequest('save', { data: cleanData, playerKey: auth.playerKey, newPlayerKey: auth.newPlayerKey });
+  // 応答付きPOSTならGASの保存完了応答をそのまま採用し、再読込確認を省略する。
+  // no-cors互換フォールバック時だけ従来の読込確認を行う。
+  if(saveResult&&saveResult.sentNoCors)await verifyCloudCharacterSave(cleanData,effectivePlayerKey);
   if (auth.newPlayerKey) {
     currentCloudPlayerKey = auth.newPlayerKey;
     if ($('playerKey')) $('playerKey').value = auth.newPlayerKey;
     if ($('newPlayerKey')) $('newPlayerKey').value = '';
     if ($('cloudPlayerKeyInput')) $('cloudPlayerKeyInput').value = auth.newPlayerKey;
   }
-  return { saved:true, cloudSaved:true, verified:true };
+  return { saved:true, cloudSaved:true, verified:true, acknowledged:!!(saveResult&&saveResult.acknowledged) };
 }
 async function refreshList() {
   $('characterList').innerHTML = '';
