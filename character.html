@@ -6478,7 +6478,7 @@ function dbAntiqueInstanceToInventoryItem(row={}) {
     id:row.id||row.publicId||row.name,publicId:row.publicId||'',masterId:row.id||'',masterSheet:'antique_instances',masterSync:'',
     name:row.name||'',kind:dbItemTypeToInventoryKind(row),itemType:row.itemType||'',itemCategory:row.itemCategory||'',
     category:row.itemCategory||row.itemType||'',count:1,rank:row.rank||'',equipSlot:row.equipSlot||'',skill:row.skill||'',
-    power:row.power||'',element:row.element||'',modifiers:row.modifiers||'',upgradeLimit:row.upgradeLimit||'',
+    power:row.power||'',element:row.element||'',offhand:row.offhandBonus||'',modifiers:row.modifiers||'',upgradeLimit:row.upgradeLimit||'',
     upgradeMaterialMinRank:row.upgradeMaterialMinRank||row.rank||'',upgradeEntries:upgrades,upgradeLines:'',
     description:row.description||'',effect:row.effect||'',source:row.source||'骨董屋（骨董装備ガチャ）',
     tags:mergeTextUnique(row.tags||'','骨董屋,骨董装備,骨董個体,骨董強化固定')
