@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.597</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.599</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1142,10 +1142,10 @@ body.public-view .loadout-preset-panel{display:none!important}
 
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.597">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.599">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.597｜更新：2026年8月20日</div>
+<div class="ra-build-info">v90.8.599｜更新：2026年8月20日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -7580,9 +7580,8 @@ function cloudPostMessageRequest(action, payload={}, timeoutMs=60000) {
     const frameName='recraftCharPost_'+Date.now()+'_'+Math.random().toString(36).slice(2);
     frame.name=frameName;frame.style.display='none';frame.setAttribute('aria-hidden','true');
     const form=document.createElement('form');
-    form.method='POST';form.action=url;form.target=frameName;form.style.display='none';
-    const add=(name,value)=>{const input=document.createElement('input');input.type='hidden';input.name=name;input.value=String(value??'');form.appendChild(input);};
-    add('action',action);add('responseMode','postMessage');add('token',token);add('payload',JSON.stringify({...payload,token}));
+    form.method='POST';const actionUrl=new URL(url);actionUrl.searchParams.set('action',action);actionUrl.searchParams.set('responseMode','postMessage');actionUrl.searchParams.set('token',token);form.action=actionUrl.toString();form.target=frameName;form.enctype='text/plain';form.acceptCharset='UTF-8';form.style.display='none';
+    const payloadField=document.createElement('textarea');payloadField.name='payload';payloadField.value=JSON.stringify({...payload,token});payloadField.style.display='none';form.appendChild(payloadField);
     let settled=false;
     const timer=setTimeout(()=>finishReject(new Error('クラウド保存の応答がタイムアウトしました。')),timeoutMs);
     function cleanup(){clearTimeout(timer);window.removeEventListener('message',onMessage);setTimeout(()=>{try{form.remove();frame.remove();}catch(_e){}},0);}
