@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.608</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.612</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1142,10 +1142,10 @@ body.public-view .loadout-preset-panel{display:none!important}
 
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.608">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.612">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.608｜更新：2026年8月21日</div>
+<div class="ra-build-info">v90.8.612｜更新：2026年8月21日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -3216,19 +3216,25 @@ function characterCraftingToolName(craftSkill='',craftType=''){
   if(skill==='細工') return '細工道具';
   return '対応道具';
 }
-function characterWeaponCraftSupportEligible(row={}){
-  const rank=characterNumericRankValue(row.rank,1);
+function characterCraftSupportName(row={}){
+  const skill=String(row.craftSkill||'').trim();
   const type=String(row.craftType||'').trim();
-  return rank<=5&&(type==='武器派生'||(type==='鍛冶'&&String(row.category||'').trim()!=='矢弾'));
+  if(skill==='調合'||type==='調合')return '調合安定剤';
+  if(skill==='設計')return '機巧調整剤';
+  if(skill==='細工'){
+    if(type==='武器派生'||(type==='鍛冶'&&String(row.category||'').trim()!=='矢弾'))return '武装融和剤';
+    return '工作定着剤';
+  }
+  return '';
 }
-function characterWeaponCraftSupportText(){return '武装融和剤（自作時のみ・任意個数）：1個につき作成難易度－2';}
+function characterCraftSupportText(row={}){const name=characterCraftSupportName(row);return name?`${name}（自作時のみ・任意個数）：1個につき作成難易度－2`:'';}
 function characterCraftingSelfText(row={}){
   const skill=row.craftSkill || (row.craftType==='調合'?'調合':row.craftType==='料理'?'なし':(row.craftType==='細工'||row.craftType==='仕掛け製作')?'設計':'細工');
   const difficultyRows=characterCraftingDifficultyRows(row.rank,row.difficulty);
   if(!difficultyRows.length){
     return `自作：レシピ必須 / 製作技能：${skill} / 作成難易度：${row.difficulty||'未設定'}`;
   }
-  const support=characterWeaponCraftSupportEligible(row)?` / 任意の作成補助材：${characterWeaponCraftSupportText()}`:'';
+  const supportText=characterCraftSupportText(row);const support=supportText?` / 任意の作成補助材：${supportText}`:'';
   return `自作：レシピ必須 / 製作技能：${skill} / 使用道具：${characterCraftingToolName(skill,row.craftType)} / 基礎作成難易度：${row.difficulty||'未設定'} / ${characterCraftingDifficultySummary(row.rank,row.difficulty)}${support}`;
 }
 /* RA_PATCH_WAREHOUSE_ALL_ITEM_RANK_V90_8_575 */
@@ -4612,7 +4618,7 @@ const INVENTORY_LOCATION_FILTERS = ['全て'];
 const INVENTORY_LOCATION_OPTIONS = ['倉庫'];
 const INVENTORY_KIND_OPTIONS = ['アイテム','素材','武器','防具','装飾品','バッグ','矢筒','術式','レシピ','重要品','その他'];
 const INVENTORY_KIND_TOKEN = { '武器':'weapon', '防具':'armor', '装飾品':'accessory', 'アイテム':'item', '素材':'material', 'バッグ':'bag', '矢筒':'quiver', '術式':'spell', 'レシピ':'recipe', '重要品':'important', 'その他':'other' };
-const INVENTORY_SMALL_CATEGORY_ORDER = ['武器','防具','盾','装飾品','調合品','道具','特殊矢弾','収納具','素材','スクロール','換金品','レシピ','術式','スキル','重要品','その他'];
+const INVENTORY_SMALL_CATEGORY_ORDER = ['武器','防具','盾','装飾品','調合品','道具','特殊矢弾','収納具','素材','スクロール','換金品','レシピ','術式','スキル','重要アイテム','重要品','その他'];
 const INVENTORY_MATERIAL_TYPE_ORDER = ['食材','魔物素材','採取素材','加工素材','特殊素材'];
 function canonicalInventoryMaterialType(value=''){
   const raw=String(value||'').trim();
