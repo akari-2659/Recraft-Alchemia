@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.646</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.647</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1139,10 +1139,10 @@ body.public-view .loadout-preset-panel{display:none!important}
 
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.646">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.647">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.646｜更新：2026年8月25日</div>
+<div class="ra-build-info">v90.8.647｜更新：2026年8月25日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -2752,7 +2752,7 @@ function sumModifierRows(rows=[], predicate=()=>false) {
 function upgradeEntryModifierRow(entry={}) {
   const e=normalizeUpgradeEntry(entry),content=e.content,value=String(upgradeEffectAmount(e)||'').trim();
   if(!content||!value||isZeroModifierText(value))return null;
-  const aliases={'命中強化':'hit','防御強化':'combat:defense','回避強化':'skill:evade','防御行動強化':'combat:guardAction','HP強化':'resource:maxHp','MP強化':'resource:maxMp','力業補助':'skill:force','魔法補助':'skill:magic','祈祷補助':'skill:prayer'};
+  const aliases={'命中強化':'hit','防御強化':'combat:defense','回避強化':'skill:evade','抵抗強化':'combat:resistance','防御行動強化':'combat:guardAction','HP強化':'resource:maxHp','MP強化':'resource:maxMp','力業補助':'skill:force','魔法補助':'skill:magic','祈祷補助':'skill:prayer'};
   const target=aliases[content]||'';return target?normalizeModifierRow({target,value}):null;
 }
 function equipmentUpgradeModifierRows(item={}) {
@@ -3359,7 +3359,7 @@ function syncAllEquipmentSpellSetsToInventory() {
     if (slot.kind !== 'carry') syncEquippedSpellSetToInventoryItem(slot.key);
   }
 }
-const EQUIPMENT_UPGRADE_OPTIONS = ['','威力強化','威力固定強化','命中強化','防御強化','防御行動強化','回避強化','副手追撃強化','術式枠拡張','術式省力化','回復量強化','回復量固定強化','最大スタック拡張','HP強化','MP強化','力業補助','魔法補助','祈祷補助','素材固有効果'];
+const EQUIPMENT_UPGRADE_OPTIONS = ['','威力強化','威力固定強化','命中強化','防御強化','防御行動強化','回避強化','抵抗強化','副手追撃強化','術式枠拡張','術式省力化','回復量強化','回復量固定強化','最大スタック拡張','HP強化','MP強化','力業補助','魔法補助','祈祷補助','素材固有効果'];
 const EQUIPMENT_UPGRADE_OPTION_LABELS = {'素材固有効果':'特殊効果'};
 const EQUIPMENT_UPGRADE_DEFINITIONS={
   '威力強化':{amount:1,slotCost:1,detail:'同じ装備に付与された威力強化の段階に応じて、この装備による武器攻撃・魔法・祈祷のダメージへ追加する。1段階は+1、2段階は+1D2、3段階は+1D3、以後同様。'},
@@ -3368,6 +3368,7 @@ const EQUIPMENT_UPGRADE_DEFINITIONS={
   '防御強化':{amount:1,slotCost:2,detail:'防御値+1。'},
   '防御行動強化':{amount:1,slotCost:1,detail:'防御行動中のみ防御行動値+1。'},
   '回避強化':{amount:1,slotCost:1,detail:'回避値+1。'},
+  '抵抗強化':{amount:1,slotCost:1,detail:'抵抗値+1。'},
   '副手追撃強化':{amount:1,slotCost:1,detail:'副手追撃値+1。'},
   '術式枠拡張':{amount:1,slotCost:2,detail:'この魔導書・祈祷書の術式枠+1。'},
   '術式省力化':{amount:1,slotCost:2,detail:'この装備から使用する術式の消費MPを1点軽減する（最低1）。'},
@@ -3384,7 +3385,7 @@ const LEGACY_UPGRADE_NAME_MAP={
   '威力':'威力強化','威力+1':'威力強化','武器威力':'威力強化','命中':'命中強化','命中補正':'命中強化',
   '防御貫通':'威力固定強化','装甲貫通':'威力固定強化','雷脈貫通':'威力固定強化','天雷貫通':'威力固定強化',
   '防御':'防御強化','防御値':'防御強化','防御行動':'防御行動強化','防御行動値':'防御行動強化',
-  '回避':'回避強化','回避補正':'回避強化','副手追撃値':'副手追撃強化','術式枠':'術式枠拡張',
+  '回避':'回避強化','回避補正':'回避強化','抵抗':'抵抗強化','抵抗値':'抵抗強化','抵抗補正':'抵抗強化','副手追撃値':'副手追撃強化','術式枠':'術式枠拡張',
   '消費コスト軽減':'術式省力化','コスト軽減':'術式省力化','回復量':'回復量固定強化','回復強化':'回復量固定強化',
   '最大スタック数':'最大スタック拡張','HP':'HP強化','最大HP':'HP強化','MP':'MP強化','最大MP':'MP強化',
   '力業':'力業補助','魔法':'魔法補助','祈祷':'祈祷補助'
@@ -3412,6 +3413,7 @@ function standardUpgradeDetailForAmount(content='',amount=1){
     case '防御強化':return `防御値+${n}。`;
     case '防御行動強化':return `防御行動中のみ防御行動値+${n}。`;
     case '回避強化':return `回避値+${n}。`;
+    case '抵抗強化':return `抵抗値+${n}。`;
     case '副手追撃強化':return `副手追撃値+${n}。`;
     case '術式枠拡張':return `この魔導書・祈祷書の術式枠+${n}。`;
     case '術式省力化':return `この装備から使用する術式の消費MPを${n}点軽減する（最低1）。`;
@@ -9751,7 +9753,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 .ra-picker-detail-grid dt{color:var(--muted);font-weight:800}.ra-picker-detail-grid dd{margin:0;white-space:pre-wrap}
 .ra-picker-empty{padding:25px;text-align:center;color:var(--muted)}
 @media(max-width:720px){.ra-picker-body{grid-template-columns:1fr}.ra-picker-detail{border-left:0;border-top:1px solid var(--line);max-height:42vh}.ra-picker-card{grid-template-columns:1fr}.ra-picker-actions{justify-content:flex-start}}
-/* v90.8.646: 装備選択も既存キャラシモーダルと同じ外観へ統一 */
+/* v90.8.647: 装備選択も既存キャラシモーダルと同じ外観へ統一 */
 dialog.output-dialog.ra-picker-dialog{width:min(900px,calc(100% - 24px));max-height:min(88vh,880px);box-shadow:0 18px 60px rgba(45,27,8,.28)}
 .ra-picker-dialog .ra-picker-shell{padding:16px;grid-template-rows:auto auto auto minmax(0,1fr);max-height:min(88vh,880px)}
 .ra-picker-dialog .ra-picker-head{padding:0 0 10px;border-bottom:0;align-items:flex-start}
