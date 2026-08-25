@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.642</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.644</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -534,7 +534,7 @@
   .equipment-upgrade-slot-badge{align-self:center;display:inline-flex;align-items:center;justify-content:center;min-width:84px;border:1px solid var(--line);border-radius:999px;background:rgba(255,249,238,.96);padding:7px 10px;font-size:.8rem;font-weight:900;color:var(--accent2);white-space:nowrap}
   .equipment-readonly-text{min-height:42px;border:1px solid var(--line);border-radius:10px;background:rgba(249,245,235,.82);padding:9px 10px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
   .inventory-count-editor{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.inventory-count-editor input{width:96px;min-width:0}
-.inventory-mode-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 12px}.inventory-mode-tabs button{flex:0 1 auto}.inventory-mode-tabs button.active{background:#8f5728;color:#fffaf2;border-color:#8f5728}.learned-recipe-card .inventory-card-head{grid-template-columns:minmax(0,1fr)!important}.learned-recipe-empty{margin-top:10px}.inventory-card,.equipment-card,.skill-category-card,.quiver-slot-card{content-visibility:auto;contain-intrinsic-size:auto 170px}
+.inventory-mode-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 12px}.inventory-mode-tabs button{flex:0 1 auto}.inventory-mode-tabs button.active{background:#8f5728;color:#fffaf2;border-color:#8f5728}.learned-kind-dialog-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin:12px 0}.learned-kind-dialog-list button{min-height:46px;text-align:center}.learned-kind-dialog-list button.active{background:#8f5728;color:#fffaf2;border-color:#8f5728}.learned-recipe-card .inventory-card-head{grid-template-columns:minmax(0,1fr)!important}.learned-recipe-empty{margin-top:10px}.inventory-card,.equipment-card,.skill-category-card,.quiver-slot-card{content-visibility:auto;contain-intrinsic-size:auto 170px}
   .equipment-upgrade-special-detail{grid-column:1/-1;border:1px solid var(--line);border-radius:10px;background:rgba(249,245,235,.82);padding:8px 10px;font-size:.82rem;line-height:1.55;white-space:pre-wrap}
   .equipment-upgrade-special-detail:empty{display:none}
   .equipment-upgrade-row label{font-size:.78rem}
@@ -595,23 +595,21 @@
   body.public-view [data-private-view="1"],
   body.public-view [data-private-section="1"],
   body.public-view [data-section-key="warehouse"],
-  body.public-view [data-section-key="inventory"],
   body.public-view [data-section-key="storage"],
   body.public-view [data-section-key="deposit"],
   body.public-view #warehouseSection,
-  body.public-view #inventorySection,
   body.public-view #storageSection,
   body.public-view #depositSection,
   body.public-view #warehousePanel,
-  body.public-view #inventoryPanel,
   body.public-view #storagePanel,
   body.public-view #depositPanel,
   body.public-view #warehouseList,
-  body.public-view #inventoryList,
   body.public-view #storageList,
   body.public-view #depositList,
   body.public-view #itemRegisterSection,
   body.public-view #warehouseRegisterSection,
+  body.public-view .inventory-registration-card,
+  body.public-view #inventoryModeTabs,
   body.public-view #cloudSavePanel,
   body.public-view #dbSyncPanel,
   body.public-view #saveLoadPanel,
@@ -620,7 +618,6 @@
   body.public-view textarea[data-inventory-input="1"],
   body.public-view textarea[data-equipment-input="1"],
   body.public-view .warehouse-card,
-  body.public-view .inventory-card,
   body.public-view .storage-card,
   body.public-view .deposit-card,
   body.public-view .item-edit-area,
@@ -1142,10 +1139,10 @@ body.public-view .loadout-preset-panel{display:none!important}
 
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.642">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.644">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.642｜更新：2026年8月25日</div>
+<div class="ra-build-info">v90.8.644｜更新：2026年8月25日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -1530,10 +1527,13 @@ body.public-view .loadout-preset-panel{display:none!important}
             <button type="button" class="ghost active" data-inventory-mode="warehouse">所持品（倉庫）</button>
             <button type="button" class="ghost" data-inventory-mode="learned">習得系</button>
           </div>
-          <div id="learnedKindTabs" class="inventory-mode-tabs" aria-label="習得系カテゴリ切り替え" hidden>
-            <button type="button" class="ghost active" data-learned-kind="spell">術式</button>
-            <button type="button" class="ghost" data-learned-kind="skill">スキル</button>
-            <button type="button" class="ghost" data-learned-kind="recipe">レシピ</button>
+          <div id="learnedKindPickerWrap" class="inventory-mode-tabs" aria-label="習得系カテゴリ選択" hidden>
+            <button id="openLearnedKindPickerBtn" type="button" class="ghost public-view-allowed"><span id="learnedKindPickerLabel">術式（0）</span><span aria-hidden="true"> ▾</span></button>
+          </div>
+          <div id="learnedKindTabs" hidden aria-hidden="true">
+            <button type="button" data-learned-kind="spell">術式</button>
+            <button type="button" data-learned-kind="skill">スキル</button>
+            <button type="button" data-learned-kind="recipe">レシピ</button>
           </div>
           <div class="inventory-list-heading">
             <div>
@@ -1573,6 +1573,15 @@ body.public-view .loadout-preset-panel{display:none!important}
     </div>
 </div>
 </main>
+
+<dialog id="learnedKindDialog" class="output-dialog learned-kind-dialog">
+  <div class="dialog-inner">
+    <div class="dialog-title">習得内容を選択</div>
+    <p class="hint">表示する習得内容を選択すると、そのまま切り替わります。</p>
+    <div id="learnedKindDialogList" class="learned-kind-dialog-list"></div>
+    <div class="button-row"><button id="closeLearnedKindDialogBtn" type="button" class="ghost public-view-allowed">閉じる</button></div>
+  </div>
+</dialog>
 
 <dialog id="outputDialog" class="output-dialog">
   <div class="dialog-inner">
@@ -5995,19 +6004,21 @@ function learnedContentRows(type=learnedContentType) {
   return learnedSpellRowsForInventory();
 }
 function renderLearnedKindTabs() {
-  const tabs = $('learnedKindTabs');
-  if (!tabs) return;
   const counts = {
     spell: learnedSpellRowsForInventory().length,
     skill: ownedSkillRowsForInventory().length,
     recipe: normalizeLearnedRecipes(learnedRecipesState).length
   };
-  tabs.querySelectorAll('[data-learned-kind]').forEach(btn => {
+  const tabs = $('learnedKindTabs');
+  if (tabs) tabs.querySelectorAll('[data-learned-kind]').forEach(btn => {
     const type = btn.dataset.learnedKind || 'spell';
     btn.classList.toggle('active', type === learnedContentType);
-    const label = learnedContentLabel(type);
-    btn.textContent = `${label}（${counts[type] || 0}）`;
+    btn.textContent = `${learnedContentLabel(type)}（${counts[type] || 0}）`;
   });
+  const label = `${learnedContentLabel()}（${counts[learnedContentType] || 0}）`;
+  if ($('learnedKindPickerLabel')) $('learnedKindPickerLabel').textContent = label;
+  const list=$('learnedKindDialogList');
+  if(list) list.innerHTML=['spell','skill','recipe'].map(type=>`<button type="button" class="ghost public-view-allowed ${type===learnedContentType?'active':''}" data-learned-kind-choice="${type}">${learnedContentLabel(type)}（${counts[type]||0}）</button>`).join('');
 }
 function applyLearnedKnowledgeSearch() {
   const search = String(inventoryViewFilter.search || $('inventorySearchInput')?.value || '').trim().toLowerCase();
@@ -6031,11 +6042,12 @@ function updateInventoryModeUi() {
   document.querySelectorAll('#inventoryModeTabs [data-inventory-mode]').forEach(btn => btn.classList.toggle('active', btn.dataset.inventoryMode === inventoryDisplayMode));
   const learned = inventoryDisplayMode === 'learned';
   const label = learnedContentLabel();
-  if ($('learnedKindTabs')) $('learnedKindTabs').hidden = !learned;
+  if ($('learnedKindTabs')) $('learnedKindTabs').hidden = true;
+  if ($('learnedKindPickerWrap')) $('learnedKindPickerWrap').hidden = !learned;
   if (learned) renderLearnedKindTabs();
   if ($('inventoryListTitle')) $('inventoryListTitle').textContent = learned ? `習得済み${label}` : '所持品（倉庫）一覧';
   if ($('inventoryListHint')) $('inventoryListHint').textContent = learned
-    ? `習得済みの${label}だけを表示します。上の「術式／スキル／レシピ」で切り替えられます。`
+    ? `習得済みの${label}だけを表示します。「習得内容を選択」から切り替えられます。`
     : '倉庫に所持している物を表示します。所持レシピもここで確認できます。';
   if ($('sortInventoryItemBtn')) $('sortInventoryItemBtn').hidden = learned;
   if ($('inventoryFilterPanel')) $('inventoryFilterPanel').hidden = learned;
@@ -9122,22 +9134,41 @@ function setOutputStatus(message, ok=true) {
   showToast(message, ok ? 'ok' : 'error');
 }
 async function copyTextDirect(text) {
+  const value = String(text ?? '');
+  // Clipboard API は、GAS通信などの await 後にユーザー操作権限や
+  // document focus を失って失敗することがある。失敗時は旧方式へ即フォールバックする。
   if (navigator.clipboard && window.isSecureContext) {
-    await navigator.clipboard.writeText(text);
-    return;
+    try {
+      await navigator.clipboard.writeText(value);
+      return;
+    } catch (e) {
+      console.warn('navigator.clipboard.writeText failed; falling back to execCommand copy.', e);
+    }
   }
+
   const ta = document.createElement('textarea');
-  ta.value = text;
+  const previousFocus = document.activeElement;
+  ta.value = value;
   ta.setAttribute('readonly', '');
+  ta.setAttribute('aria-hidden', 'true');
   ta.style.position = 'fixed';
   ta.style.left = '-9999px';
   ta.style.top = '0';
+  ta.style.opacity = '0';
   document.body.appendChild(ta);
-  ta.focus();
-  ta.select();
-  const ok = document.execCommand('copy');
-  ta.remove();
-  if (!ok) throw new Error('clipboard copy failed');
+  let ok = false;
+  try {
+    ta.focus({ preventScroll: true });
+    ta.select();
+    ta.setSelectionRange(0, ta.value.length);
+    ok = document.execCommand('copy');
+  } finally {
+    ta.remove();
+    try {
+      if (previousFocus && typeof previousFocus.focus === 'function') previousFocus.focus({ preventScroll: true });
+    } catch (_) {}
+  }
+  if (!ok) throw new Error('クリップボードへのコピーに失敗しました。画面を選択してからもう一度お試しください。');
 }
 async function copyOutput(kind, data=outputTargetData || collectData(false)) {
   const payload = getOutputPayload(kind, data);
@@ -9161,7 +9192,7 @@ function openOutputDialog(data=collectData(false)) {
 }
 async function copySummary() {
   const text = makeSummary();
-  try { await navigator.clipboard.writeText(text); $('editorStatus').className = 'status-box ok'; $('editorStatus').textContent = 'サマリーをコピーしました。'; showToast('サマリーをコピーしました。', 'ok'); }
+  try { await copyTextDirect(text); $('editorStatus').className = 'status-box ok'; $('editorStatus').textContent = 'サマリーをコピーしました。'; showToast('サマリーをコピーしました。', 'ok'); }
   catch { $('editorStatus').className = 'status-box warn'; $('editorStatus').textContent = 'コピーに失敗しました。'; showToast('コピーに失敗しました。', 'warn'); }
 }
 
@@ -9354,6 +9385,14 @@ function bindEvents() {
   if ($('learnedKindTabs')) $('learnedKindTabs').addEventListener('click', e => {
     const btn=e.target.closest('[data-learned-kind]'); if(!btn)return;
     setLearnedContentType(btn.dataset.learnedKind || 'spell');
+  });
+  if ($('openLearnedKindPickerBtn')) $('openLearnedKindPickerBtn').addEventListener('click', () => { renderLearnedKindTabs(); $('learnedKindDialog')?.showModal(); });
+  if ($('closeLearnedKindDialogBtn')) $('closeLearnedKindDialogBtn').addEventListener('click', () => $('learnedKindDialog')?.close());
+  if ($('learnedKindDialog')) $('learnedKindDialog').addEventListener('click', e => {
+    if(e.target===$('learnedKindDialog')){ $('learnedKindDialog').close(); return; }
+    const btn=e.target.closest('[data-learned-kind-choice]'); if(!btn)return;
+    setLearnedContentType(btn.dataset.learnedKindChoice || 'spell');
+    $('learnedKindDialog').close();
   });
   if ($('inventoryLocationTabs')) $('inventoryLocationTabs').addEventListener('click', e => {
     const btn = e.target.closest('[data-inventory-filter="location"]'); if (!btn) return;
@@ -9592,7 +9631,7 @@ function privacyNormalizeText(value=''){
   return String(value || '').replace(/\s+/g,'');
 }
 function markPrivateViewSections(){
-  const privateWords = ['倉庫','習得','預け','預かり','登録ID','公開ID','プレイヤーキー','保存','読込','DB同期','データベース','管理','デバッグ'];
+  const privateWords = ['預け','預かり','登録ID','公開ID','プレイヤーキー','保存','読込','DB同期','データベース','管理','デバッグ'];
   document.querySelectorAll('section, details, .panel, .card, .box, fieldset, article').forEach(el=>{
     const heading = el.querySelector('h1,h2,h3,h4,summary,legend,.section-title,.panel-title');
     const text = privacyNormalizeText(heading ? heading.textContent : '');
@@ -9607,9 +9646,9 @@ function sanitizePublicView(){
   document.body.classList.add('public-view');
   markPrivateViewSections();
   const privateSelectors = [
-    '#warehouseSection','#inventorySection','#storageSection','#depositSection',
-    '#warehousePanel','#inventoryPanel','#storagePanel','#depositPanel',
-    '#warehouseList','#inventoryList','#storageList','#depositList',
+    '#warehouseSection','#storageSection','#depositSection',
+    '#warehousePanel','#storagePanel','#depositPanel',
+    '#warehouseList','#storageList','#depositList',
     '#itemRegisterSection','#warehouseRegisterSection','#cloudSavePanel','#dbSyncPanel',
     '#saveLoadPanel','#adminPanel','#debugPanel'
   ];
@@ -9625,13 +9664,17 @@ function sanitizePublicView(){
   });
   document.querySelectorAll('.editor-tab-btn').forEach(btn=>{
     const tab=String(btn.dataset.editorTab||'');
-    if(tab==='inventory'){
-      btn.classList.add('private-view-only');
-      btn.setAttribute('data-private-view','1');
-    }else{
-      btn.classList.add('public-view-allowed');
-    }
+    btn.classList.add('public-view-allowed');
+    if(tab==='inventory' && btn.textContent!=='習得') btn.textContent='習得';
   });
+  const inventorySummary=document.querySelector('#tabInventory > details.big-section > summary');
+  if(inventorySummary && inventorySummary.textContent!=='習得') inventorySummary.textContent='習得';
+  const inventoryHint=document.querySelector('#tabInventory > details.big-section > .section-body > .hint');
+  if(inventoryHint && inventoryHint.textContent!=='習得済みの術式・スキル・レシピを閲覧できます。倉庫内容は共有画面には表示されません。') inventoryHint.textContent='習得済みの術式・スキル・レシピを閲覧できます。倉庫内容は共有画面には表示されません。';
+  if(typeof inventoryDisplayMode!=='undefined' && inventoryDisplayMode!=='learned'){
+    inventoryDisplayMode='learned';
+    try{renderInventory({refreshLinked:false});}catch(_e){}
+  }
   document.querySelectorAll('button,[data-action],[data-row-save],[data-row-replace],[data-add-row],[data-delete-row]').forEach(el=>{
     if(!el.classList.contains('public-view-allowed')){
       el.classList.add('edit-only');
