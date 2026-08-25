@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.641</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.642</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1142,10 +1142,10 @@ body.public-view .loadout-preset-panel{display:none!important}
 
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.641">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.642">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.641｜更新：2026年8月25日</div>
+<div class="ra-build-info">v90.8.642｜更新：2026年8月25日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -3802,7 +3802,7 @@ function refreshSelectionListsForTarget(target=null){
       syncEquipmentUpgradeToInventoryItem(slotKey, itemKey);
       syncEquippedSpellSetToInventoryItem(slotKey, itemKey);
     }
-    refreshEquipmentItemSelects();
+    refreshEquipmentItemSelects({slotKeys:[slotKey]});
   }
   if(target && target.id?.startsWith('equip_') && target.id.endsWith('_type')) refreshEquipmentTypeSelects();
   // 術式セレクトはクリック直前に作り直さない。
@@ -4201,7 +4201,11 @@ function resolvedEquipmentUpgradeLimit(item={}) {
 }
 function setEquipmentState(equipment={}) {
   refreshEquipmentTypeSelects();
-  refreshEquipmentItemSelects();
+  // キャラを開く時点では全倉庫×全装備枠の<option>を生成しない。各枠は現在装備だけの軽量表示で開始する。
+  for(const slot of EQUIPMENT_SLOTS){
+    const select=$('equip_'+slot.key+'_itemSelect');
+    if(select)select.innerHTML=`<option value="">${slot.kind==='carry'?'未選択（倉庫へ戻す）':'未選択'}</option>`;
+  }
   carryWarehouseAllocationState = {};
   const defaults = defaultEquipment();
   const eq = { ...defaults, ...(equipment || {}) };
@@ -4249,8 +4253,18 @@ function setEquipmentState(equipment={}) {
           note: selectedRow.effect || selectedRow.note || ''
         };
       }
-      $('equip_' + slot.key + '_itemSelect').value = selectedId && Array.from($('equip_' + slot.key + '_itemSelect').options).some(o=>o.value===selectedId) ? selectedId : '';
-      $('equip_' + slot.key + '_itemSelect').dataset.previousItemKey = $('equip_' + slot.key + '_itemSelect').value || '';
+      const initialSelect=$('equip_' + slot.key + '_itemSelect');
+      if(initialSelect && selectedId){
+        const existing=Array.from(initialSelect.options).some(o=>o.value===selectedId);
+        if(!existing){
+          const opt=document.createElement('option');
+          opt.value=selectedId;
+          opt.textContent=selectedRow?.name || item.name || selectedId;
+          initialSelect.appendChild(opt);
+        }
+      }
+      if(initialSelect)initialSelect.value = selectedId && Array.from(initialSelect.options).some(o=>o.value===selectedId) ? selectedId : '';
+      if(initialSelect)initialSelect.dataset.previousItemKey = initialSelect.value || '';
       if (typeof window.raSyncEquipmentPickerTrigger === 'function') {
         window.raSyncEquipmentPickerTrigger($('equip_' + slot.key + '_itemSelect'));
       }
@@ -4305,7 +4319,6 @@ function setEquipmentState(equipment={}) {
     card.open = !!String(item.name || item.itemId || '').trim();
   }
   enforceUniqueWeaponAccessoryEquipment({notify:true});
-  refreshEquipmentItemSelects({slotKinds:['hand','accessory']});
   updateEquipmentHandLocks(false);
   updateSpellSlotHints();
   updateEquipmentSummaries();
@@ -4443,7 +4456,10 @@ function updateEquipmentHandLocks(clearOpposite=true) {
 function showEditorTab(tab) {
   const map = { ability:'tabAbility', skills:'tabSkills', skillCrystal:'tabSkillCrystal', equipment:'tabEquipment', carry:'tabCarry', inventory:'tabInventory' };
   const target = $(map[tab] || 'tabAbility');
-  if (!target || target.classList.contains('active')) return;
+  if (!target) return;
+  // 倉庫は初回表示時だけDOMを構築する。キャラを開く瞬間の数百件カード生成を避ける。
+  if (tab === 'inventory' && inventoryUiDirty) renderInventory({refreshLinked:false});
+  if (target.classList.contains('active')) return;
   for (const page of document.querySelectorAll('.editor-tab-page')) page.classList.toggle('active', page === target);
   for (const btn of document.querySelectorAll('.editor-tab-btn')) btn.classList.toggle('active', btn.dataset.editorTab === tab);
 }
@@ -4658,6 +4674,9 @@ let inventoryViewFilter = { location:'全て', itemType:'全て', category:'全�
 let inventoryItemsState = [];
 let learnedRecipesState = [];
 let inventoryDisplayMode = 'warehouse';
+let inventoryUiDirty = true;
+function inventoryTabIsActive(){ const el=$('tabInventory'); return !!el && el.classList.contains('active'); }
+function markInventoryUiDirty(){ inventoryUiDirty=true; }
 let learnedContentType = 'spell';
 const inventoryCardOpenState = new Map();
 let selectedBagId = '';
@@ -6197,6 +6216,7 @@ function inventoryLinkedRefreshForItems(...items){
 function renderInventory({refreshLinked=true}={}) {
   const area=$('inventoryArea');
   if(!area)return;
+  inventoryUiDirty=false;
   rememberInventoryCardOpenStates();
   // 状態の正規化はrevisionごとに一度だけ。以後は派生キャッシュを再利用する。
   const cache=inventoryDerived();
@@ -6784,7 +6804,7 @@ function setDbCharacterSheetMaster(res={}, {force=false,refreshUi=true}={}){
   invalidateInventoryDerivedCache();
   if(!refreshUi)return true;
 
-  try{ if(inventoryItemsState?.length)renderInventory({refreshLinked:false}); }catch(_){ }
+  try{ if(inventoryItemsState?.length){ markInventoryUiDirty(); if(inventoryTabIsActive())renderInventory({refreshLinked:false}); } }catch(_){ }
   try{
     for(const slot of EQUIPMENT_SLOTS){
       if(slot.kind!=='carry') renderEquipmentUpgradeSlots(slot.key);
@@ -7186,7 +7206,8 @@ async function syncInitialInventoryFromDb(options={}) {
       }
     }
     if(added){
-      renderInventory();
+      markInventoryUiDirty();
+      if(inventoryTabIsActive())renderInventory();
       updateSummary();
     }
     if(!silent)showToast(added?`初期倉庫アイテム${added}件を補充しました。`:'初期倉庫アイテムは固定マスターと同期済みです。',added?'ok':'warn');
@@ -7249,7 +7270,7 @@ async function syncInitialInventoryFromDb(options={}) {
   invalidateInventoryDerivedCache();
   const visualChanged=added||updated||replaced||synced;
   const versionChanged=!!masterVersion && previousMasterVersion!==masterVersion;
-  if (visualChanged) renderInventory();
+  if (visualChanged) { markInventoryUiDirty(); if(inventoryTabIsActive())renderInventory(); }
   if (visualChanged || versionChanged) updateSummary();
 
   if (!silent) {
@@ -7378,9 +7399,10 @@ function applyData(data) {
   // v90.8.457: 倉庫→装備→倉庫表示の順に1回だけ構築する。
   // 旧処理は setInventoryState 内で全倉庫を描画した直後、setEquipmentState が同じ候補群を再構築していた。
   setInventoryState(currentCharacter.inventory || {}, {render:false});
+  markInventoryUiDirty();
   loadoutPresetsState = normalizeLoadoutPresets(currentCharacter.loadoutPresets || {});
   setEquipmentState(currentCharacter.equipment || {});
-  renderInventory({refreshLinked:false});
+  // 倉庫カードは「倉庫」タブを開くまで生成しない。編集画面への遷移を倉庫件数から切り離す。
   renderQuiverControls();
   setSkillGachaState(currentCharacter.skillGacha || {});
   if(legacyEquipmentUpgradeMigrationCount>0){
@@ -7488,7 +7510,7 @@ function openEditor(mode, data=null) {
   setReadOnly(mode === 'view');
   $('editorStatus').className = 'status-box';
   $('editorStatus').textContent = mode === 'view'
-    ? (publicShareView ? '共有用の閲覧ページです。装備と冒険中の所持品を表示します。倉庫・習得データは公開しません。' : '閲覧モードです。編集する場合は「編集に切替」を押してください。')
+    ? (publicShareView ? '共有用の閲覧ページです。キャラクターシート内容を、倉庫一覧を除いて表示します。' : '閲覧モードです。編集する場合は「編集に切替」を押してください。')
     : (autoSaveEnabled ? '編集中です。変更は自動保存されます。' : '編集中です。自動保存はOFFです。');
   setActionBarCollapsed(false);
   showEditorTab('ability');
@@ -7797,19 +7819,23 @@ function enforceUniqueWeaponAccessoryEquipment({notify=false}={}){
   return cleared;
 }
 
-function refreshEquipmentItemSelects({slotKinds=null}={}) {
+function refreshEquipmentItemSelects({slotKinds=null,slotKeys=null}={}) {
   const cache=inventoryDerived();
   const allowed=slotKinds ? new Set(Array.isArray(slotKinds)?slotKinds:[slotKinds]) : null;
+  const allowedKeys=slotKeys ? new Set(Array.isArray(slotKeys)?slotKeys:[slotKeys]) : null;
   for (const slot of EQUIPMENT_SLOTS) {
     if(allowed && !allowed.has(slot.kind))continue;
+    if(allowedKeys && !allowedKeys.has(slot.key))continue;
     const select = $('equip_' + slot.key + '_itemSelect');
     if (!select) continue;
     const current = select.value || '';
     const items = cache.equipmentBySlotKind[slot.kind] || [];
+    const nameCounts=new Map();
+    for(const item of items){const n=String(item.name||'').trim();if(n)nameCounts.set(n,(nameCounts.get(n)||0)+1);}
     const options = [`<option value="">${slot.kind === 'carry' ? '未選択（倉庫へ戻す）' : '未選択'}</option>`].concat(items.map(row => {
       const key = inventoryItemKey(row);
       const duplicateSlot = slot.kind!=='carry' ? duplicateRestrictedEquipmentOtherSlot(slot.key,row) : null;
-      const multi=items.filter(other=>String(other.name||'').trim()===String(row.name||'').trim()).length>1;const individual=isAntiqueIndividualItem(row)||multi;const instance=individual?inventoryIndividualShortId(row):'';const individualStats=individual?[row.power?`威力:${row.power}`:'',row.defense?`防御:${row.defense}`:'',row.guard?`防御行動:${row.guard}`:'',`${isAntiqueIndividualItem(row)?'固定枠':'枠'}:${equipmentUpgradeUsedSlots(parseUpgradeLines(row.upgradeEntries||row.upgradeLines||''))}/${resolvedEquipmentUpgradeLimit(row)||0}`,antiqueIndividualEnhancementSummary(row)].filter(Boolean).join(' / '):'';
+      const multi=(nameCounts.get(String(row.name||'').trim())||0)>1;const individual=isAntiqueIndividualItem(row)||multi;const instance=individual?inventoryIndividualShortId(row):'';const individualStats=individual?[row.power?`威力:${row.power}`:'',row.defense?`防御:${row.defense}`:'',row.guard?`防御行動:${row.guard}`:'',`${isAntiqueIndividualItem(row)?'固定枠':'枠'}:${equipmentUpgradeUsedSlots(parseUpgradeLines(row.upgradeEntries||row.upgradeLines||''))}/${resolvedEquipmentUpgradeLimit(row)||0}`,antiqueIndividualEnhancementSummary(row)].filter(Boolean).join(' / '):'';
       const label = [row.name,instance,row.kind,row.category,slot.kind === 'carry' ? '倉庫:' + row.count : '',row.element ? '属性:' + row.element : '',individualStats,duplicateSlot ? `${duplicateSlot.name}に装備中` : ''].filter(Boolean).join(' / ');
       return `<option value="${esc(key)}"${duplicateSlot?' disabled':''}>${esc(label)}</option>`;
     }));
@@ -9162,8 +9188,8 @@ async function copyShareData() {
     await copyTextDirect(url);
     currentCharacter = data;
     $('editorStatus').className = 'status-box ok';
-    $('editorStatus').textContent = '共有用の閲覧URLをコピーしました。共有先では倉庫・習得データを表示せず、装備と冒険中の所持品だけを公開します。';
-    showToast('共有URLをコピーしました（倉庫・習得は非公開）。', 'ok');
+    $('editorStatus').textContent = '共有用の閲覧URLをコピーしました。共有先ではキャラクターシート内容を倉庫一覧を除いて表示します。';
+    showToast('共有URLをコピーしました（倉庫一覧は非公開）。', 'ok');
   } catch (e) {
     $('editorStatus').className = 'status-box error';
     $('editorStatus').textContent = e.message || '共有URLの発行に失敗しました。';
@@ -9516,7 +9542,10 @@ function init() {
     syncAutoSaveToggle();
     setAutoSaveStatus('自動保存：ON（キャラクターごとに保存）','ok');
     setView('home');
-    autoSyncEquipmentCategoriesFromDb();
+    // 一覧取得と4MB級固定マスター取得を競合させない。ホーム描画後のアイドル時間にウォームする。
+    const warmMaster=()=>{ Promise.resolve(autoSyncEquipmentCategoriesFromDb()).catch(console.error); };
+    if(typeof requestIdleCallback==='function')requestIdleCallback(warmMaster,{timeout:1500});
+    else window.setTimeout(warmMaster,500);
   } catch (e) {
     console.error('キャラシHTMLの初期化に失敗しました。', e);
     const st = $('homeStatus') || $('listStatus') || $('editorStatus');
@@ -9743,7 +9772,7 @@ function run(){
     detail.innerHTML=detailHtml(selected);
     requestAnimationFrame(()=>{list.scrollTop=savedScroll;});
   }
-  function open(select){try{if(typeof refreshEquipmentItemSelects==='function')refreshEquipmentItemSelects();}catch(_){}target=select;activeCategory='すべて';detailKey=select.value||'';search.value='';savedScroll=0;render();dialog.showModal();search.focus();}
+  function open(select){try{if(typeof refreshEquipmentItemSelects==='function'){const slotKey=String(select?.id||'').replace(/^equip_/,'').replace(/_itemSelect$/,'');refreshEquipmentItemSelects({slotKeys:[slotKey]});}}catch(_){}target=select;activeCategory='すべて';detailKey=select.value||'';search.value='';savedScroll=0;render();dialog.showModal();search.focus();}
   function enhance(select){
     if(select.dataset.raPickerEnhanced||!/^equip_.+_itemSelect$/u.test(select.id))return;
     select.dataset.raPickerEnhanced='1';select.classList.add('ra-picker-native');
