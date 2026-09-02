@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.687</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.694</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -510,6 +510,7 @@
   .equipment-slot-label::after { content:'装備枠'; font-size:.72rem; color:var(--muted); border:1px solid rgba(184,119,56,.24); border-radius:999px; padding:2px 7px; background:rgba(255,255,255,.58); }
   .equipment-slot-body { display:grid; gap:10px; }
   .equipment-summary { color: var(--muted); font-size: .82rem; text-align: right; line-height: 1.4; }
+  .inventory-card > .inventory-card-detail { display:none !important; }
   .owned-item-detail { margin-top:8px; border:1px solid rgba(221,203,176,.82); border-radius:12px; background:rgba(255,253,248,.76); overflow:hidden; }
   .owned-item-detail > summary { cursor:pointer; list-style:none; padding:7px 10px; font-size:.82rem; font-weight:900; color:var(--accent2); display:flex; align-items:center; gap:6px; }
   .owned-item-detail > summary::-webkit-details-marker { display:none; }
@@ -518,6 +519,7 @@
   .owned-item-detail-body { border-top:1px solid rgba(221,203,176,.72); padding:8px 10px; display:grid; gap:5px; font-size:.82rem; line-height:1.55; }
   .owned-item-detail-line { display:grid; grid-template-columns:max-content minmax(0,1fr); gap:7px; align-items:start; }
   .owned-item-detail-line > b { color:var(--muted); font-size:.76rem; }
+  .named-process-chip{display:inline-flex;align-items:center;border:1px solid #c89b4c;background:#f5e3b8;color:#6e4416;border-radius:999px;padding:3px 8px;font-size:.75rem;font-weight:900}.named-process-list{display:grid;gap:10px;margin-top:10px}.named-process-card{border:1px solid rgba(200,155,76,.55);border-radius:12px;background:rgba(255,249,237,.92);padding:10px;display:grid;gap:7px}.named-process-change{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:center}.named-process-change .after{font-weight:900}.item-detail-view-body{display:grid;gap:10px}.inventory-detail-btn{white-space:nowrap}
   .equipment-card h3 { color: var(--accent2); }
   .equipment-fields {
     display: grid;
@@ -1139,10 +1141,10 @@ body.public-view .loadout-preset-panel{display:none!important}
 
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.687">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.694">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.687｜更新：2026年9月2日</div>
+<div class="ra-build-info">v90.8.694｜更新：2026年9月2日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -1606,6 +1608,14 @@ body.public-view .loadout-preset-panel{display:none!important}
       <button id="loadoutPresetDialogCloseBtn" type="button" class="ghost">閉じる</button>
     </div>
     <div id="loadoutPresetDialogStatus" class="status-box">内容を確認してください。</div>
+  </div>
+</dialog>
+
+<dialog id="itemDetailViewDialog" class="output-dialog">
+  <div class="dialog-inner">
+    <div id="itemDetailViewTitle" class="dialog-title">アイテム詳細</div>
+    <div id="itemDetailViewBody" class="item-detail-view-body"></div>
+    <div class="button-row"><button id="closeItemDetailViewBtn" type="button" class="ghost public-view-allowed">閉じる</button></div>
   </div>
 </dialog>
 
@@ -2294,10 +2304,8 @@ function renderStatic() {
             </div>
           </div>
           <div id="equip_${slot.key}_effectPreview" class="carry-item-effect" hidden></div>
-          <details class="owned-item-detail" data-owned-item-detail="${slot.key}">
-            <summary>アイテム詳細</summary>
-            <div id="equip_${slot.key}_itemDetail" class="owned-item-detail-body"><div class="small">アイテムを選択すると詳細を表示します。</div></div>
-          </details>
+          <button type="button" class="ghost inventory-detail-btn public-view-allowed" data-carry-item-detail="${slot.key}">アイテム詳細</button>
+          <div id="equip_${slot.key}_itemDetail" hidden><div class="small">アイテムを選択すると詳細を表示します。</div></div>
           <input id="equip_${slot.key}_name" data-equipment-input="1" type="hidden" value="" />
           <select id="equip_${slot.key}_type" data-equipment-input="1" hidden aria-hidden="true" tabindex="-1">${options}</select>
           <input id="equip_${slot.key}_description" data-equipment-input="1" type="hidden" value="" />
@@ -5377,6 +5385,17 @@ function updateQuiverAmmoSlotCount(slotKey, rawValue) {
   refreshWarehouseQuantityViews();
 }
 
+function characterNamedProcessingHtml(options=[]){
+  const rows=Array.isArray(options)?options:[];if(!rows.length)return'';
+  return `<div><span class="named-process-chip">異名加工可能</span><div class="named-process-list">${rows.map(opt=>`<div class="named-process-card"><b>${esc(opt.namedMonster||opt.material||'異名加工')}</b><div class="named-process-change"><span>${esc(opt.before||'変更前')}</span><span>→</span><span class="after">${esc(opt.after||'変更後')}</span></div><div class="small">変更項目：${esc(opt.changeLabel||'性能')}</div><div class="small">二つ名素材：${esc(opt.material||'')}</div><div class="small">必要素材：${esc(opt.requiredMaterials||'')}</div><div class="small">施設依頼：${esc(String(opt.facilityFeeG||0))}G${opt.difficulty?` / 基礎作成難易度 ${esc(opt.difficulty)}`:''}</div><div class="small">${esc(opt.rule||'同一装備への異名加工は1種類まで。')}</div></div>`).join('')}</div></div>`;
+}
+function openCharacterItemDetail(item={},count=''){
+  const row=normalizeInventoryItem(item||{});if(!row?.name)return;
+  const dlg=$('itemDetailViewDialog');if(!dlg)return;
+  $('itemDetailViewTitle').textContent=`${row.name}${row.rank?`　${inventoryRankLabel(row)}`:''}`;
+  $('itemDetailViewBody').innerHTML=ownedItemDetailHtml(row,count)+characterNamedProcessingHtml(row.namedProcessingOptions);
+  dlg.showModal();
+}
 function ownedItemDetailHtml(item={}, count='') {
   const row = item ? normalizeInventoryItem(item) : null;
   if (!row || !String(row.name || '').trim()) return '<div class="small">アイテムを選択すると詳細を表示します。</div>';
@@ -5447,7 +5466,7 @@ function renderQuiverControls() {
           <input data-inventory-input="1" type="number" min="1" max="${esc(maxStack)}" value="${esc(count)}" data-quiver-ammo-count="${key}" ${state?.warehouseAllocated ? '' : 'disabled'} />
         </div>
       </div>
-      ${selectedRow ? `<details class="owned-item-detail"><summary>矢弾の詳細</summary><div class="owned-item-detail-body">${ownedItemDetailHtml(selectedRow, count)}</div></details>` : ''}
+      ${selectedRow ? `<button type="button" class="ghost public-view-allowed" data-quiver-item-detail="${esc(inventoryItemKey(selectedRow))}">矢弾の詳細</button>` : ''}
     </div>`;
   }).join('');
 }
@@ -5597,6 +5616,7 @@ function canonicalWeaponUsageSkill(item={}) {
   return '近接';
 }
 /* RA_PATCH_CARRY_PALETTE_MASTER_FALLBACK_V90_8_572 */
+function parseNamedProcessingOptions(value){if(Array.isArray(value))return value;if(typeof value==='string'&&value.trim()){try{const parsed=JSON.parse(value);return Array.isArray(parsed)?parsed:[];}catch(_){return[];}}return[];}
 function normalizeInventoryItem(item={}) {
   const masterRow = inventoryMasterRowForClassification(item);
   const masterIsMaterial = String(masterRow?.dataKind || '').trim()==='素材';
@@ -5675,6 +5695,7 @@ function normalizeInventoryItem(item={}) {
     equipmentUpgradeSlotCost: masterIsMaterial ? (masterUpgradeSlotCost || String(item.equipmentUpgradeSlotCost || '').trim()) : String(item.equipmentUpgradeSlotCost || '').trim(),
     equipmentUpgradeDetail: masterIsMaterial ? (masterUpgradeDetail || String(item.equipmentUpgradeDetail || '').trim()) : String(item.equipmentUpgradeDetail || '').trim(),
     equipmentUpgradeTarget: masterIsMaterial ? (masterUpgradeTarget || String(item.equipmentUpgradeTarget || '').trim()) : String(item.equipmentUpgradeTarget || '').trim(),
+    namedProcessingOptions: parseNamedProcessingOptions(masterRow?.namedProcessingOptions ?? item.namedProcessingOptions),
     upgradeEntries: normalizedUpgradeEntries,
     upgradeLines: serializeUpgradeEntries(normalizedUpgradeEntries),
     spellSlots: kind === 'バッグ' ? '' : String(item.spellSlots || item.slotCount || item.registerSlots || item.maxStack || '').trim(),
@@ -6122,6 +6143,7 @@ function inventoryWarehouseCardHtml(item,index){
       <div><div class="inventory-title">${esc(title)}</div><div class="small">倉庫 / ${esc(displayType)} / ${esc(displayCategory)}<span data-inventory-quick-index="${index}">${quick?` / ${esc(quick)}`:''}</span></div></div>
       <div class="button-row" style="margin:0;">
         ${item.kind==='レシピ'?`<button type="button" class="secondary" data-inventory-action="learn-recipe" data-index="${index}" ${isRecipeLearned(item)?'disabled':''}>${isRecipeLearned(item)?'習得済み':'覚える'}</button>`:''}
+        <button type="button" class="ghost inventory-detail-btn public-view-allowed" data-inventory-action="detail" data-index="${index}">詳細</button>
         <button type="button" class="secondary" data-inventory-action="edit" data-index="${index}">編集</button>
         <button type="button" class="ghost" data-inventory-action="duplicate" data-index="${index}">複製</button>
         <button type="button" class="danger" data-inventory-action="delete" data-index="${index}">削除</button>
@@ -7445,7 +7467,7 @@ function setReadOnly(readOnly) {
     const quiverState = quiverSlot ? normalizeQuiverAmmoSlotState(quiverAmmoSlotsState[quiverSlot]) : null;
     el.disabled = readOnly || (!!quiverSlot && !quiverState?.warehouseAllocated);
   }
-  for (const btn of document.querySelectorAll('[data-inventory-action]')) btn.disabled = readOnly;
+  for (const btn of document.querySelectorAll('[data-inventory-action]')) btn.disabled = readOnly && btn.dataset.inventoryAction !== 'detail';
   for (const el of document.querySelectorAll('[data-skill-crystal-input]')) el.disabled = readOnly;
   for (const el of document.querySelectorAll('[data-loadout-preset-input],[data-loadout-preset-action]')) el.disabled = readOnly;
   for (const btn of document.querySelectorAll('[data-skill-remove],#addSkillByPublicIdBtn,#clearSkillPublicIdBtn')) btn.disabled = readOnly || (btn.dataset.skillRemove && normalizeSkillGachaState(skillGachaState||{}).equippedSkillIds.includes(btn.dataset.skillRemove));
@@ -9366,6 +9388,10 @@ function bindEvents() {
   if ($('bagSelect')) $('bagSelect').addEventListener('change', e => { selectedBagId = e.target.value || ''; applyBagCapacityToEquipmentSlots(); updateSummary(); });
   if ($('saveInventoryDialogBtn')) $('saveInventoryDialogBtn').addEventListener('click', saveInventoryDialog);
   if ($('cancelInventoryDialogBtn')) $('cancelInventoryDialogBtn').addEventListener('click', () => $('inventoryDialog')?.close());
+  if ($('closeItemDetailViewBtn')) $('closeItemDetailViewBtn').addEventListener('click', () => $('itemDetailViewDialog')?.close());
+  if ($('itemDetailViewDialog')) $('itemDetailViewDialog').addEventListener('click', e => { if(e.target===$('itemDetailViewDialog'))$('itemDetailViewDialog').close(); });
+  document.addEventListener('click', e => { const b=e.target.closest('[data-carry-item-detail]');if(!b)return;const slotKey=b.dataset.carryItemDetail||'';const select=$(`equip_${slotKey}_itemSelect`);const cache=inventoryDerived();const row=cache.rowByLookup.get(String(select?.value||''))||cache.equipmentByKey.get(String(select?.value||''))||null;if(row)openCharacterItemDetail(row,row.count||1);else showToast('アイテムを選択してください。','warn'); });
+  document.addEventListener('click', e => { const b=e.target.closest('[data-quiver-item-detail]');if(!b)return;const key=String(b.dataset.quiverItemDetail||'');const cache=inventoryDerived();const row=cache.rowByLookup.get(key)||cache.equipmentByKey.get(key)||null;if(row)openCharacterItemDetail(row,row.count||1);else showToast('矢弾の詳細を取得できませんでした。','warn'); });
   if ($('inventoryArea')) $('inventoryArea').addEventListener('click', e => {
     const unlearnBtn=e.target.closest('[data-unlearn-recipe]');
     if(unlearnBtn){e.preventDefault();e.stopPropagation();unlearnRecipeByKey(unlearnBtn.dataset.unlearnRecipe||'');return;}
@@ -9375,7 +9401,8 @@ function bindEvents() {
     e.preventDefault();
     e.stopPropagation();
     const index = Number(btn.dataset.index || 0);
-    if (btn.dataset.inventoryAction === 'edit') { openInventoryDialog(index); return; }
+    if (btn.dataset.inventoryAction === 'detail') { if(inventoryItemsState[index])openCharacterItemDetail(inventoryItemsState[index],inventoryItemsState[index].count); return; }
+        if (btn.dataset.inventoryAction === 'edit') { openInventoryDialog(index); return; }
     if (btn.dataset.inventoryAction === 'learn-recipe') { learnRecipeFromInventory(index); return; }
     if (btn.dataset.inventoryAction === 'delete') deleteInventoryItem(index);
     if (btn.dataset.inventoryAction === 'duplicate') duplicateInventoryItem(index);
