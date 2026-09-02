@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.695</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.696</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -519,7 +519,7 @@
   .owned-item-detail-body { border-top:1px solid rgba(221,203,176,.72); padding:8px 10px; display:grid; gap:5px; font-size:.82rem; line-height:1.55; }
   .owned-item-detail-line { display:grid; grid-template-columns:max-content minmax(0,1fr); gap:7px; align-items:start; }
   .owned-item-detail-line > b { color:var(--muted); font-size:.76rem; }
-  .named-process-chip{display:inline-flex;align-items:center;border:1px solid #c89b4c;background:#f5e3b8;color:#6e4416;border-radius:999px;padding:3px 8px;font-size:.75rem;font-weight:900}.named-process-list{display:grid;gap:10px;margin-top:10px}.named-process-card{border:1px solid rgba(200,155,76,.55);border-radius:12px;background:rgba(255,249,237,.92);padding:10px;display:grid;gap:7px}.named-process-change{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:center}.named-process-change .after{font-weight:900}.item-detail-view-body{display:grid;gap:10px}.inventory-detail-btn{white-space:nowrap}
+  .named-process-chip{display:inline-flex;align-items:center;border:1px solid #c89b4c;background:#f5e3b8;color:#6e4416;border-radius:999px;padding:3px 8px;font-size:.75rem;font-weight:900}.named-process-chip.applied{background:#dfead1;border-color:#8fa86a;color:#355522}.named-process-list{display:grid;gap:10px;margin-top:10px}.named-process-card{border:1px solid rgba(200,155,76,.55);border-radius:12px;background:rgba(255,249,237,.92);padding:10px;display:grid;gap:9px}.named-process-full{display:grid;gap:8px}.named-process-text{border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.72);padding:9px 10px;line-height:1.65;white-space:pre-wrap}.named-process-text b{display:block;font-size:.76rem;color:var(--muted);margin-bottom:3px}.named-process-text.after{font-weight:700}.named-process-diff{background:#ffe49a;color:#5b3512;border-radius:4px;padding:0 2px;font-weight:900}.named-process-actions{display:flex;gap:8px;flex-wrap:wrap}.named-process-actions button{flex:0 1 auto}.item-detail-view-body{display:grid;gap:10px}.inventory-detail-btn{white-space:nowrap}
   .equipment-card h3 { color: var(--accent2); }
   .equipment-fields {
     display: grid;
@@ -1144,7 +1144,7 @@ body.public-view .loadout-preset-panel{display:none!important}
 <link rel="stylesheet" href="ra-design-system.css?v=90.8.695">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.695｜更新：2026年9月2日</div>
+<div class="ra-build-info">v90.8.696｜更新：2026年9月3日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -5385,15 +5385,23 @@ function updateQuiverAmmoSlotCount(slotKey, rawValue) {
   refreshWarehouseQuantityViews();
 }
 
-function characterNamedProcessingHtml(options=[]){
-  const rows=Array.isArray(options)?options:[];if(!rows.length)return'';
-  return `<div><span class="named-process-chip">異名加工可能</span><div class="named-process-list">${rows.map(opt=>`<div class="named-process-card"><b>${esc(opt.namedMonster||opt.material||'異名加工')}</b><div class="named-process-change"><span>${esc(opt.before||'変更前')}</span><span>→</span><span class="after">${esc(opt.after||'変更後')}</span></div><div class="small">変更項目：${esc(opt.changeLabel||'性能')}</div><div class="small">二つ名素材：${esc(opt.material||'')}</div><div class="small">必要素材：${esc(opt.requiredMaterials||'')}</div><div class="small">施設依頼：${esc(String(opt.facilityFeeG||0))}G${opt.difficulty?` / 基礎作成難易度 ${esc(opt.difficulty)}`:''}</div><div class="small">${esc(opt.rule||'同一装備への異名加工は1種類まで。')}</div></div>`).join('')}</div></div>`;
+let itemDetailViewContext={index:-1};
+function characterNamedProcessDiffPair(before='',after=''){
+  const a=String(before||''),b=String(after||'');let p=0;while(p<a.length&&p<b.length&&a[p]===b[p])p++;let tail=0;while(tail<a.length-p&&tail<b.length-p&&a[a.length-1-tail]===b[b.length-1-tail])tail++;
+  const render=(text,start,end)=>`${esc(text.slice(0,start))}${end>start?`<mark class="named-process-diff">${esc(text.slice(start,end))}</mark>`:''}${esc(text.slice(end))}`;
+  return{before:render(a,p,a.length-tail),after:render(b,p,b.length-tail)};
 }
-function openCharacterItemDetail(item={},count=''){
+function characterNamedProcessingHtml(options=[],appliedId='',index=-1){
+  const rows=Array.isArray(options)?options:[];if(!rows.length)return'';
+  return `<div class="named-process-list">${rows.map(opt=>{const applied=String(appliedId||'')===String(opt.id||'');const diff=characterNamedProcessDiffPair(opt.fullBefore||opt.before||'変更前',opt.fullAfter||opt.after||'変更後');const actions=(currentMode!=='view'&&index>=0)?`<div class="named-process-actions">${applied?`<button type="button" class="ghost" data-clear-named-processing="${esc(opt.id||'')}">異名加工登録を解除</button>`:`<button type="button" data-apply-named-processing="${esc(opt.id||'')}">異名加工を適用</button>`}</div>`:'';return `<div class="named-process-card"><div><span class="named-process-chip ${applied?'applied':''}">${applied?'異名加工済':'異名加工可能'}</span> <b>${esc(opt.namedMonster||opt.material||'異名加工')}</b></div><div class="named-process-full"><div class="named-process-text"><b>加工前</b>${diff.before}</div><div class="named-process-text after"><b>加工後</b>${diff.after}</div></div><div class="small">変更項目：${esc(opt.changeLabel||'性能')}</div><div class="small">二つ名素材：${esc(opt.material||'')}</div><div class="small">必要素材：${esc(opt.requiredMaterials||'')}</div><div class="small">施設依頼：${esc(String(opt.facilityFeeG||0))}G${opt.difficulty?` / 基礎作成難易度 ${esc(opt.difficulty)}`:''}</div>${actions}</div>`}).join('')}</div>`;
+}
+function openCharacterItemDetail(item={},count='',index=null){
   const row=normalizeInventoryItem(item||{});if(!row?.name)return;
+  const resolvedIndex=Number.isInteger(index)?index:inventoryIndexByLookup(row.id||row.masterId||row.publicId,row.name);
+  itemDetailViewContext={index:resolvedIndex};
   const dlg=$('itemDetailViewDialog');if(!dlg)return;
   $('itemDetailViewTitle').textContent=`${row.name}${row.rank?`　${inventoryRankLabel(row)}`:''}`;
-  $('itemDetailViewBody').innerHTML=ownedItemDetailHtml(row,count)+characterNamedProcessingHtml(row.namedProcessingOptions);
+  $('itemDetailViewBody').innerHTML=ownedItemDetailHtml(row,count)+characterNamedProcessingHtml(row.namedProcessingOptions,row.appliedNamedProcessingId,resolvedIndex);
   dlg.showModal();
 }
 function ownedItemDetailHtml(item={}, count='') {
@@ -5412,9 +5420,51 @@ function ownedItemDetailHtml(item={}, count='') {
   add('威力', row.power);
   add('効果', row.effect || row.note);
   add('説明', row.description);
-  add('入手先', row.source);
+  add(row.materialType==='魔物素材'?'ドロップ元':'入手先', row.source);
   if (row.equipmentUpgradeEffect) add('装備強化', [row.equipmentUpgradeEffect, row.equipmentUpgradeDetail].filter(Boolean).join('：'));
   return lines.join('') || '<div class="small">表示できる詳細情報がありません。</div>';
+}
+function parseNamedProcessingMaterials(text=''){
+  return String(text||'').split(/[,、\n]+/u).map(v=>String(v||'').trim()).filter(Boolean).map(part=>{const m=part.match(/^(.*?)[×xX*]\s*(\d+)\s*$/u);return{name:String(m?m[1]:part).trim(),count:Math.max(1,Number(m?m[2]:1)||1)}}).filter(v=>v.name);
+}
+function inventoryCountByName(name=''){
+  const target=String(name||'').trim();return (inventoryItemsState||[]).reduce((sum,raw)=>sum+(String(raw?.name||'').trim()===target?Math.max(0,Number(raw.count||0)):0),0);
+}
+function consumeInventoryByName(name='',amount=0){
+  let remain=Math.max(0,Number(amount)||0),target=String(name||'').trim();
+  for(let i=0;i<inventoryItemsState.length&&remain>0;i++){
+    const raw=inventoryItemsState[i];if(String(raw?.name||'').trim()!==target)continue;
+    const have=Math.max(0,Number(raw.count||0)),take=Math.min(have,remain);if(!take)continue;
+    inventoryItemsState[i]=normalizeInventoryItem({...raw,count:have-take});remain-=take;
+  }
+  return remain<=0;
+}
+function applyNamedProcessingAtIndex(index,optionId=''){
+  if(currentMode==='view')return;
+  if(!Number.isInteger(index)||index<0||!inventoryItemsState[index])return;
+  const raw=inventoryItemsState[index],row=normalizeInventoryItem(raw),opt=(row.namedProcessingOptions||[]).find(x=>String(x.id||'')===String(optionId||''));if(!opt)return;
+  if(row.appliedNamedProcessingId){showToast('この装備にはすでに異名加工が登録されています。','warn');return;}
+  const req=parseNamedProcessingMaterials(opt.requiredMaterials||'');const missing=req.filter(x=>inventoryCountByName(x.name)<x.count);
+  if(missing.length){showToast(`必要素材が不足しています：${missing.map(x=>`${x.name}×${x.count}`).join('、')}`,'warn');return;}
+  const fee=Number(opt.facilityFeeG||0)||0;
+  if(!confirm(`必要素材を消費して異名加工を登録します。${fee?`\n施設依頼費 ${fee}G はキャラシでは自動減算しません。`:''}`))return;
+  req.forEach(x=>consumeInventoryByName(x.name,x.count));
+  let targetIndex=index,targetRaw={...raw};
+  const count=Math.max(1,Number(raw.count||1));
+  if(count>1){inventoryItemsState[index]=normalizeInventoryItem({...raw,count:count-1});targetRaw={...raw,id:'inv_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8),count:1};targetIndex=inventoryItemsState.length;inventoryItemsState.push(targetRaw);}
+  const baseRow=normalizeInventoryItem({...targetRaw,appliedNamedProcessingId:'',namedProcessingBase:null});
+  const base={power:baseRow.power,modifiers:baseRow.modifiers,effect:baseRow.effect,spellSlots:baseRow.spellSlots};
+  inventoryItemsState[targetIndex]=normalizeInventoryItem({...targetRaw,count:1,appliedNamedProcessingId:String(opt.id||''),namedProcessingBase:base});
+  invalidateInventoryDerivedCache();markInventoryUiDirty();renderInventory({refreshLinked:true});updateSummary();if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon();
+  showToast(`異名加工を登録しました：${row.name}`,'ok');openCharacterItemDetail(inventoryItemsState[targetIndex],1,targetIndex);
+}
+function clearNamedProcessingAtIndex(index,optionId=''){
+  if(currentMode==='view')return;if(!Number.isInteger(index)||index<0||!inventoryItemsState[index])return;
+  const raw=inventoryItemsState[index],row=normalizeInventoryItem(raw);if(String(row.appliedNamedProcessingId||'')!==String(optionId||''))return;
+  if(!confirm('異名加工の登録を解除します。消費した素材は戻りません。'))return;
+  const base=(raw.namedProcessingBase&&typeof raw.namedProcessingBase==='object')?raw.namedProcessingBase:{};
+  inventoryItemsState[index]=normalizeInventoryItem({...raw,power:base.power??raw.power,modifiers:base.modifiers??raw.modifiers,effect:base.effect??raw.effect,spellSlots:base.spellSlots??raw.spellSlots,appliedNamedProcessingId:'',namedProcessingBase:null});
+  invalidateInventoryDerivedCache();markInventoryUiDirty();renderInventory({refreshLinked:true});updateSummary();if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon();showToast(`異名加工の登録を解除しました：${row.name}`,'ok');openCharacterItemDetail(inventoryItemsState[index],inventoryItemsState[index].count,index);
 }
 function renderQuiverControls() {
   quiverAmmoSlotsState = normalizeQuiverAmmoSlotsState(quiverAmmoSlotsState, {restoreInvalid:true});
@@ -5530,7 +5580,7 @@ function inventoryManualClassification(kind='', category='') {
 }
 function emptyInventoryItem() {
   const cls = inventoryManualClassification(defaultInventoryKind(), '');
-  return { id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), masterId:'', masterSheet:'', masterSync:'', name:'', kind:cls.kind, itemType:cls.itemType, itemCategory:cls.itemCategory, materialType:cls.materialType, materialCategory:cls.materialCategory, category:'', count:1, capacity:'', location:'倉庫', rank:'', price:'', equipSlot:'', skill:'', power:'', offhand:'', reloadTurns:'', modifiers:'', upgradeLimit:'', upgradeMaterialMinRank:'', upgradeLines:'', upgradeEntries:[], equipmentUpgradeEffect:'', equipmentUpgradeSlotCost:'', equipmentUpgradeDetail:'', equipmentUpgradeTarget:'', spellSlots:'', setSpells:'', target:'', element:'', enchantTarget:'', enchantEffectType:'', enchantValue:'', enchantDuration:'', enchantRounds:'', enchantStackRule:'', cost:'', checkType:'', role:'', source:'', tags:'', setItem:'', description:'', effect:'', recipeResult:'', materials:'', note:'' };
+  return { id:'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), masterId:'', masterSheet:'', masterSync:'', name:'', kind:cls.kind, itemType:cls.itemType, itemCategory:cls.itemCategory, materialType:cls.materialType, materialCategory:cls.materialCategory, category:'', count:1, capacity:'', location:'倉庫', rank:'', price:'', equipSlot:'', skill:'', power:'', offhand:'', reloadTurns:'', modifiers:'', upgradeLimit:'', upgradeMaterialMinRank:'', upgradeLines:'', upgradeEntries:[], equipmentUpgradeEffect:'', equipmentUpgradeSlotCost:'', equipmentUpgradeDetail:'', equipmentUpgradeTarget:'', namedProcessingOptions:[], appliedNamedProcessingId:'', namedProcessingBase:null, spellSlots:'', setSpells:'', target:'', element:'', enchantTarget:'', enchantEffectType:'', enchantValue:'', enchantDuration:'', enchantRounds:'', enchantStackRule:'', cost:'', checkType:'', role:'', source:'', tags:'', setItem:'', description:'', effect:'', recipeResult:'', materials:'', note:'' };
 }
 function inferInventoryItemType(item={}, kind='') {
   const explicit = String(item.itemType || '').trim();
@@ -5654,7 +5704,30 @@ function normalizeInventoryItem(item={}) {
   const normalizedUpgradeEntries = normalizedUpgradeLimit > 0
     ? trimUpgradeEntriesToSlotLimit(rawSavedUpgradeEntries, normalizedUpgradeLimit).map(upgradeEntryForStorage)
     : [];
-  const normalizedModifierRows = migrateLegacyDefenseActionRows(parseModifierRows(migratedModifierTextForItem(item)), item);
+  const namedProcessingOptions = parseNamedProcessingOptions(masterRow?.namedProcessingOptions ?? item.namedProcessingOptions);
+  const appliedNamedProcessingId = String(item.appliedNamedProcessingId || '').trim();
+  const appliedNamedProcessing = appliedNamedProcessingId ? (namedProcessingOptions.find(opt=>String(opt?.id||'')===appliedNamedProcessingId) || null) : null;
+  const baseSnapshot = (item.namedProcessingBase && typeof item.namedProcessingBase === 'object') ? item.namedProcessingBase : {};
+  const useCanonicalBase = !!appliedNamedProcessing;
+  const basePower = String((useCanonicalBase ? (masterRow?.power ?? baseSnapshot.power) : null) ?? item.power ?? item.damage ?? item.damageValue ?? masterRow?.power ?? '').trim();
+  const baseModifierText = String((useCanonicalBase ? (masterRow?.modifiers ?? baseSnapshot.modifiers) : null) ?? migratedModifierTextForItem(item) ?? '').trim();
+  const baseEffect = String((useCanonicalBase ? (masterRow?.effect ?? baseSnapshot.effect) : null) ?? item.effect ?? item['効果'] ?? masterRow?.effect ?? '').trim();
+  const baseSpellSlots = String((useCanonicalBase ? (masterRow?.spellSlots ?? baseSnapshot.spellSlots) : null) ?? item.spellSlots ?? item.slotCount ?? item.registerSlots ?? item.maxStack ?? '').trim();
+  let effectivePower=basePower, effectiveEffect=baseEffect, effectiveSpellSlots=baseSpellSlots;
+  let normalizedModifierRows = migrateLegacyDefenseActionRows(parseModifierRows(baseModifierText), item);
+  if(appliedNamedProcessing){
+    const kind=String(appliedNamedProcessing.applyKind||'').trim(), target=String(appliedNamedProcessing.applyTarget||'').trim();
+    if(kind==='power') effectivePower=String(appliedNamedProcessing.applyAfter||effectivePower).trim();
+    else if(kind==='modifier'){
+      const idx=normalizedModifierRows.findIndex(row=>String(row.target||'')===target);
+      if(idx>=0) normalizedModifierRows[idx]={...normalizedModifierRows[idx],value:String(appliedNamedProcessing.applyAfter||normalizedModifierRows[idx].value).trim()};
+      else if(target) normalizedModifierRows.push({target,value:String(appliedNamedProcessing.applyAfter||'').trim()});
+    }else if(kind==='effect') effectiveEffect=String(appliedNamedProcessing.applyAfter||appliedNamedProcessing.fullAfter||effectiveEffect).trim();
+    else if(kind==='spellSlots'){
+      effectiveSpellSlots=String(appliedNamedProcessing.applyAfter||effectiveSpellSlots).trim();
+      if(appliedNamedProcessing.fullAfter) effectiveEffect=String(appliedNamedProcessing.fullAfter).trim();
+    }
+  }
   const normalizedModifiers = serializeModifierRows(normalizedModifierRows);
   const firstModifierText = target => String(normalizedModifierRows.find(row => row.target === target)?.value || '').trim();
   return {
@@ -5681,7 +5754,7 @@ function normalizeInventoryItem(item={}) {
     price: String(String(item.price ?? '').trim() || String(masterRow?.sellPrice ?? '').trim()).trim(),
     equipSlot: inferEquipSlotForInventory({ ...item, kind }),
     skill: kind === '武器' ? canonicalWeaponUsageSkill(item) : String(item.skill || '').trim(),
-    power: String(item.power || item.damage || item.damageValue || masterRow?.power || '').trim(),
+    power: effectivePower,
     hit: String(item.hit || item.hitMod || firstModifierText('hit')).trim(),
     defense: String(item.defense || item.alwaysDefense || firstModifierText('combat:defense')).trim(),
     guard: String(item.guard || item.guardValue || firstModifierText('combat:guardAction')).trim(),
@@ -5695,10 +5768,12 @@ function normalizeInventoryItem(item={}) {
     equipmentUpgradeSlotCost: masterIsMaterial ? (masterUpgradeSlotCost || String(item.equipmentUpgradeSlotCost || '').trim()) : String(item.equipmentUpgradeSlotCost || '').trim(),
     equipmentUpgradeDetail: masterIsMaterial ? (masterUpgradeDetail || String(item.equipmentUpgradeDetail || '').trim()) : String(item.equipmentUpgradeDetail || '').trim(),
     equipmentUpgradeTarget: masterIsMaterial ? (masterUpgradeTarget || String(item.equipmentUpgradeTarget || '').trim()) : String(item.equipmentUpgradeTarget || '').trim(),
-    namedProcessingOptions: parseNamedProcessingOptions(masterRow?.namedProcessingOptions ?? item.namedProcessingOptions),
+    namedProcessingOptions,
+    appliedNamedProcessingId: appliedNamedProcessing ? appliedNamedProcessingId : '',
+    namedProcessingBase: appliedNamedProcessing ? {power:basePower,modifiers:baseModifierText,effect:baseEffect,spellSlots:baseSpellSlots} : null,
     upgradeEntries: normalizedUpgradeEntries,
     upgradeLines: serializeUpgradeEntries(normalizedUpgradeEntries),
-    spellSlots: kind === 'バッグ' ? '' : String(item.spellSlots || item.slotCount || item.registerSlots || item.maxStack || '').trim(),
+    spellSlots: kind === 'バッグ' ? '' : effectiveSpellSlots,
     setSpells: splitFormulaList(item.setSpells || item.selectedSpells || '').join('\n'),
     target: String(item.target || item['対象'] || masterRow?.target || '').trim(),
     element: String(item.element || item.attribute || item.attributeType || item.elementName || item['属性'] || item['属性種別'] || item['攻撃属性'] || item['ダメージ属性'] || masterRow?.element || defaultElementForEquipmentRow(item) || '').trim(),
@@ -5711,11 +5786,11 @@ function normalizeInventoryItem(item={}) {
     cost: String(item.cost || item.mpCost || item['MP'] || item['コスト'] || '').trim(),
     checkType: kind === '武器' ? '' : normalizeCheckExpression(item.checkType || item['判定'] || masterRow?.checkType || ''),
     role: String(item.role || item['役割'] || '').trim(),
-    source: String(item.source || '').trim(),
+    source: String(item.source || masterRow?.source || '').trim(),
     tags: String(item.tags || '').trim(),
     setItem: String(item.setItem || '').trim(),
     description: mergeTextUnique(item.description, item['説明'], oldDescription, masterRow?.description),
-    effect: String(item.effect || item['効果'] || masterRow?.effect || '').trim(),
+    effect: effectiveEffect,
     recipeResult: String(item.recipeResult || item.resultItem || '').trim(),
     materials: String(item.materials || item.requiredMaterials || '').trim(),
     note: String(item.note || item.notes || '').trim()
@@ -9390,8 +9465,9 @@ function bindEvents() {
   if ($('cancelInventoryDialogBtn')) $('cancelInventoryDialogBtn').addEventListener('click', () => $('inventoryDialog')?.close());
   if ($('closeItemDetailViewBtn')) $('closeItemDetailViewBtn').addEventListener('click', () => $('itemDetailViewDialog')?.close());
   if ($('itemDetailViewDialog')) $('itemDetailViewDialog').addEventListener('click', e => { if(e.target===$('itemDetailViewDialog'))$('itemDetailViewDialog').close(); });
-  document.addEventListener('click', e => { const b=e.target.closest('[data-carry-item-detail]');if(!b)return;const slotKey=b.dataset.carryItemDetail||'';const select=$(`equip_${slotKey}_itemSelect`);const cache=inventoryDerived();const row=cache.rowByLookup.get(String(select?.value||''))||cache.equipmentByKey.get(String(select?.value||''))||null;if(row)openCharacterItemDetail(row,row.count||1);else showToast('アイテムを選択してください。','warn'); });
-  document.addEventListener('click', e => { const b=e.target.closest('[data-quiver-item-detail]');if(!b)return;const key=String(b.dataset.quiverItemDetail||'');const cache=inventoryDerived();const row=cache.rowByLookup.get(key)||cache.equipmentByKey.get(key)||null;if(row)openCharacterItemDetail(row,row.count||1);else showToast('矢弾の詳細を取得できませんでした。','warn'); });
+  if ($('itemDetailViewDialog')) $('itemDetailViewDialog').addEventListener('click', e => { const apply=e.target.closest('[data-apply-named-processing]');if(apply){applyNamedProcessingAtIndex(Number(itemDetailViewContext.index),apply.dataset.applyNamedProcessing||'');return;}const clear=e.target.closest('[data-clear-named-processing]');if(clear){clearNamedProcessingAtIndex(Number(itemDetailViewContext.index),clear.dataset.clearNamedProcessing||'');return;} });
+  document.addEventListener('click', e => { const b=e.target.closest('[data-carry-item-detail]');if(!b)return;const slotKey=b.dataset.carryItemDetail||'';const select=$(`equip_${slotKey}_itemSelect`);const cache=inventoryDerived();const row=cache.rowByLookup.get(String(select?.value||''))||cache.equipmentByKey.get(String(select?.value||''))||null;if(row){const idx=inventoryIndexByLookup(row.id||row.masterId||row.publicId,row.name);openCharacterItemDetail(row,row.count||1,idx);}else showToast('アイテムを選択してください。','warn'); });
+  document.addEventListener('click', e => { const b=e.target.closest('[data-quiver-item-detail]');if(!b)return;const key=String(b.dataset.quiverItemDetail||'');const cache=inventoryDerived();const row=cache.rowByLookup.get(key)||cache.equipmentByKey.get(key)||null;if(row){const idx=inventoryIndexByLookup(row.id||row.masterId||row.publicId,row.name);openCharacterItemDetail(row,row.count||1,idx);}else showToast('矢弾の詳細を取得できませんでした。','warn'); });
   if ($('inventoryArea')) $('inventoryArea').addEventListener('click', e => {
     const unlearnBtn=e.target.closest('[data-unlearn-recipe]');
     if(unlearnBtn){e.preventDefault();e.stopPropagation();unlearnRecipeByKey(unlearnBtn.dataset.unlearnRecipe||'');return;}
@@ -9401,7 +9477,7 @@ function bindEvents() {
     e.preventDefault();
     e.stopPropagation();
     const index = Number(btn.dataset.index || 0);
-    if (btn.dataset.inventoryAction === 'detail') { if(inventoryItemsState[index])openCharacterItemDetail(inventoryItemsState[index],inventoryItemsState[index].count); return; }
+    if (btn.dataset.inventoryAction === 'detail') { if(inventoryItemsState[index])openCharacterItemDetail(inventoryItemsState[index],inventoryItemsState[index].count,index); return; }
         if (btn.dataset.inventoryAction === 'edit') { openInventoryDialog(index); return; }
     if (btn.dataset.inventoryAction === 'learn-recipe') { learnRecipeFromInventory(index); return; }
     if (btn.dataset.inventoryAction === 'delete') deleteInventoryItem(index);
