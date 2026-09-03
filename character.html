@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.715</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.716</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1143,10 +1143,10 @@ body.public-view .loadout-preset-panel{display:none!important}
 
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.715-effect-ui-drive-patch-autosave">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.716-autosave-loop-guard">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">Version：v90.8.715 / 最終更新日：2026年9月4日</div>
+<div class="ra-build-info">Version：v90.8.716 / 最終更新日：2026年9月4日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -1937,9 +1937,12 @@ async function setAutoSaveEnabled(enabled){
 }
 function autoSaveDraftSoon(section='all'){
   if(!autoSaveEnabled || !autoSaveReady || currentMode==='view' || !currentCharacter)return;
-  const sections=Array.isArray(section)?section:[section];
-  sections.filter(Boolean).forEach(value=>autoSaveDirtySections.add(String(value)));
+  const sections=(Array.isArray(section)?section:[section]).filter(Boolean).map(value=>String(value));
+  sections.forEach(value=>autoSaveDirtySections.add(value));
   if(autoSaveDirtySections.has('all')) autoSaveDirtySections=new Set(['all']);
+  // 空の予約要求だけでDirty扱いにしない。保存中の重複呼び出しが空予約へ変わっても、
+  // それを新しいフル保存として再発火させない。
+  if(autoSaveDirtySections.size===0)return;
   autoSaveDirty=true;
   clearAutoSaveTimer();
   if(!autoSaveBusy)setAutoSaveStatus('変更を検出しました。差分自動保存を待機中…','warn');
@@ -1996,7 +1999,8 @@ function buildAutoSavePatch(sectionsSet=autoSaveDirtySections){
 }
 async function saveCharacterNow({automatic=false,force=false}={}){
   if(autoSaveBusy){
-    autoSavePending=true;
+    // 保存中に同じ保存要求が重なっても、未送信のDirtyが無ければ再保存は不要。
+    if(autoSaveDirtySections.size>0)autoSavePending=true;
     return {saved:false,pending:true};
   }
   const usePatch=automatic&&!force&&autoSaveDirtySections.size>0;
@@ -2027,6 +2031,7 @@ async function saveCharacterNow({automatic=false,force=false}={}){
   else savingSections.forEach(key=>autoSaveDirtySections.delete(key));
   autoSaveDirty=autoSaveDirtySections.size>0;
   autoSaveBusy=true;autoSavePending=false;
+  let saveFailed=false;
   if(automatic)setAutoSaveStatus(usePatch?'変更部分だけクラウドへ自動保存中…':'クラウドへ自動保存中…','saving');
   try{
     const result=usePatch?await savePatchItem(currentCharacter.id,patch):await saveItem(data);
@@ -2039,15 +2044,22 @@ async function saveCharacterNow({automatic=false,force=false}={}){
     else{$('editorStatus').className=result?.reason?'status-box warn':'status-box ok';$('editorStatus').textContent='クラウドへ保存しました。';setAutoSaveStatus(autoSaveEnabled?`保存しました（${autoSaveTimeLabel()}）`:'自動保存：OFF','ok');showToast('クラウドへ保存しました。','ok');}
     return {saved:true,result};
   }catch(e){
+    saveFailed=true;
     // 失敗した送信対象をDirtyへ戻し、次回保存で取りこぼさない。
-    savingSections.forEach(key=>autoSaveDirtySections.add(key));
+    // フル保存失敗は全体未保存として保持する。
+    if(usePatch)savingSections.forEach(key=>autoSaveDirtySections.add(key));
+    else autoSaveDirtySections.add('all');
     autoSaveDirty=true;
-    if(automatic)setAutoSaveStatus(`自動保存に失敗しました：${e.message||e}`,'error');
+    if(automatic)setAutoSaveStatus(`自動保存に失敗しました：${e.message||e}（未保存の変更は保持中。次の編集または「保存」で再試行します）`,'error');
     else{$('editorStatus').className='status-box error';$('editorStatus').textContent=e.message;showToast(e.message,'error');}
     return {saved:false,reason:'error',error:e};
   }finally{
     autoSaveBusy=false;
-    if(autoSavePending||autoSaveDirtySections.size){autoSavePending=false;if(autoSaveEnabled)autoSaveDraftSoon([...autoSaveDirtySections]);}
+    const queuedSections=[...autoSaveDirtySections];
+    autoSavePending=false;
+    // 保存失敗をトリガーに自動で自分自身を再予約しない。
+    // 成功中にユーザーが追加編集した場合だけ、残ったDirtyを次の1回へ回す。
+    if(!saveFailed&&queuedSections.length&&autoSaveEnabled)autoSaveDraftSoon(queuedSections);
   }
 }
 async function flushAutoSaveBeforeLeave(){
