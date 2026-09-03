@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.716</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.717</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1143,10 +1143,10 @@ body.public-view .loadout-preset-panel{display:none!important}
 
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.716-autosave-loop-guard">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.717-initial-drive-migration">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">Version：v90.8.716 / 最終更新日：2026年9月4日</div>
+<div class="ra-build-info">Version：v90.8.717 / 最終更新日：2026年9月4日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -8364,6 +8364,9 @@ async function loadItem(id) {
   if (!currentCloudPlayerKey) throw new Error('クラウド読み込みにはプレイヤーキーが必要です。');
   const res = await cloudRequest('load', { id, playerKey: currentCloudPlayerKey });
   cloudCharacterRevision=Number(res.revision||0)||0;
+  if(res&&res.migratedToDrive){
+    showToast('旧スプレッドシート保存をGoogle Driveへ移行しました。','ok');
+  }
   return res.data;
 }
 async function deleteItem(id) {
