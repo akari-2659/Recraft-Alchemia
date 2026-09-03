@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.705</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.712</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -520,6 +520,8 @@
   .owned-item-detail-line { display:grid; grid-template-columns:max-content minmax(0,1fr); gap:7px; align-items:start; }
   .owned-item-detail-line > b { color:var(--muted); font-size:.76rem; }
   .named-process-chip{display:inline-flex;align-items:center;border:1px solid #c89b4c;background:#f5e3b8;color:#6e4416;border-radius:999px;padding:3px 8px;font-size:.75rem;font-weight:900}.named-process-chip.applied{background:#dfead1;border-color:#8fa86a;color:#355522}.named-process-list{display:grid;gap:10px;margin-top:10px}.named-process-card{border:1px solid rgba(200,155,76,.55);border-radius:12px;background:rgba(255,249,237,.92);padding:10px;display:grid;gap:9px}.named-process-full{display:grid;gap:8px}.named-process-text{border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.72);padding:9px 10px;line-height:1.65;white-space:pre-wrap}.named-process-text b{display:block;font-size:.76rem;color:var(--muted);margin-bottom:3px}.named-process-text.after{font-weight:700}.named-process-diff{background:#ffe49a;color:#5b3512;border-radius:4px;padding:0 2px;font-weight:900}.named-process-actions{display:flex;gap:8px;flex-wrap:wrap}.named-process-actions button{flex:0 1 auto}.item-detail-view-body{display:grid;gap:10px}.inventory-detail-btn{white-space:nowrap}
+  .equipment-effect-sections{display:grid;gap:12px;margin-top:10px}.equipment-effect-section{border:1px solid var(--line);border-radius:12px;background:rgba(255,253,248,.76);padding:10px}.equipment-effect-section h4{margin:0 0 8px;color:var(--accent2);font-size:.88rem}.equipment-effect-entry{border-top:1px dashed rgba(170,137,95,.35);padding:7px 0}.equipment-effect-entry:first-of-type{border-top:0;padding-top:0}.equipment-effect-entry details>summary{cursor:pointer;list-style:none;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}.equipment-effect-entry details>summary::-webkit-details-marker{display:none}.equipment-effect-name{font-weight:900;color:var(--ink)}.equipment-effect-summary{font-size:.82rem;color:var(--muted)}.equipment-effect-detail{padding:8px 0 2px;line-height:1.7;white-space:pre-wrap}.named-process-inline-badge{display:inline-flex;align-items:center;border:2px solid #8b3f2e;background:#8b3f2e;color:#fff8df;border-radius:999px;padding:3px 8px;font-size:.72rem;font-weight:900;margin-left:7px}.named-process-inline-badge.applied{background:#dfead1;border-color:#78945a;color:#355522}.inventory-card.named-process-available{border:3px double #8a4228!important;background:linear-gradient(180deg,rgba(255,250,239,.98),rgba(247,232,211,.94))!important;box-shadow:0 0 0 4px rgba(155,90,60,.17),0 8px 18px rgba(80,50,20,.10)}.inventory-card.named-process-applied{border:3px double #6d874e!important;background:linear-gradient(180deg,rgba(250,253,246,.98),rgba(228,238,216,.94))!important;box-shadow:0 0 0 4px rgba(120,148,90,.16),0 8px 18px rgba(55,80,35,.09)}
+
   .equipment-card h3 { color: var(--accent2); }
   .equipment-fields {
     display: grid;
@@ -1141,10 +1143,10 @@ body.public-view .loadout-preset-panel{display:none!important}
 
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.695">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.712-effect-ui-drive-patch-autosave">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">v90.8.705｜更新：2026年9月3日</div>
+<div class="ra-build-info">Version：v90.8.712 / 最終更新日：2026年9月3日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -1677,6 +1679,7 @@ const EQUIPMENT_CATEGORY_CACHE_KEY = APP_NAME + '.equipmentCategories';
 const EQUIPMENT_CATEGORY_CACHE_META_KEY = APP_NAME + '.equipmentCategories.meta';
 const CS_ITEM_CACHE_KEY = APP_NAME + '.characterSheetItems';
 let CS_ITEM_MASTER = [];
+let DB_EQUIPMENT_CATEGORY_MASTER = [];
 let DB_INITIAL_ITEM_MASTER = [];
 let DB_INITIAL_ITEM_MASTER_INDEX = { byId:new Map(), byPublicId:new Map(), byName:new Map() };
 let DB_INITIAL_SPELL_MASTER = [];
@@ -1820,7 +1823,7 @@ let currentCharacter = null;
 let outputTargetData = null;
 let lastRolls = [];
 
-const AUTO_SAVE_DELAY_MS = 1000;
+const AUTO_SAVE_DELAY_MS = 1200;
 let autoSaveEnabled = true;
 let autoSaveReady = false;
 let autoSaveTimer = null;
@@ -1828,6 +1831,8 @@ let autoSaveBusy = false;
 let autoSavePending = false;
 let autoSaveDirty = false;
 let autoSaveLastSavedHash = '';
+let autoSaveDirtySections = new Set();
+let cloudCharacterRevision = 0;
 
 function setAutoSaveStatus(message='', state=''){
   const el=$('autoSaveStatus');
@@ -1865,6 +1870,7 @@ function initializeAutoSaveForEditor(mode=currentMode){
   clearAutoSaveTimer();
   autoSavePending=false;
   autoSaveDirty=false;
+  autoSaveDirtySections.clear();
   autoSaveEnabled=currentCharacter?.autoSaveEnabled!==false;
   autoSaveReady=mode!=='view';
   syncAutoSaveToggle();
@@ -1918,7 +1924,7 @@ async function setAutoSaveEnabled(enabled){
           : '自動保存：OFF（このキャラクターに保存済み）',
         autoSaveEnabled?'ok':'warn'
       );
-      if(autoSaveEnabled)autoSaveDraftSoon();
+      if(autoSaveEnabled)autoSaveDraftSoon('all');
       return;
     }
     throw new Error('設定を保存できませんでした。');
@@ -1929,91 +1935,119 @@ async function setAutoSaveEnabled(enabled){
     setAutoSaveStatus(`自動保存設定の保存に失敗しました：${e.message||e}`,'error');
   }
 }
-function autoSaveDraftSoon(){
+function autoSaveDraftSoon(section='all'){
   if(!autoSaveEnabled || !autoSaveReady || currentMode==='view' || !currentCharacter)return;
-  // v90.8.457: 入力のたびにcollectData()+巨大JSON比較をしない。
-  // 変更ありの印だけ付け、デバウンス後の保存時に1回だけ収集・比較する。
+  const sections=Array.isArray(section)?section:[section];
+  sections.filter(Boolean).forEach(value=>autoSaveDirtySections.add(String(value)));
+  if(autoSaveDirtySections.has('all')) autoSaveDirtySections=new Set(['all']);
   autoSaveDirty=true;
   clearAutoSaveTimer();
-  if(!autoSaveBusy)setAutoSaveStatus('変更を検出しました。自動保存を待機中…','warn');
+  if(!autoSaveBusy)setAutoSaveStatus('変更を検出しました。差分自動保存を待機中…','warn');
   autoSaveTimer=setTimeout(()=>{
     autoSaveTimer=null;
     saveCharacterNow({automatic:true,force:false});
   },AUTO_SAVE_DELAY_MS);
+}
+function autoSaveSectionForTarget(target){
+  if(!target)return '';
+  const id=String(target.id||'');
+  if(['charName','charGender','charAge'].includes(id))return 'identity';
+  if(id==='charMemo')return 'memo';
+  if(id.startsWith('stat_'))return ['stats','abilities','resources'];
+  if(id.startsWith('ability_')||target.dataset?.abilityInput!==undefined)return ['abilities','resources'];
+  if(id.startsWith('skill_')||target.dataset?.skillInput!==undefined)return 'skills';
+  if(id.startsWith('manualBonus_'))return 'manualCategoryBonuses';
+  if(['currentHp','currentMp','hpBonus','mpBonus','fatigueLevel'].includes(id))return 'resources';
+  if(id.startsWith('equip_')||target.dataset?.equipmentInput!==undefined||id==='equipmentMemo'||id==='bagSelect')return ['equipment','inventory'];
+  if(target.dataset?.inventoryInput!==undefined||target.dataset?.inventoryCountIndex!==undefined||id.startsWith('inventory')||id==='quiverSelect'||target.dataset?.quiverAmmoSlot!==undefined||target.dataset?.quiverAmmoCount!==undefined)return ['inventory','equipment'];
+  if(target.dataset?.skillCrystalSlot!==undefined||id.startsWith('skillCrystal'))return 'skillGacha';
+  if(id.startsWith('loadout')||target.dataset?.loadoutPreset!==undefined)return 'loadoutPresets';
+  if(id==='autoSaveToggle')return 'settings';
+  return '';
+}
+function buildAutoSavePatch(sectionsSet=autoSaveDirtySections){
+  const sections=new Set(sectionsSet||[]);
+  if(sections.has('all')){
+    const full=stripRuntimeOnlyData(collectData(true));
+    delete full.id; delete full.createdAt;
+    return full;
+  }
+  const patch={updatedAt:nowIso()};
+  let equipmentCache=null,baseAbilitiesCache=null,effectiveAbilitiesCache=null;
+  const equipment=()=>equipmentCache||(equipmentCache=getEquipmentState());
+  const baseAbilities=()=>baseAbilitiesCache||(baseAbilitiesCache=getAbilityValues());
+  const effectiveAbilities=()=>effectiveAbilitiesCache||(effectiveAbilitiesCache=computeEffectiveAbilities(baseAbilities(),equipment()));
+  if(sections.has('identity')){patch.name=$('charName').value.trim();patch.gender=$('charGender').value.trim();patch.age=$('charAge').value.trim();}
+  if(sections.has('stats'))patch.stats=getStats();
+  if(sections.has('abilities'))patch.abilities=baseAbilities();
+  if(sections.has('skills'))patch.skills=getSkillAlloc();
+  if(sections.has('manualCategoryBonuses'))patch.manualCategoryBonuses=getManualCategoryBonuses();
+  if(sections.has('resources'))patch.resources=computeResources(effectiveAbilities(),getResourceState(),equipment());
+  if(sections.has('equipment')||sections.has('inventory')){
+    syncAllEquipmentUpgradesToInventory();syncAllEquipmentSpellSetsToInventory();equipmentCache=getEquipmentState();
+    // 装備個体の強化・術式セットは倉庫個体にも保存されるため、この2区分は必ず同時にpatchする。
+    patch.equipment=equipmentCache;patch.inventory=getInventoryState();
+  }
+  if(sections.has('loadoutPresets'))patch.loadoutPresets=normalizeLoadoutPresets(loadoutPresetsState);
+  if(sections.has('skillGacha'))patch.skillGacha=getSkillGachaState();
+  if(sections.has('settings'))patch.autoSaveEnabled=autoSaveEnabled!==false;
+  if(sections.has('memo'))patch.memo=$('charMemo').value;
+  return patch;
 }
 async function saveCharacterNow({automatic=false,force=false}={}){
   if(autoSaveBusy){
     autoSavePending=true;
     return {saved:false,pending:true};
   }
-  const data=collectData(true);
-  if(!data.name){
-    if(automatic){
-      autoSaveDirty=true;
-      setAutoSaveStatus('キャラクター名の入力後に自動保存します。','warn');
-    }else{
-      $('editorStatus').className='status-box error';
-      $('editorStatus').textContent='キャラクター名を入力してください。';
-      showToast('キャラクター名を入力してください。','error');
-    }
+  const usePatch=automatic&&!force&&autoSaveDirtySections.size>0;
+  const patch=usePatch?buildAutoSavePatch(autoSaveDirtySections):null;
+  const data=usePatch?null:collectData(true);
+  const name=usePatch?(Object.prototype.hasOwnProperty.call(patch,'name')?patch.name:currentCharacter?.name):data?.name;
+  if(!name){
+    if(automatic){autoSaveDirty=true;setAutoSaveStatus('キャラクター名の入力後に自動保存します。','warn');}
+    else{$('editorStatus').className='status-box error';$('editorStatus').textContent='キャラクター名を入力してください。';showToast('キャラクター名を入力してください。','error');}
     return {saved:false,reason:'name'};
   }
-  const check=validateSkills(data.skills,data.stats,data.manualCategoryBonuses||emptyCategoryBonus());
-  if(check.errors.length){
-    if(automatic){
-      autoSaveDirty=true;
-      setAutoSaveStatus('技能ポイントに問題があるため、自動保存を保留しています。','error');
-    }else{
-      $('editorStatus').className='status-box error';
-      $('editorStatus').textContent='技能ポイントに問題があるため保存前に確認してください。\n'+check.errors.join('\n');
-      showToast('技能ポイントに問題があるため保存できません。','error');
+  if(!usePatch || autoSaveDirtySections.has('skills') || autoSaveDirtySections.has('stats') || autoSaveDirtySections.has('manualCategoryBonuses')){
+    const skillData=usePatch?{skills:patch.skills||currentCharacter.skills,stats:patch.stats||currentCharacter.stats,manualCategoryBonuses:patch.manualCategoryBonuses||currentCharacter.manualCategoryBonuses}:data;
+    const check=validateSkills(skillData.skills,skillData.stats,skillData.manualCategoryBonuses||emptyCategoryBonus());
+    if(check.errors.length){
+      if(automatic){autoSaveDirty=true;setAutoSaveStatus('技能ポイントに問題があるため、自動保存を保留しています。','error');}
+      else{$('editorStatus').className='status-box error';$('editorStatus').textContent='技能ポイントに問題があるため保存前に確認してください。\n'+check.errors.join('\n');showToast('技能ポイントに問題があるため保存できません。','error');}
+      return {saved:false,reason:'skills',errors:check.errors};
     }
-    return {saved:false,reason:'skills',errors:check.errors};
   }
-
-  const hash=autoSaveContentHash(data);
-  if(!force && hash===autoSaveLastSavedHash){
-    autoSaveDirty=false;
-    setAutoSaveStatus('自動保存済み','ok');
-    return {saved:false,unchanged:true};
+  if(!usePatch){
+    const hash=autoSaveContentHash(data);
+    if(!force&&hash===autoSaveLastSavedHash){autoSaveDirty=false;autoSaveDirtySections.clear();setAutoSaveStatus('自動保存済み','ok');return {saved:false,unchanged:true};}
   }
-
-  autoSaveBusy=true;
-  autoSavePending=false;
-  if(automatic)setAutoSaveStatus('クラウドへ自動保存中…','saving');
+  const savingSections=new Set(autoSaveDirtySections);
+  // 送信対象を現在のDirty集合から切り離す。await中に同じ区分が再編集された場合は、新しいDirtyとして残す。
+  if(savingSections.has('all')) autoSaveDirtySections.clear();
+  else savingSections.forEach(key=>autoSaveDirtySections.delete(key));
+  autoSaveDirty=autoSaveDirtySections.size>0;
+  autoSaveBusy=true;autoSavePending=false;
+  if(automatic)setAutoSaveStatus(usePatch?'変更部分だけクラウドへ自動保存中…':'クラウドへ自動保存中…','saving');
   try{
-    const result=await saveItem(data);
-    currentCharacter=data;
+    const result=usePatch?await savePatchItem(currentCharacter.id,patch):await saveItem(data);
+    if(usePatch){currentCharacter={...(currentCharacter||{}),...patch};}
+    else{currentCharacter=data;autoSaveLastSavedHash=autoSaveContentHash(data);}
     currentMode='edit';
-    autoSaveLastSavedHash=hash;
-    autoSaveDirty=false;
+    autoSaveDirty=autoSaveDirtySections.size>0;
     syncAutoSaveToggle();
-
-    if(automatic){
-      setAutoSaveStatus(`自動保存しました（${autoSaveTimeLabel()}）`,'ok');
-    }else{
-      $('editorStatus').className=result?.reason?'status-box warn':'status-box ok';
-      $('editorStatus').textContent='クラウドへ保存しました。';
-      setAutoSaveStatus(autoSaveEnabled?`保存しました（${autoSaveTimeLabel()}）`:'自動保存：OFF','ok');
-      showToast('クラウドへ保存しました。','ok');
-    }
+    if(automatic)setAutoSaveStatus(`差分自動保存しました（${autoSaveTimeLabel()}）`,'ok');
+    else{$('editorStatus').className=result?.reason?'status-box warn':'status-box ok';$('editorStatus').textContent='クラウドへ保存しました。';setAutoSaveStatus(autoSaveEnabled?`保存しました（${autoSaveTimeLabel()}）`:'自動保存：OFF','ok');showToast('クラウドへ保存しました。','ok');}
     return {saved:true,result};
   }catch(e){
+    // 失敗した送信対象をDirtyへ戻し、次回保存で取りこぼさない。
+    savingSections.forEach(key=>autoSaveDirtySections.add(key));
     autoSaveDirty=true;
-    if(automatic){
-      setAutoSaveStatus(`自動保存に失敗しました：${e.message||e}`,'error');
-    }else{
-      $('editorStatus').className='status-box error';
-      $('editorStatus').textContent=e.message;
-      showToast(e.message,'error');
-    }
+    if(automatic)setAutoSaveStatus(`自動保存に失敗しました：${e.message||e}`,'error');
+    else{$('editorStatus').className='status-box error';$('editorStatus').textContent=e.message;showToast(e.message,'error');}
     return {saved:false,reason:'error',error:e};
   }finally{
     autoSaveBusy=false;
-    if(autoSavePending){
-      autoSavePending=false;
-      autoSaveDraftSoon();
-    }
+    if(autoSavePending||autoSaveDirtySections.size){autoSavePending=false;if(autoSaveEnabled)autoSaveDraftSoon([...autoSaveDirtySections]);}
   }
 }
 async function flushAutoSaveBeforeLeave(){
@@ -3131,8 +3165,7 @@ function updateResources() {
 }
 
 function updateSummary() {
-  /* 出力欄はボタンから開くため常時表示しない */
-  autoSaveDraftSoon();
+  /* 出力欄はボタンから開くため常時表示しない。保存変更検知は入力元/操作元で区分管理する。 */
 }
 function updateAll() { updateAbilities(); updateCategoryBonuses(); updateResources(); updateSkills(); updateCombatStats(); updateSpellSlotHints(); updateEquipmentSummaries(); applyBagCapacityToEquipmentSlots();
   renderQuiverControls(); updateSummary(); }
@@ -4642,11 +4675,11 @@ async function addSkillByPublicIds(){
   const state=normalizeSkillGachaState(skillGachaState||{}),owned=new Set(state.acquiredSkillIds);let added=0,duplicate=0;const missing=[],fragmentAwards={};
   ids.forEach(id=>{const skill=characterSkillByPublicId(id);if(!skill){missing.push(id);return;}if(owned.has(skill.id)){const rank=Math.max(1,Math.floor(Number(skill.rank)||1));duplicate++;fragmentAwards[String(rank)]=(fragmentAwards[String(rank)]||0)+1;return;}owned.add(skill.id);added++;});
   Object.entries(fragmentAwards).forEach(([rank,count])=>addSkillDuplicateFragments(state,rank,count));
-  state.acquiredSkillIds=[...owned];skillGachaState=state;renderSkillCrystalPanel();updateAll();if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon();
+  state.acquiredSkillIds=[...owned];skillGachaState=state;renderSkillCrystalPanel();updateAll();if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon('skillGacha');
   if(status){const awardText=resonanceFragmentAwardText(fragmentAwards);status.className='status-box '+(missing.length?'warn':'ok');status.textContent=`追加 ${added}件 / 重複 ${duplicate}件${awardText?` / 獲得：${awardText}`:''}${missing.length?` / 該当なし：${missing.join(', ')}`:''}`;}
 }
 function removeSkillFromWarehouse(id=''){
-  const state=normalizeSkillGachaState(skillGachaState||{});if(state.equippedSkillIds.includes(id))return;state.acquiredSkillIds=state.acquiredSkillIds.filter(v=>v!==id);skillGachaState=state;renderSkillCrystalPanel();updateAll();if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon();
+  const state=normalizeSkillGachaState(skillGachaState||{});if(state.equippedSkillIds.includes(id))return;state.acquiredSkillIds=state.acquiredSkillIds.filter(v=>v!==id);skillGachaState=state;renderSkillCrystalPanel();updateAll();if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon('skillGacha');
 }
 
 const INVENTORY_LOCATION_FILTERS = ['全て'];
@@ -5393,7 +5426,7 @@ function characterNamedProcessDiffPair(before='',after=''){
 }
 function characterNamedProcessingHtml(options=[],appliedId='',index=-1){
   const rows=Array.isArray(options)?options:[];if(!rows.length)return'';
-  return `<div class="named-process-list">${rows.map(opt=>{const applied=String(appliedId||'')===String(opt.id||'');const diff=characterNamedProcessDiffPair(opt.fullBefore||opt.before||'変更前',opt.fullAfter||opt.after||'変更後');const actions=(currentMode!=='view'&&index>=0)?`<div class="named-process-actions">${applied?`<button type="button" class="ghost" data-clear-named-processing="${esc(opt.id||'')}">異名加工登録を解除</button>`:`<button type="button" data-apply-named-processing="${esc(opt.id||'')}">異名加工を適用</button>`}</div>`:'';return `<div class="named-process-card"><div><span class="named-process-chip ${applied?'applied':''}">${applied?'異名加工済':'異名加工可能'}</span> <b>${esc(opt.namedMonster||opt.material||'異名加工')}</b></div><div class="named-process-full"><div class="named-process-text"><b>加工前</b>${diff.before}</div><div class="named-process-text after"><b>加工後</b>${diff.after}</div></div><div class="small">変更項目：${esc(opt.changeLabel||'性能')}</div><div class="small">二つ名素材：${esc(opt.material||'')}</div><div class="small">必要素材：${esc(opt.requiredMaterials||'')}</div><div class="small">施設依頼：${esc(String(opt.facilityFeeG||0))}G${opt.difficulty?` / 基礎作成難易度 ${esc(opt.difficulty)}`:''}</div>${actions}</div>`}).join('')}</div>`;
+  return `<div class="named-process-list">${rows.map(opt=>{const applied=String(appliedId||'')===String(opt.id||'');const diff=characterNamedProcessDiffPair(opt.fullBefore||opt.before||'変更前',opt.fullAfter||opt.after||'変更後');const actions=(currentMode!=='view'&&index>=0)?`<div class="named-process-actions">${applied?`<button type="button" class="ghost" data-clear-named-processing="${esc(opt.id||'')}">異名加工登録を解除</button>`:`<button type="button" data-apply-named-processing="${esc(opt.id||'')}">異名加工を適用</button>`}</div>`:'';return `<div class="named-process-card"><div><span class="named-process-chip ${applied?'applied':''}">${applied?'異名加工済':'異名加工可'}</span> <b>${esc(opt.namedMonster||opt.material||'異名加工')}</b></div><div class="named-process-full"><div class="named-process-text"><b>加工前</b>${diff.before}</div><div class="named-process-text after"><b>加工後</b>${diff.after}</div></div><div class="small">変更項目：${esc(opt.changeLabel||'性能')}</div><div class="small">二つ名素材：${esc(opt.material||'')}</div><div class="small">必要素材：${esc(opt.requiredMaterials||'')}</div><div class="small">施設依頼：${esc(String(opt.facilityFeeG||0))}G${opt.difficulty?` / 基礎作成難易度 ${esc(opt.difficulty)}`:''}</div>${actions}</div>`}).join('')}</div>`;
 }
 function openCharacterItemDetail(item={},count='',index=null){
   const row=normalizeInventoryItem(item||{});if(!row?.name)return;
@@ -5418,11 +5451,11 @@ function ownedItemDetailHtml(item={}, count='') {
   add('対象', row.target);
   add('使用技能', row.checkType || row.skill);
   add('威力', row.power);
-  add('効果', row.effect || row.note);
   add('説明', row.description);
   add(row.materialType==='魔物素材'?'ドロップ元':'入手先', row.source);
   if (row.equipmentUpgradeEffect) add('装備強化', [row.equipmentUpgradeEffect, row.equipmentUpgradeDetail].filter(Boolean).join('：'));
-  return lines.join('') || '<div class="small">表示できる詳細情報がありません。</div>';
+  const effects=equipmentEffectSectionsHtml(row);
+  return (lines.join('')+effects) || '<div class="small">表示できる詳細情報がありません。</div>';
 }
 function parseNamedProcessingMaterials(text=''){
   return String(text||'').split(/[,、\n]+/u).map(v=>String(v||'').trim()).filter(Boolean).map(part=>{const m=part.match(/^(.*?)[×xX*]\s*(\d+)\s*$/u);return{name:String(m?m[1]:part).trim(),count:Math.max(1,Number(m?m[2]:1)||1)}}).filter(v=>v.name);
@@ -5439,10 +5472,16 @@ function consumeInventoryByName(name='',amount=0){
   }
   return remain<=0;
 }
+function isForbiddenArmorNamedDefenseProcessing(item={},option={}){
+  return String(item?.itemType||'').trim()==='防具'
+    && String(option?.applyKind||'').trim()==='modifier'
+    && String(option?.applyTarget||'').trim()==='combat:defense';
+}
 function applyNamedProcessingAtIndex(index,optionId=''){
   if(currentMode==='view')return;
   if(!Number.isInteger(index)||index<0||!inventoryItemsState[index])return;
   const raw=inventoryItemsState[index],row=normalizeInventoryItem(raw),opt=(row.namedProcessingOptions||[]).find(x=>String(x.id||'')===String(optionId||''));if(!opt)return;
+  if(isForbiddenArmorNamedDefenseProcessing(row,opt)){showToast('防具の異名加工では防御値を上げられません。','warn');return;}
   if(row.appliedNamedProcessingId){showToast('この装備にはすでに異名加工が登録されています。','warn');return;}
   const req=parseNamedProcessingMaterials(opt.requiredMaterials||'');const missing=req.filter(x=>inventoryCountByName(x.name)<x.count);
   if(missing.length){showToast(`必要素材が不足しています：${missing.map(x=>`${x.name}×${x.count}`).join('、')}`,'warn');return;}
@@ -5455,7 +5494,7 @@ function applyNamedProcessingAtIndex(index,optionId=''){
   const baseRow=normalizeInventoryItem({...targetRaw,appliedNamedProcessingId:'',namedProcessingBase:null});
   const base={power:baseRow.power,modifiers:baseRow.modifiers,effect:baseRow.effect,spellSlots:baseRow.spellSlots};
   inventoryItemsState[targetIndex]=normalizeInventoryItem({...targetRaw,count:1,appliedNamedProcessingId:String(opt.id||''),namedProcessingBase:base});
-  invalidateInventoryDerivedCache();markInventoryUiDirty();renderInventory({refreshLinked:true});updateSummary();if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon();
+  invalidateInventoryDerivedCache();markInventoryUiDirty();renderInventory({refreshLinked:true});updateSummary();if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon(['inventory','equipment']);
   showToast(`異名加工を登録しました：${row.name}`,'ok');openCharacterItemDetail(inventoryItemsState[targetIndex],1,targetIndex);
 }
 function clearNamedProcessingAtIndex(index,optionId=''){
@@ -5464,7 +5503,7 @@ function clearNamedProcessingAtIndex(index,optionId=''){
   if(!confirm('異名加工の登録を解除します。消費した素材は戻りません。'))return;
   const base=(raw.namedProcessingBase&&typeof raw.namedProcessingBase==='object')?raw.namedProcessingBase:{};
   inventoryItemsState[index]=normalizeInventoryItem({...raw,power:base.power??raw.power,modifiers:base.modifiers??raw.modifiers,effect:base.effect??raw.effect,spellSlots:base.spellSlots??raw.spellSlots,appliedNamedProcessingId:'',namedProcessingBase:null});
-  invalidateInventoryDerivedCache();markInventoryUiDirty();renderInventory({refreshLinked:true});updateSummary();if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon();showToast(`異名加工の登録を解除しました：${row.name}`,'ok');openCharacterItemDetail(inventoryItemsState[index],inventoryItemsState[index].count,index);
+  invalidateInventoryDerivedCache();markInventoryUiDirty();renderInventory({refreshLinked:true});updateSummary();if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon(['inventory','equipment']);showToast(`異名加工の登録を解除しました：${row.name}`,'ok');openCharacterItemDetail(inventoryItemsState[index],inventoryItemsState[index].count,index);
 }
 function renderQuiverControls() {
   quiverAmmoSlotsState = normalizeQuiverAmmoSlotsState(quiverAmmoSlotsState, {restoreInvalid:true});
@@ -5667,6 +5706,10 @@ function canonicalWeaponUsageSkill(item={}) {
 }
 /* RA_PATCH_CARRY_PALETTE_MASTER_FALLBACK_V90_8_572 */
 function parseNamedProcessingOptions(value){if(Array.isArray(value))return value;if(typeof value==='string'&&value.trim()){try{const parsed=JSON.parse(value);return Array.isArray(parsed)?parsed:[];}catch(_){return[];}}return[];}
+function parseEquipmentEffects(value){if(Array.isArray(value))return value.map(v=>({name:String(v?.name||'固有効果').trim()||'固有効果',summary:String(v?.summary||'').trim(),detail:String(v?.detail||'').trim()})).filter(v=>v.detail||v.summary);if(typeof value==='string'&&value.trim()){try{return parseEquipmentEffects(JSON.parse(value));}catch(_){return[];}}return [];}
+function equipmentIntrinsicEffectsForItem(item={}){const category=String(item.itemCategory||item.category||item.type||'').trim();const row=(DB_EQUIPMENT_CATEGORY_MASTER||[]).find(v=>String(v?.name||'').trim()===category);if(!row)return[];const structured=parseEquipmentEffects(row.intrinsicEffects);if(structured.length)return structured;const detail=String(row.effect||'').trim();if(!detail)return[];return[{name:category==='鞭'?'引き寄せ':'武器種固有',summary:category==='鞭'?'後衛の敵を前衛へ引き寄せる':detail.split('。')[0],detail}];}
+function equipmentEffectsForItem(item={}){const structured=parseEquipmentEffects(item.equipmentEffects);if(structured.length)return structured;const detail=String(item.effect||'').trim();return detail?[{name:'固有効果',summary:detail.split('。')[0],detail}]:[];}
+function equipmentEffectSectionsHtml(item={}){const intrinsic=equipmentIntrinsicEffectsForItem(item),unique=equipmentEffectsForItem(item);const section=(title,rows)=>rows.length?`<section class="equipment-effect-section"><h4>${esc(title)}</h4>${rows.map(effect=>`<div class="equipment-effect-entry"><details><summary><span class="equipment-effect-name">《${esc(effect.name)}》</span><span class="equipment-effect-summary">${esc(effect.summary||'詳細を表示')}</span></summary><div class="equipment-effect-detail">${esc(effect.detail||effect.summary||'')}</div></details></div>`).join('')}</section>`:'';return intrinsic.length||unique.length?`<div class="equipment-effect-sections">${section('武器種固有',intrinsic)}${section('固有効果',unique)}</div>`:'';}
 function normalizeInventoryItem(item={}) {
   const masterRow = inventoryMasterRowForClassification(item);
   const masterIsMaterial = String(masterRow?.dataKind || '').trim()==='素材';
@@ -5706,7 +5749,9 @@ function normalizeInventoryItem(item={}) {
     : [];
   const namedProcessingOptions = parseNamedProcessingOptions(masterRow?.namedProcessingOptions ?? item.namedProcessingOptions);
   const appliedNamedProcessingId = String(item.appliedNamedProcessingId || '').trim();
-  const appliedNamedProcessing = appliedNamedProcessingId ? (namedProcessingOptions.find(opt=>String(opt?.id||'')===appliedNamedProcessingId) || null) : null;
+  const appliedNamedProcessingCandidate = appliedNamedProcessingId ? (namedProcessingOptions.find(opt=>String(opt?.id||'')===appliedNamedProcessingId) || null) : null;
+  // 防具の異名加工で防御値そのものを伸ばすことは禁止。旧/不正データが来ても性能へ反映しない。
+  const appliedNamedProcessing = appliedNamedProcessingCandidate && !isForbiddenArmorNamedDefenseProcessing(item,appliedNamedProcessingCandidate) ? appliedNamedProcessingCandidate : null;
   const baseSnapshot = (item.namedProcessingBase && typeof item.namedProcessingBase === 'object') ? item.namedProcessingBase : {};
   const useCanonicalBase = !!appliedNamedProcessing;
   const basePower = String((useCanonicalBase ? (masterRow?.power ?? baseSnapshot.power) : null) ?? item.power ?? item.damage ?? item.damageValue ?? masterRow?.power ?? '').trim();
@@ -5727,6 +5772,13 @@ function normalizeInventoryItem(item={}) {
       effectiveSpellSlots=String(appliedNamedProcessing.applyAfter||effectiveSpellSlots).trim();
       if(appliedNamedProcessing.fullAfter) effectiveEffect=String(appliedNamedProcessing.fullAfter).trim();
     }
+  }
+  let equipmentEffects=parseEquipmentEffects(masterRow?.equipmentEffects ?? item.equipmentEffects);
+  if(!equipmentEffects.length&&effectiveEffect)equipmentEffects=[{name:'固有効果',summary:String(effectiveEffect).split('。')[0],detail:effectiveEffect}];
+  if(appliedNamedProcessing&&String(appliedNamedProcessing.applyKind||'').trim()==='effect'){
+    const before=String(appliedNamedProcessing.applyBefore||'').trim(),after=String(appliedNamedProcessing.applyAfter||appliedNamedProcessing.fullAfter||'').trim();
+    if(before&&after)equipmentEffects=equipmentEffects.map(effect=>String(effect.detail||'').includes(before)?{...effect,detail:String(effect.detail||'').replace(before,after)}:effect);
+    if(equipmentEffects.length===1&&after)equipmentEffects[0]={...equipmentEffects[0],detail:after};
   }
   const normalizedModifiers = serializeModifierRows(normalizedModifierRows);
   const firstModifierText = target => String(normalizedModifierRows.find(row => row.target === target)?.value || '').trim();
@@ -5769,6 +5821,7 @@ function normalizeInventoryItem(item={}) {
     equipmentUpgradeDetail: masterIsMaterial ? (masterUpgradeDetail || String(item.equipmentUpgradeDetail || '').trim()) : String(item.equipmentUpgradeDetail || '').trim(),
     equipmentUpgradeTarget: masterIsMaterial ? (masterUpgradeTarget || String(item.equipmentUpgradeTarget || '').trim()) : String(item.equipmentUpgradeTarget || '').trim(),
     namedProcessingOptions,
+    equipmentEffects,
     appliedNamedProcessingId: appliedNamedProcessing ? appliedNamedProcessingId : '',
     namedProcessingBase: appliedNamedProcessing ? {power:basePower,modifiers:baseModifierText,effect:baseEffect,spellSlots:baseSpellSlots} : null,
     upgradeEntries: normalizedUpgradeEntries,
@@ -6167,7 +6220,7 @@ function learnRecipeFromInventory(index) {
   if (isRecipeLearned(row)) { showToast('このレシピはすでに覚えています。', 'warn'); return; }
   learnedRecipesState = normalizeLearnedRecipes([...(learnedRecipesState || []), row]);
   renderInventory({refreshLinked:false});
-  if (typeof autoSaveDraftSoon === 'function') autoSaveDraftSoon();
+  if (typeof autoSaveDraftSoon === 'function') autoSaveDraftSoon('inventory');
   showToast(`レシピを覚えました：${row.name || '名称未設定'}`, 'ok');
 }
 function unlearnRecipeByKey(key='') {
@@ -6175,7 +6228,7 @@ function unlearnRecipeByKey(key='') {
   const target = String(key || '').trim().toUpperCase();
   learnedRecipesState = normalizeLearnedRecipes(learnedRecipesState).filter(row => learnedRecipeKey(row) !== target);
   renderInventory({refreshLinked:false});
-  if (typeof autoSaveDraftSoon === 'function') autoSaveDraftSoon();
+  if (typeof autoSaveDraftSoon === 'function') autoSaveDraftSoon('inventory');
 }
 function inventoryWarehouseCardSearchText(item={}){
   const displayType=inventorySmallCategory(item),displayCategory=inventoryInternalCategory(item);
@@ -6213,9 +6266,10 @@ function inventoryWarehouseCardHtml(item,index){
     : (item.category||displayCategory||'—');
   const quick=inventoryWarehouseQuickText(item);
   const stable=`item:${inventoryItemKey(item)||learnedRecipeKey(item)||String(index)}`;
-  return `<details class="inventory-card" data-inventory-row="${index}" data-inventory-stable-key="${esc(stable)}" data-inventory-id="${esc(item.id||'')}" data-inventory-location="倉庫" data-inventory-kind="${esc(item.kind||'アイテム')}" data-inventory-item-type="${esc(displayType)}" data-inventory-category="${esc(displayCategory)}" data-inventory-search="${esc(inventoryWarehouseCardSearchText(item))}">
+  const namedOptions=parseNamedProcessingOptions(item.namedProcessingOptions);const namedApplied=!!String(item.appliedNamedProcessingId||'').trim();const namedClass=namedApplied?' named-process-applied':(namedOptions.length?' named-process-available':'');const namedBadge=namedApplied?'<span class="named-process-inline-badge applied">異名加工済</span>':(namedOptions.length?'<span class="named-process-inline-badge">異名加工可</span>':'');
+  return `<details class="inventory-card${namedClass}" data-inventory-row="${index}" data-inventory-stable-key="${esc(stable)}" data-inventory-id="${esc(item.id||'')}" data-inventory-location="倉庫" data-inventory-kind="${esc(item.kind||'アイテム')}" data-inventory-item-type="${esc(displayType)}" data-inventory-category="${esc(displayCategory)}" data-inventory-search="${esc(inventoryWarehouseCardSearchText(item))}">
     <summary class="inventory-card-head">
-      <div><div class="inventory-title">${esc(title)}</div><div class="small">倉庫 / ${esc(displayType)} / ${esc(displayCategory)}<span data-inventory-quick-index="${index}">${quick?` / ${esc(quick)}`:''}</span></div></div>
+      <div><div class="inventory-title">${esc(title)}${namedBadge}</div><div class="small">倉庫 / ${esc(displayType)} / ${esc(displayCategory)}<span data-inventory-quick-index="${index}">${quick?` / ${esc(quick)}`:''}</span></div></div>
       <div class="button-row" style="margin:0;">
         ${item.kind==='レシピ'?`<button type="button" class="secondary" data-inventory-action="learn-recipe" data-index="${index}" ${isRecipeLearned(item)?'disabled':''}>${isRecipeLearned(item)?'習得済み':'覚える'}</button>`:''}
         <button type="button" class="ghost inventory-detail-btn public-view-allowed" data-inventory-action="detail" data-index="${index}">詳細</button>
@@ -6266,7 +6320,7 @@ function inventoryWarehouseDetailHtml(item,index){
     ${spellMeta?`<div class="meta-item meta-wide"><span class="meta-label">術式データ</span><div class="inventory-note">${esc(spellMeta)}</div></div>`:''}
     ${recipeMeta?`<div class="meta-item meta-wide"><span class="meta-label">レシピ</span><div class="inventory-note">${esc(recipeMeta)}</div></div>`:''}
     ${description?`<div class="meta-item meta-wide"><span class="meta-label">説明</span><div class="inventory-note">${esc(description)}</div></div>`:''}
-    ${effectText?`<div class="meta-item meta-wide"><span class="meta-label">効果</span><div class="inventory-note">${esc(effectText)}</div></div>`:''}
+    ${equipmentEffectSectionsHtml(item)}
   </div>`;
 }
 function hydrateInventoryCardDetail(card){
@@ -7190,7 +7244,7 @@ function addAntiqueGearCodeToWarehouse(rawText=''){
   const payload=parseAntiqueGearCode(rawText);if(!payload)throw new Error('骨董装備コードを読み取れません。');
   const raw=payload.item||{},localId='antq_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
   const kind=dbItemTypeToInventoryKind(raw),item=normalizeInventoryItem({...raw,id:localId,masterId:'',publicId:'',masterSheet:'',masterSync:'',kind,count:1,location:'倉庫',source:'骨董屋（骨董装備ガチャ）',tags:mergeTextUnique(raw.tags||'','骨董屋,骨董装備,骨董個体')});
-  item.id=localId;item.masterId='';item.publicId='';item.masterSheet='';item.masterSync='';item.count=1;inventoryItemsState.push(item);invalidateInventoryDerivedCache();const index=inventoryItemsState.length-1;if(!refreshInventoryCardAt(index,{appendIfMissing:true}))renderInventory({refreshLinked:false});inventoryLinkedRefreshForItems(item);updateSummary();if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon();return item;
+  item.id=localId;item.masterId='';item.publicId='';item.masterSheet='';item.masterSync='';item.count=1;inventoryItemsState.push(item);invalidateInventoryDerivedCache();const index=inventoryItemsState.length-1;if(!refreshInventoryCardAt(index,{appendIfMissing:true}))renderInventory({refreshLinked:false});inventoryLinkedRefreshForItems(item);updateSummary();if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon('inventory');return item;
 }
 async function addInventoryByPublicIdPaste(){
   if(currentMode === 'view') return;
@@ -7218,7 +7272,7 @@ async function addInventoryByPublicIdPaste(){
     skillGachaState=state;renderSkillCrystalPanel();updateAll();
     if(status){status.className='status-box ok';status.textContent=fragmentCount?`スキルを追加・変換しました：${skill.name} / 獲得：★${rank}共鳴片×${fragmentCount}`:`スキルを追加しました：${skill.name}`;}
     if(idInput)idInput.value='';if(countInput)countInput.value='1';
-    if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon();
+    if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon('skillGacha');
     return;
   }
   // 既に読み込んだ固定マスターがあればネットワーク処理なしで即検索する。
@@ -7244,7 +7298,7 @@ async function addInventoryByPublicIdPaste(){
     skillGachaState=state;renderSkillCrystalPanel();updateAll();
     if(status){status.className='status-box ok';status.textContent=fragmentCount?`スキルを追加・変換しました：${loadedSkill.name} / 獲得：★${rank}共鳴片×${fragmentCount}`:`スキルを追加しました：${loadedSkill.name}`;}
     if(idInput)idInput.value='';if(countInput)countInput.value='1';
-    if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon();
+    if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon('skillGacha');
     return;
   }
   let preset = findPresetByPublicId(master, publicId);
@@ -7750,7 +7804,7 @@ async function cloudRequest(action, payload={}) {
     if (!json.ok) throw new Error(json.error || 'DB読み込みに失敗しました。');
     return json;
   }
-  if (action === 'save' || action === 'delete') {
+  if (action === 'save' || action === 'savePatch' || action === 'delete') {
     // v90.8.594: 1回の応答付きPOSTで完了する。旧no-cors経路は互換フォールバックのみ。
     try{
       return await cloudPostMessageRequest(action,payload);
@@ -8146,6 +8200,7 @@ function applyEquipmentCategoryMaster(rows, {save=false, silent=false, meta=null
   if (!Array.isArray(rows) || !rows.length) return false;
   const active = rows.filter(row => row && row.name && enabledLike(row.enabled));
   if (!active.length) return false;
+  DB_EQUIPMENT_CATEGORY_MASTER=active.map(row=>({...row,intrinsicEffects:parseEquipmentEffects(row.intrinsicEffects)}));
   const namesByKind = {
     hand: uniqueNames(active, 'hand'),
     armor: uniqueNames(active, 'armor'),
@@ -8288,6 +8343,7 @@ async function listItems() {
 async function loadItem(id) {
   if (!currentCloudPlayerKey) throw new Error('クラウド読み込みにはプレイヤーキーが必要です。');
   const res = await cloudRequest('load', { id, playerKey: currentCloudPlayerKey });
+  cloudCharacterRevision=Number(res.revision||0)||0;
   return res.data;
 }
 async function deleteItem(id) {
@@ -8320,10 +8376,10 @@ async function saveItem(data) {
   if (!auth.playerKey && !auth.newPlayerKey) throw new Error('クラウド保存にはプレイヤーキーが必要です。');
   const cleanData = stripRuntimeOnlyData(data);
   const effectivePlayerKey = auth.newPlayerKey || auth.playerKey;
-  const saveResult=await cloudRequest('save', { data: cleanData, playerKey: auth.playerKey, newPlayerKey: auth.newPlayerKey });
+  const saveResult=await cloudRequest('save', { data: cleanData, playerKey: auth.playerKey, newPlayerKey: auth.newPlayerKey, baseRevision:cloudCharacterRevision });
   // 応答付きPOSTならGASの保存完了応答をそのまま採用し、再読込確認を省略する。
   // no-cors互換フォールバック時だけ従来の読込確認を行う。
-  if(saveResult&&saveResult.sentNoCors)await verifyCloudCharacterSave(cleanData,effectivePlayerKey);
+  if(saveResult&&saveResult.sentNoCors){await verifyCloudCharacterSave(cleanData,effectivePlayerKey);}else if(saveResult&&saveResult.revision!==undefined){cloudCharacterRevision=Number(saveResult.revision||0)||0;}
   if (auth.newPlayerKey) {
     currentCloudPlayerKey = auth.newPlayerKey;
     if ($('playerKey')) $('playerKey').value = auth.newPlayerKey;
@@ -8331,6 +8387,34 @@ async function saveItem(data) {
     if ($('cloudPlayerKeyInput')) $('cloudPlayerKeyInput').value = auth.newPlayerKey;
   }
   return { saved:true, cloudSaved:true, verified:true, acknowledged:!!(saveResult&&saveResult.acknowledged) };
+}
+async function verifyCloudCharacterPatch(id, patch, playerKey) {
+  const delays=[220,520,1000];
+  let lastError=null;
+  for(let i=0;i<delays.length;i++){
+    if(i>0)await sleepMs(delays[i]);
+    try{
+      const verify=await cloudRequest('load',{id,playerKey});
+      const loaded=verify?.data||{};
+      const mismatch=Object.entries(patch||{}).find(([key,value])=>key!=='updatedAt'&&JSON.stringify(loaded[key])!==JSON.stringify(value));
+      if(!mismatch)return verify;
+      lastError=new Error(`差分保存を確認できませんでした：${mismatch[0]}`);
+    }catch(e){lastError=e;}
+  }
+  throw lastError||new Error('差分保存を確認できませんでした。');
+}
+async function savePatchItem(id,patch={}){
+  const auth=getCloudAuth();
+  if(!auth.playerKey&&!auth.newPlayerKey)throw new Error('クラウド保存にはプレイヤーキーが必要です。');
+  const cleanPatch=stripRuntimeOnlyData(patch||{});
+  const effectivePlayerKey=auth.newPlayerKey||auth.playerKey;
+  const saveResult=await cloudRequest('savePatch',{id,patch:cleanPatch,playerKey:auth.playerKey,newPlayerKey:auth.newPlayerKey,baseRevision:cloudCharacterRevision});
+  if(saveResult&&saveResult.sentNoCors){
+    const verify=await verifyCloudCharacterPatch(id,cleanPatch,effectivePlayerKey);
+    cloudCharacterRevision=Number(verify?.revision||cloudCharacterRevision)||0;
+  }else if(saveResult&&saveResult.revision!==undefined){cloudCharacterRevision=Number(saveResult.revision||0)||0;}
+  if(auth.newPlayerKey){currentCloudPlayerKey=auth.newPlayerKey;if($('playerKey'))$('playerKey').value=auth.newPlayerKey;if($('newPlayerKey'))$('newPlayerKey').value='';if($('cloudPlayerKeyInput'))$('cloudPlayerKeyInput').value=auth.newPlayerKey;}
+  return {saved:true,patched:true,acknowledged:!!(saveResult&&saveResult.acknowledged)};
 }
 async function refreshList() {
   $('characterList').innerHTML = '';
@@ -8950,9 +9034,10 @@ function isNonWeaponEquipmentPaletteItem(row={}) {
     || /^(鎧|防具|装飾品|バッグ|矢筒|盾|大盾)$/.test(equipSlot);
 }
 function appendPaletteBlock(result=[], block=[]) {
-  const clean = (block || []).filter(line => String(line || '').trim());
-  if (!clean.length) return;
-  if (result.length && result[result.length - 1] !== '') result.push('');
+  const clean=(block||[]).map(line=>String(line??''));
+  while(clean.length&&!clean[0].trim())clean.shift();while(clean.length&&!clean[clean.length-1].trim())clean.pop();
+  if(!clean.length)return;
+  if(result.length&&result[result.length-1] !== '')result.push('');
   result.push(...clean);
 }
 function collectCheckPaletteLines(data={}, totals={}) {
@@ -9135,27 +9220,18 @@ function collectEquipmentEffectPaletteLines(data={}){
     const eq=equipment[slot.key]||{},source=findPaletteInventoryItem(items,eq);
     const merged=normalizeInventoryItem({...(source||{}),...(eq||{})});
     const name=String(merged.name||eq.name||'').trim();if(!name)continue;
-    const type=normalizeEquipmentType(merged.itemCategory||merged.category||eq.type||'なし');
-    const identity=String(source?inventoryItemKey(source):eq.itemId||`${slot.key}:${name}`);
-    if(seen.has(identity))continue;seen.add(identity);
-    const isShield=['盾','大盾'].includes(type)||String(merged.itemType||'')==='盾';
-    const category=merged.kind==='装飾品'?'装飾品':(merged.kind==='防具'||isShield?'防具':'武器');
-    const baseEffect=String(source?.effect||merged.effect||eq.note||'').trim();
+    const identity=String(source?inventoryItemKey(source):eq.itemId||`${slot.key}:${name}`);if(seen.has(identity))continue;seen.add(identity);
+    const intrinsic=equipmentIntrinsicEffectsForItem(merged),unique=equipmentEffectsForItem(merged);
     const modifierRows=aggregatePaletteModifierRows(activeEquipmentModifierRows(merged));
     const upgrades=parseUpgradeLines(source?.upgradeEntries||eq.upgradeEntries||source?.upgradeLines||eq.upgradeLines||'').filter(entry=>normalizeUpgradeEntry(entry).content==='素材固有効果');
-    if(!baseEffect&&!modifierRows.length&&!upgrades.length)continue;
-    const block=[`// 【${category}・${slot.label}：${name}】`];
-    if(modifierRows.length)block.push(`// 補正：${modifierRows.map(row=>`${modifierTargetDisplayName(row.target)} ${signedNumberText(row.value)||row.value}`).join(' / ')}`);
-    if(baseEffect)block.push(`// ${category==='武器'?'追加効果':category==='防具'?'特殊効果':'効果'}：${baseEffect}`);
-    const seenUpgradeSpecialEffects=new Set();
-    upgrades.forEach(raw=>{
-      const entry=normalizeUpgradeEntry(raw),effectName=entry.specialEffectName||'名称未設定';
-      if(seenUpgradeSpecialEffects.has(effectName))return;
-      seenUpgradeSpecialEffects.add(effectName);
-      block.push(`// 強化特殊効果：${effectName}`);
-      const detail=resolvePaletteSpecialUpgradeDetail(entry,items);if(detail)block.push(`// 能力詳細：${detail}`);
-    });
-    appendPaletteBlock(result,block);
+    if(!intrinsic.length&&!unique.length&&!modifierRows.length&&!upgrades.length)continue;
+    if(result.length&&result[result.length-1] !== '')result.push('');
+    result.push(name,'');
+    if(modifierRows.length){result.push(`補正：${modifierRows.map(row=>`${modifierTargetDisplayName(row.target)} ${signedNumberText(row.value)||row.value}`).join(' / ')}`,'');}
+    intrinsic.forEach(effect=>{result.push(`武器種固有：${effect.name}`,`${effect.name}：${effect.detail||effect.summary}`,'');});
+    unique.forEach(effect=>{result.push(`効果：${effect.name}`,`${effect.name}：${effect.detail||effect.summary}`,'');});
+    const seenUpgrade=new Set();upgrades.forEach(raw=>{const entry=normalizeUpgradeEntry(raw),effectName=entry.specialEffectName||'名称未設定';if(seenUpgrade.has(effectName))return;seenUpgrade.add(effectName);const detail=resolvePaletteSpecialUpgradeDetail(entry,items);result.push(`強化特殊効果：${effectName}`,`${effectName}：${detail||'詳細未設定'}`,'');});
+    while(result.length&&result[result.length-1]==='')result.pop();
   }
   return result;
 }
@@ -9442,10 +9518,10 @@ function bindEvents() {
     state.equippedSkillIds=state.equippedSkillIds.slice(0,nextSlots);
     while(state.equippedSkillIds.length<nextSlots)state.equippedSkillIds.push('');
     skillGachaState=normalizeSkillGachaState(state);
-    renderSkillCrystalPanel();updateAll();if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon();
+    renderSkillCrystalPanel();updateAll();if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon('skillGacha');
     if($('editorStatus')){$('editorStatus').className='status-box ok';$('editorStatus').textContent=`スキルクリスタルを${nextSlots}枠へ変更しました。${removed?`外れたスキル${removed}件はスキル倉庫に残っています。`:''}`;}
   });
-  if ($('skillCrystalSlots')) $('skillCrystalSlots').addEventListener('change',e=>{const sel=e.target.closest('[data-skill-crystal-slot]');if(!sel)return;const state=normalizeSkillGachaState(skillGachaState||{}),i=Number(sel.dataset.skillCrystalSlot),old=state.equippedSkillIds[i]||'',next=sel.value||'';if(next&&state.equippedSkillIds.some((v,j)=>j!==i&&v===next)){sel.value=old;if($('editorStatus')){$('editorStatus').className='status-box error';$('editorStatus').textContent='同じスキルを複数枠へ装着できません。';}return;}state.equippedSkillIds[i]=next;skillGachaState=state;renderSkillCrystalPanel();updateAll();if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon();});
+  if ($('skillCrystalSlots')) $('skillCrystalSlots').addEventListener('change',e=>{const sel=e.target.closest('[data-skill-crystal-slot]');if(!sel)return;const state=normalizeSkillGachaState(skillGachaState||{}),i=Number(sel.dataset.skillCrystalSlot),old=state.equippedSkillIds[i]||'',next=sel.value||'';if(next&&state.equippedSkillIds.some((v,j)=>j!==i&&v===next)){sel.value=old;if($('editorStatus')){$('editorStatus').className='status-box error';$('editorStatus').textContent='同じスキルを複数枠へ装着できません。';}return;}state.equippedSkillIds[i]=next;skillGachaState=state;renderSkillCrystalPanel();updateAll();if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon('skillGacha');});
   if ($('skillWarehouseArea')) $('skillWarehouseArea').addEventListener('click',e=>{const b=e.target.closest('[data-skill-remove]');if(!b)return;removeSkillFromWarehouse(b.dataset.skillRemove||'');});
 
   $('makeTokenOutputBtn').addEventListener('click', () => copyOutput('token'));
@@ -9577,7 +9653,7 @@ function bindEvents() {
         invalidateInventoryDerivedCache();
         e.target.value=String(inventoryItemsState[index].count);
         refreshWarehouseQuantityViews();
-        if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon();
+        if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon('inventory');
       }
       return;
     }
@@ -9650,6 +9726,8 @@ function bindEvents() {
       return;
     }
   });
+  document.addEventListener('input', e => { const section=autoSaveSectionForTarget(e.target); if(section)autoSaveDraftSoon(section); });
+  document.addEventListener('change', e => { const section=autoSaveSectionForTarget(e.target); if(section)autoSaveDraftSoon(section); });
   document.addEventListener('focusin', e => refreshSelectionListsForTarget(e.target));
   document.addEventListener('pointerdown', e => {
     const target = e.target;
@@ -9708,15 +9786,15 @@ document.addEventListener('change', (ev) => {
     releaseAllQuiverAmmoSlots();
     selectedQuiverId = target.value || '';
     refreshWarehouseQuantityViews();
-    if (typeof autoSaveDraftSoon === 'function') autoSaveDraftSoon();
+    if (typeof autoSaveDraftSoon === 'function') autoSaveDraftSoon(['inventory','equipment']);
   }
   if (target && target.dataset && target.dataset.quiverAmmoSlot) {
     selectQuiverAmmoForSlot(target.dataset.quiverAmmoSlot, target.value || '');
-    if (typeof autoSaveDraftSoon === 'function') autoSaveDraftSoon();
+    if (typeof autoSaveDraftSoon === 'function') autoSaveDraftSoon(['inventory','equipment']);
   }
   if (target && target.dataset && target.dataset.quiverAmmoCount) {
     updateQuiverAmmoSlotCount(target.dataset.quiverAmmoCount, target.value);
-    if (typeof autoSaveDraftSoon === 'function') autoSaveDraftSoon();
+    if (typeof autoSaveDraftSoon === 'function') autoSaveDraftSoon(['inventory','equipment']);
   }
 });
 
@@ -9965,7 +10043,7 @@ function run(){
         const input=document.getElementById(`equip_${slotKey}_upgradeLimit`);if(input)input.value=limit;
         if(typeof renderEquipmentUpgradeSlots==='function')renderEquipmentUpgradeSlots(slotKey,item.upgradeEntries||item.upgradeLines||[]);
         if(typeof updateSummary==='function')updateSummary();
-        if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon();
+        if(typeof autoSaveDraftSoon==='function')autoSaveDraftSoon(['inventory','equipment']);
       }catch(error){console.warn('強化枠上限の補完に失敗しました。',error)}
     });
   });
