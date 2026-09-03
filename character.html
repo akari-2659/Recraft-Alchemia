@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.712</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.713</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -520,7 +520,7 @@
   .owned-item-detail-line { display:grid; grid-template-columns:max-content minmax(0,1fr); gap:7px; align-items:start; }
   .owned-item-detail-line > b { color:var(--muted); font-size:.76rem; }
   .named-process-chip{display:inline-flex;align-items:center;border:1px solid #c89b4c;background:#f5e3b8;color:#6e4416;border-radius:999px;padding:3px 8px;font-size:.75rem;font-weight:900}.named-process-chip.applied{background:#dfead1;border-color:#8fa86a;color:#355522}.named-process-list{display:grid;gap:10px;margin-top:10px}.named-process-card{border:1px solid rgba(200,155,76,.55);border-radius:12px;background:rgba(255,249,237,.92);padding:10px;display:grid;gap:9px}.named-process-full{display:grid;gap:8px}.named-process-text{border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.72);padding:9px 10px;line-height:1.65;white-space:pre-wrap}.named-process-text b{display:block;font-size:.76rem;color:var(--muted);margin-bottom:3px}.named-process-text.after{font-weight:700}.named-process-diff{background:#ffe49a;color:#5b3512;border-radius:4px;padding:0 2px;font-weight:900}.named-process-actions{display:flex;gap:8px;flex-wrap:wrap}.named-process-actions button{flex:0 1 auto}.item-detail-view-body{display:grid;gap:10px}.inventory-detail-btn{white-space:nowrap}
-  .equipment-effect-sections{display:grid;gap:12px;margin-top:10px}.equipment-effect-section{border:1px solid var(--line);border-radius:12px;background:rgba(255,253,248,.76);padding:10px}.equipment-effect-section h4{margin:0 0 8px;color:var(--accent2);font-size:.88rem}.equipment-effect-entry{border-top:1px dashed rgba(170,137,95,.35);padding:7px 0}.equipment-effect-entry:first-of-type{border-top:0;padding-top:0}.equipment-effect-entry details>summary{cursor:pointer;list-style:none;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}.equipment-effect-entry details>summary::-webkit-details-marker{display:none}.equipment-effect-name{font-weight:900;color:var(--ink)}.equipment-effect-summary{font-size:.82rem;color:var(--muted)}.equipment-effect-detail{padding:8px 0 2px;line-height:1.7;white-space:pre-wrap}.named-process-inline-badge{display:inline-flex;align-items:center;border:2px solid #8b3f2e;background:#8b3f2e;color:#fff8df;border-radius:999px;padding:3px 8px;font-size:.72rem;font-weight:900;margin-left:7px}.named-process-inline-badge.applied{background:#dfead1;border-color:#78945a;color:#355522}.inventory-card.named-process-available{border:3px double #8a4228!important;background:linear-gradient(180deg,rgba(255,250,239,.98),rgba(247,232,211,.94))!important;box-shadow:0 0 0 4px rgba(155,90,60,.17),0 8px 18px rgba(80,50,20,.10)}.inventory-card.named-process-applied{border:3px double #6d874e!important;background:linear-gradient(180deg,rgba(250,253,246,.98),rgba(228,238,216,.94))!important;box-shadow:0 0 0 4px rgba(120,148,90,.16),0 8px 18px rgba(55,80,35,.09)}
+  .equipment-effect-sections{display:grid;gap:12px;margin-top:10px}.equipment-effect-section{border:1px solid var(--line);border-radius:12px;background:rgba(255,253,248,.76);padding:10px}.equipment-effect-section h4{margin:0 0 8px;color:var(--accent2);font-size:.88rem}.equipment-effect-entry{border-top:1px dashed rgba(170,137,95,.35);padding:7px 0}.equipment-effect-entry:first-of-type{border-top:0;padding-top:0}.equipment-effect-entry details>summary{cursor:pointer;list-style:none;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}.equipment-effect-entry details>summary::-webkit-details-marker{display:none}.equipment-effect-name{font-weight:900;color:var(--ink)}.equipment-effect-summary{font-size:.82rem;color:var(--muted)}.equipment-effect-detail{padding:8px 0 2px;line-height:1.7;white-space:pre-wrap}.named-process-badge-row{display:flex;align-items:center;gap:6px;margin-top:5px}.named-process-inline-badge{display:inline-flex;align-items:center;border:2px solid #8b3f2e;background:#8b3f2e;color:#fff8df;border-radius:999px;padding:3px 8px;font-size:.72rem;font-weight:900;margin-left:0;line-height:1.15}.named-process-inline-badge.applied{background:#dfead1;border-color:#78945a;color:#355522}.inventory-card.named-process-available{border:3px double #8a4228!important;background:linear-gradient(180deg,rgba(255,250,239,.98),rgba(247,232,211,.94))!important;box-shadow:0 0 0 4px rgba(155,90,60,.17),0 8px 18px rgba(80,50,20,.10)}.inventory-card.named-process-applied{border:3px double #6d874e!important;background:linear-gradient(180deg,rgba(250,253,246,.98),rgba(228,238,216,.94))!important;box-shadow:0 0 0 4px rgba(120,148,90,.16),0 8px 18px rgba(55,80,35,.09)}
 
   .equipment-card h3 { color: var(--accent2); }
   .equipment-fields {
@@ -1143,10 +1143,10 @@ body.public-view .loadout-preset-panel{display:none!important}
 
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.712-effect-ui-drive-patch-autosave">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.713-effect-ui-drive-patch-autosave">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">Version：v90.8.712 / 最終更新日：2026年9月3日</div>
+<div class="ra-build-info">Version：v90.8.713 / 最終更新日：2026年9月3日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -6269,7 +6269,7 @@ function inventoryWarehouseCardHtml(item,index){
   const namedOptions=parseNamedProcessingOptions(item.namedProcessingOptions);const namedApplied=!!String(item.appliedNamedProcessingId||'').trim();const namedClass=namedApplied?' named-process-applied':(namedOptions.length?' named-process-available':'');const namedBadge=namedApplied?'<span class="named-process-inline-badge applied">異名加工済</span>':(namedOptions.length?'<span class="named-process-inline-badge">異名加工可</span>':'');
   return `<details class="inventory-card${namedClass}" data-inventory-row="${index}" data-inventory-stable-key="${esc(stable)}" data-inventory-id="${esc(item.id||'')}" data-inventory-location="倉庫" data-inventory-kind="${esc(item.kind||'アイテム')}" data-inventory-item-type="${esc(displayType)}" data-inventory-category="${esc(displayCategory)}" data-inventory-search="${esc(inventoryWarehouseCardSearchText(item))}">
     <summary class="inventory-card-head">
-      <div><div class="inventory-title">${esc(title)}${namedBadge}</div><div class="small">倉庫 / ${esc(displayType)} / ${esc(displayCategory)}<span data-inventory-quick-index="${index}">${quick?` / ${esc(quick)}`:''}</span></div></div>
+      <div><div class="inventory-title">${esc(title)}</div>${namedBadge?`<div class="named-process-badge-row">${namedBadge}</div>`:''}<div class="small">倉庫 / ${esc(displayType)} / ${esc(displayCategory)}<span data-inventory-quick-index="${index}">${quick?` / ${esc(quick)}`:''}</span></div></div>
       <div class="button-row" style="margin:0;">
         ${item.kind==='レシピ'?`<button type="button" class="secondary" data-inventory-action="learn-recipe" data-index="${index}" ${isRecipeLearned(item)?'disabled':''}>${isRecipeLearned(item)?'習得済み':'覚える'}</button>`:''}
         <button type="button" class="ghost inventory-detail-btn public-view-allowed" data-inventory-action="detail" data-index="${index}">詳細</button>
