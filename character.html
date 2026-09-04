@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.718</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.719</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1146,7 +1146,7 @@ body.public-view .loadout-preset-panel{display:none!important}
 <link rel="stylesheet" href="ra-design-system.css?v=90.8.717-initial-drive-migration">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">Version：v90.8.718 / 最終更新日：2026年9月4日</div>
+<div class="ra-build-info">Version：v90.8.719 / 最終更新日：2026年9月4日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -1823,7 +1823,7 @@ let currentCharacter = null;
 let outputTargetData = null;
 let lastRolls = [];
 
-const AUTO_SAVE_DELAY_MS = 1200;
+const AUTO_SAVE_DELAY_MS = 900;
 let autoSaveEnabled = true;
 let autoSaveReady = false;
 let autoSaveTimer = null;
@@ -1833,6 +1833,7 @@ let autoSaveDirty = false;
 let autoSaveLastSavedHash = '';
 let autoSaveDirtySections = new Set();
 let cloudCharacterRevision = 0;
+let cloudCharacterRowHint = 0;
 
 function setAutoSaveStatus(message='', state=''){
   const el=$('autoSaveStatus');
@@ -1903,7 +1904,8 @@ async function setAutoSaveEnabled(enabled){
     return;
   }
 
-  if(!currentCharacter?.name){
+  // 新規キャラはまだDrive/index行がないので、最初の通常保存へ同梱する。
+  if(!currentCharacter?.name || cloudCharacterRowHint<2){
     setAutoSaveStatus(
       autoSaveEnabled
         ? '自動保存：ON（キャラクター初回保存時に設定も保存）'
@@ -1916,18 +1918,17 @@ async function setAutoSaveEnabled(enabled){
   setAutoSaveStatus('自動保存設定をキャラクターへ保存中…','saving');
   try{
     await waitForAutoSaveIdle();
-    const result=await saveCharacterNow({automatic:true,force:true});
-    if(result.saved || result.unchanged){
-      setAutoSaveStatus(
-        autoSaveEnabled
-          ? '自動保存：ON（このキャラクターに保存済み）'
-          : '自動保存：OFF（このキャラクターに保存済み）',
-        autoSaveEnabled?'ok':'warn'
-      );
-      if(autoSaveEnabled)autoSaveDraftSoon('all');
-      return;
-    }
-    throw new Error('設定を保存できませんでした。');
+    const patch={autoSaveEnabled:autoSaveEnabled!==false,updatedAt:nowIso()};
+    await savePatchItem(currentCharacter.id,patch);
+    currentCharacter={...(currentCharacter||{}),...patch};
+    autoSaveLastSavedHash=currentAutoSaveHash();
+    setAutoSaveStatus(
+      autoSaveEnabled
+        ? '自動保存：ON（このキャラクターに保存済み）'
+        : '自動保存：OFF（このキャラクターに保存済み）',
+      autoSaveEnabled?'ok':'warn'
+    );
+    if(autoSaveEnabled&&autoSaveDirtySections.size)autoSaveDraftSoon([...autoSaveDirtySections]);
   }catch(e){
     autoSaveEnabled=previous;
     if(currentCharacter)currentCharacter.autoSaveEnabled=previous;
@@ -1935,6 +1936,7 @@ async function setAutoSaveEnabled(enabled){
     setAutoSaveStatus(`自動保存設定の保存に失敗しました：${e.message||e}`,'error');
   }
 }
+
 function autoSaveDraftSoon(section='all'){
   if(!autoSaveEnabled || !autoSaveReady || currentMode==='view' || !currentCharacter)return;
   const sections=(Array.isArray(section)?section:[section]).filter(Boolean).map(value=>String(value));
@@ -7679,6 +7681,7 @@ function openEditor(mode, data=null) {
   autoSaveReady=false;
   clearAutoSaveTimer();
   currentMode = mode;
+  if(mode==='new'){ cloudCharacterRevision=0; cloudCharacterRowHint=0; }
   applyData(data || emptyCharacter());
   const publicShareView = mode === 'view' && typeof isPublicViewMode === 'function' && isPublicViewMode();
   const title = mode === 'new' ? '新規作成' : mode === 'view' ? (publicShareView ? '共有キャラクター閲覧' : 'キャラクター閲覧') : 'キャラクター編集';
@@ -8364,6 +8367,7 @@ async function loadItem(id) {
   if (!currentCloudPlayerKey) throw new Error('クラウド読み込みにはプレイヤーキーが必要です。');
   const res = await cloudRequest('load', { id, playerKey: currentCloudPlayerKey });
   cloudCharacterRevision=Number(res.revision||0)||0;
+  cloudCharacterRowHint=Number(res.storageRow||0)||0;
   if(res&&res.migratedToDrive){
     showToast('旧スプレッドシート保存をGoogle Driveへ移行しました。','ok');
   }
@@ -8386,7 +8390,7 @@ async function verifyCloudCharacterSave(data, playerKey) {
     try {
       const res = await cloudRequest('load', { id:data.id, playerKey });
       const loaded = res && res.data ? res.data : null;
-      if (loaded && autoSaveContentHash(loaded) === expectedHash) return loaded;
+      if (loaded && autoSaveContentHash(loaded) === expectedHash) return res;
       lastError = new Error('クラウド上の保存内容が送信内容と一致しません。');
     } catch (e) {
       lastError = e;
@@ -8399,10 +8403,17 @@ async function saveItem(data) {
   if (!auth.playerKey && !auth.newPlayerKey) throw new Error('クラウド保存にはプレイヤーキーが必要です。');
   const cleanData = stripRuntimeOnlyData(data);
   const effectivePlayerKey = auth.newPlayerKey || auth.playerKey;
-  const saveResult=await cloudRequest('save', { data: cleanData, playerKey: auth.playerKey, newPlayerKey: auth.newPlayerKey, baseRevision:cloudCharacterRevision });
+  const saveResult=await cloudRequest('save', { data: cleanData, playerKey: auth.playerKey, newPlayerKey: auth.newPlayerKey, baseRevision:cloudCharacterRevision, rowHint:cloudCharacterRowHint });
   // 応答付きPOSTならGASの保存完了応答をそのまま採用し、再読込確認を省略する。
   // no-cors互換フォールバック時だけ従来の読込確認を行う。
-  if(saveResult&&saveResult.sentNoCors){await verifyCloudCharacterSave(cleanData,effectivePlayerKey);}else if(saveResult&&saveResult.revision!==undefined){cloudCharacterRevision=Number(saveResult.revision||0)||0;}
+  if(saveResult&&saveResult.sentNoCors){
+    const verified=await verifyCloudCharacterSave(cleanData,effectivePlayerKey);
+    cloudCharacterRevision=Number(verified?.revision||cloudCharacterRevision)||0;
+    cloudCharacterRowHint=Number(verified?.storageRow||cloudCharacterRowHint)||0;
+  }else if(saveResult&&saveResult.revision!==undefined){
+    cloudCharacterRevision=Number(saveResult.revision||0)||0;
+    cloudCharacterRowHint=Number(saveResult.storageRow||cloudCharacterRowHint)||0;
+  }
   if (auth.newPlayerKey) {
     currentCloudPlayerKey = auth.newPlayerKey;
     if ($('playerKey')) $('playerKey').value = auth.newPlayerKey;
@@ -8431,14 +8442,22 @@ async function savePatchItem(id,patch={}){
   if(!auth.playerKey&&!auth.newPlayerKey)throw new Error('クラウド保存にはプレイヤーキーが必要です。');
   const cleanPatch=stripRuntimeOnlyData(patch||{});
   const effectivePlayerKey=auth.newPlayerKey||auth.playerKey;
-  const saveResult=await cloudRequest('savePatch',{id,patch:cleanPatch,playerKey:auth.playerKey,newPlayerKey:auth.newPlayerKey,baseRevision:cloudCharacterRevision});
+  // v90.8.719: 既にブラウザが持つ現在データへpatchを浅く合成し、完成スナップショットも送る。
+  // GAS側はこれを直接Driveへ書くため、通常の差分保存でDriveのread 1回を省略できる。
+  const snapshot=stripRuntimeOnlyData({...(currentCharacter||{}),...cleanPatch,id});
+  const saveResult=await cloudRequest('savePatch',{id,patch:cleanPatch,snapshot,playerKey:auth.playerKey,newPlayerKey:auth.newPlayerKey,baseRevision:cloudCharacterRevision,rowHint:cloudCharacterRowHint});
   if(saveResult&&saveResult.sentNoCors){
     const verify=await verifyCloudCharacterPatch(id,cleanPatch,effectivePlayerKey);
     cloudCharacterRevision=Number(verify?.revision||cloudCharacterRevision)||0;
-  }else if(saveResult&&saveResult.revision!==undefined){cloudCharacterRevision=Number(saveResult.revision||0)||0;}
+    cloudCharacterRowHint=Number(verify?.storageRow||cloudCharacterRowHint)||0;
+  }else if(saveResult&&saveResult.revision!==undefined){
+    cloudCharacterRevision=Number(saveResult.revision||0)||0;
+    cloudCharacterRowHint=Number(saveResult.storageRow||cloudCharacterRowHint)||0;
+  }
   if(auth.newPlayerKey){currentCloudPlayerKey=auth.newPlayerKey;if($('playerKey'))$('playerKey').value=auth.newPlayerKey;if($('newPlayerKey'))$('newPlayerKey').value='';if($('cloudPlayerKeyInput'))$('cloudPlayerKeyInput').value=auth.newPlayerKey;}
   return {saved:true,patched:true,acknowledged:!!(saveResult&&saveResult.acknowledged)};
 }
+
 async function refreshList() {
   $('characterList').innerHTML = '';
   $('listStatus').className = 'status-box';
