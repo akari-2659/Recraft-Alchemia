@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.719</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.721</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1143,10 +1143,10 @@ body.public-view .loadout-preset-panel{display:none!important}
 
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.717-initial-drive-migration">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.721-bag-quiver-area-only">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">Version：v90.8.719 / 最終更新日：2026年9月4日</div>
+<div class="ra-build-info">Version：v90.8.721 / 最終更新日：2026年9月4日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -2597,6 +2597,13 @@ function pushEquipmentSummaryLines(lines, equipment={}) {
     lines.push(`${slot.name}: ${item.name || '未設定'}${item.type ? ' / ' + item.type : ''}${item.element ? ' / 属性:' + item.element : ''}${item.count ? ' ×' + item.count : ''}${item.offhand ? ' / 副手追撃:' + item.offhand : ''}`);
     if (item.setSpells) lines.push(`  セット術式: ${String(item.setSpells).replace(/\n/g, '、')}`);
   }
+}
+function inventoryBuyPriceText(value, withUnit=true){
+  const raw=String(value ?? '').trim();
+  if(!raw) return '購入不可';
+  const n=Number(raw);
+  if(!Number.isFinite(n)||n<=0) return '購入不可';
+  return withUnit ? `${raw}G` : raw;
 }
 function inventorySellPriceText(value, withUnit=true){
   const raw=String(value ?? '').trim();
@@ -5817,6 +5824,7 @@ function normalizeInventoryItem(item={}) {
     compatibleWeaponTypes: String(item.compatibleWeaponTypes || item.compatibleWeapons || '').trim(),
     location: '倉庫',
     rank: String(item.rank || masterRow?.rank || 1).trim(),
+    buyPrice: String(String(item.buyPrice ?? '').trim() || String(masterRow?.buyPrice ?? '').trim()).trim(),
     price: String(String(item.price ?? '').trim() || String(masterRow?.sellPrice ?? '').trim()).trim(),
     equipSlot: inferEquipSlotForInventory({ ...item, kind }),
     skill: kind === '武器' ? canonicalWeaponUsageSkill(item) : String(item.skill || '').trim(),
@@ -6092,6 +6100,8 @@ function learnedRecipeCardHtml(item, index) {
       ${row.publicId ? `<div class="meta-item"><span class="meta-label">登録ID</span>${esc(row.publicId)}</div>` : ''}
       <div class="meta-item"><span class="meta-label">ランク</span>${esc(rank)}</div>
       <div class="meta-item"><span class="meta-label">カテゴリ</span>${esc(category)}</div>
+      <div class="meta-item"><span class="meta-label">買値</span>${esc(inventoryBuyPriceText(row.buyPrice))}</div>
+      <div class="meta-item"><span class="meta-label">売値</span>${esc(inventorySellPriceText(row.price)||'—')}</div>
       ${recipeMeta ? `<div class="meta-item meta-wide"><span class="meta-label">レシピ</span><div class="inventory-note">${esc(recipeMeta)}</div></div>` : ''}
       ${row.description ? `<div class="meta-item meta-wide"><span class="meta-label">説明</span><div class="inventory-note">${esc(row.description)}</div></div>` : ''}
       ${row.effect ? `<div class="meta-item meta-wide"><span class="meta-label">効果</span><div class="inventory-note">${esc(row.effect)}</div></div>` : ''}
@@ -6251,7 +6261,7 @@ function inventoryWarehouseCardSearchText(item={}){
     : (item.category||displayCategory||'—');
   return [
     item.name,displayType,displayCategory,categoryDisplay,item.itemType,item.itemCategory,item.materialType,item.materialCategory,
-    item.kind,item.category,item.rank,item.price,item.equipSlot,item.skill,item.power,item.hit,item.defense,item.guard,item.evade,
+    item.kind,item.category,item.rank,item.buyPrice,item.price,item.equipSlot,item.skill,item.power,item.hit,item.defense,item.guard,item.evade,
     item.offhand,item.upgradeLimit,item.upgradeMaterialMinRank,item.equipmentUpgradeEffect,item.equipmentUpgradeSlotCost,
     item.equipmentUpgradeDetail,item.equipmentUpgradeTarget,item.spellSlots,item.capacity,item.bagCapacity,item.quiverCapacity,
     item.ammoKind,item.compatibleWeaponTypes,item.target,item.element,item.enchantTarget,item.enchantEffectType,item.enchantValue,
@@ -6326,6 +6336,7 @@ function inventoryWarehouseDetailHtml(item,index){
     ${bagMeta?`<div class="meta-item"><span class="meta-label">バッグ容量</span>${esc(item.capacity||0)}</div>`:''}
     <div class="meta-item"><span class="meta-label">ランク</span>${esc(inventoryRankLabel(item)||'—')}</div>
     ${(!isAntiqueIndividualItem(item)&&sameNameEquipmentCount(item)>1)?`<div class="meta-item"><span class="meta-label">個体識別</span>${esc(inventoryIndividualShortId(item))}</div>`:''}
+    <div class="meta-item"><span class="meta-label">買値</span>${esc(inventoryBuyPriceText(item.buyPrice))}</div>
     <div class="meta-item"><span class="meta-label">売値</span>${esc(inventorySellPriceText(item.price)||'—')}</div>
     <div class="meta-item meta-wide"><span class="meta-label">装備/使用データ</span><div class="inventory-note">${esc([equipMeta,spellSlotMeta].filter(Boolean).join('\n'))}</div></div>
     ${savedUpgradeMeta?`<div class="meta-item meta-wide"><span class="meta-label">保存済み強化内容</span><div class="inventory-note">${esc(savedUpgradeMeta)}</div></div>`:''}
@@ -6557,6 +6568,7 @@ function saveInventoryDialog() {
     item.masterSheet = oldItem.masterSheet || item.masterSheet || '';
     item.masterSync = oldItem.masterSync || item.masterSync || '';
     item.source = oldItem.source || item.source || '';
+    item.buyPrice = oldItem.buyPrice || item.buyPrice || '';
     item.tags = oldItem.tags || item.tags || '';
     item.modifiers = oldItem.modifiers || '';
     if(isAntiqueIndividualItem(oldItem)){item.power=oldItem.power||'';item.element=oldItem.element||'';item.upgradeLimit=oldItem.upgradeLimit||'';item.modifiers=oldItem.modifiers||'';}
@@ -6644,6 +6656,7 @@ function dbItemToInventoryItem(row) {
     ammoKind: row.ammoKind || '',
     compatibleWeaponTypes: row.compatibleWeaponTypes || '',
     rank: row.rank || '',
+    buyPrice: row.buyPrice || '',
     price: row.sellPrice || '',
     equipSlot: row.equipSlot || '',
     skill: row.skill || '',
@@ -6732,6 +6745,7 @@ function dbRecipeToInventoryItem(row) {
     category: row.craftType || row.category || 'レシピ',
     count: 1,
     rank: row.rank || '',
+    buyPrice: row.recipePrice || '',
     price: row.recipeSellPrice || '',
     source: row.recipeSource || row.unlockFacility || '',
     tags: row.tags || '',
@@ -8442,7 +8456,7 @@ async function savePatchItem(id,patch={}){
   if(!auth.playerKey&&!auth.newPlayerKey)throw new Error('クラウド保存にはプレイヤーキーが必要です。');
   const cleanPatch=stripRuntimeOnlyData(patch||{});
   const effectivePlayerKey=auth.newPlayerKey||auth.playerKey;
-  // v90.8.719: 既にブラウザが持つ現在データへpatchを浅く合成し、完成スナップショットも送る。
+  // v90.8.721: 既にブラウザが持つ現在データへpatchを浅く合成し、完成スナップショットも送る。
   // GAS側はこれを直接Driveへ書くため、通常の差分保存でDriveのread 1回を省略できる。
   const snapshot=stripRuntimeOnlyData({...(currentCharacter||{}),...cleanPatch,id});
   const saveResult=await cloudRequest('savePatch',{id,patch:cleanPatch,snapshot,playerKey:auth.playerKey,newPlayerKey:auth.newPlayerKey,baseRevision:cloudCharacterRevision,rowHint:cloudCharacterRowHint});
