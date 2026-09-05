@@ -1146,7 +1146,7 @@ body.public-view .loadout-preset-panel{display:none!important}
 <link rel="stylesheet" href="ra-design-system.css?v=90.8.735-named-process-branch-stack">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">Version：v90.8.735 / 最終更新日：2026年9月5日</div>
+<div class="ra-build-info">Version：v90.8.735 / 最終更新日：2026年9月6日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -6760,10 +6760,8 @@ const GITHUB_COMMON_DB_BASE =
   'https://akari-2659.github.io/Recraft-Alchemia-Manager/data/public/';
 let githubCharacterSheetMasterPromise = null;
 function characterGithubBaseCandidates(){
-  const bases=[];
-  try{bases.push(new URL('./data/public/',window.location.href).toString());}catch(_e){}
-  bases.push(GITHUB_COMMON_DB_BASE);
-  return [...new Set(bases.filter(Boolean))];
+  // キャラシ側の複製data/publicは参照しない。Managerの共通GitHub DBを唯一の正本にする。
+  return [GITHUB_COMMON_DB_BASE];
 }
 function characterManifestMasterInfo(manifest={}){
   const nested=manifest&&manifest.files&&manifest.files.master;
@@ -6849,13 +6847,22 @@ function characterGithubDelay(ms) { return new Promise(resolve => setTimeout(res
 // v90.8.457: 共通DB全体(数MB)を毎回JSON.parseし直さないため、キャラシ用に変換済みのマスターをIndexedDBへ保存する。
 const CHARACTER_MASTER_CACHE_DB='recraft_alchemia_character_master_cache_v1';
 const CHARACTER_MASTER_CACHE_STORE='masters';
-function characterMasterCacheOpen(){
-  return new Promise((resolve,reject)=>{
+// IndexedDBはブラウザ設定や旧タブのversionchange待ちでイベントが返らない場合がある。
+// 共通DB読込そのものを止めないため、変換済みキャッシュは短時間で諦めてHTTP取得へ進む。
+const CHARACTER_MASTER_CACHE_TIMEOUT_MS=1200;
+function characterMasterCacheOpen(timeoutMs=CHARACTER_MASTER_CACHE_TIMEOUT_MS){
+  return new Promise(resolve=>{
     if(!('indexedDB' in window)){resolve(null);return;}
-    const req=indexedDB.open(CHARACTER_MASTER_CACHE_DB,1);
-    req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(CHARACTER_MASTER_CACHE_STORE))db.createObjectStore(CHARACTER_MASTER_CACHE_STORE);};
-    req.onsuccess=()=>resolve(req.result);
-    req.onerror=()=>reject(req.error||new Error('IndexedDBを開けませんでした。'));
+    let settled=false,req=null;
+    const finish=value=>{if(settled){try{value?.close?.();}catch(_){}return;}settled=true;clearTimeout(timer);resolve(value||null);};
+    const timer=setTimeout(()=>finish(null),Math.max(250,Number(timeoutMs)||CHARACTER_MASTER_CACHE_TIMEOUT_MS));
+    try{
+      req=indexedDB.open(CHARACTER_MASTER_CACHE_DB,1);
+      req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(CHARACTER_MASTER_CACHE_STORE))db.createObjectStore(CHARACTER_MASTER_CACHE_STORE);};
+      req.onsuccess=()=>finish(req.result);
+      req.onerror=()=>finish(null);
+      req.onblocked=()=>finish(null);
+    }catch(_){finish(null);}
   });
 }
 async function characterMasterCacheGet(key=''){
@@ -6864,10 +6871,16 @@ async function characterMasterCacheGet(key=''){
   try{
     db=await characterMasterCacheOpen();
     if(!db)return null;
-    return await new Promise((resolve,reject)=>{
-      const tx=db.transaction(CHARACTER_MASTER_CACHE_STORE,'readonly');
-      const req=tx.objectStore(CHARACTER_MASTER_CACHE_STORE).get(key);
-      req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error);
+    return await new Promise(resolve=>{
+      let settled=false;
+      const finish=value=>{if(settled)return;settled=true;clearTimeout(timer);resolve(value||null);};
+      const timer=setTimeout(()=>finish(null),CHARACTER_MASTER_CACHE_TIMEOUT_MS);
+      try{
+        const tx=db.transaction(CHARACTER_MASTER_CACHE_STORE,'readonly');
+        const req=tx.objectStore(CHARACTER_MASTER_CACHE_STORE).get(key);
+        req.onsuccess=()=>finish(req.result||null);req.onerror=()=>finish(null);
+        tx.onabort=()=>finish(null);
+      }catch(_){finish(null);}
     });
   }catch(_){return null;}finally{try{db?.close();}catch(_){}}
 }
@@ -6877,14 +6890,19 @@ async function characterMasterCachePut(key='',value=null){
   try{
     db=await characterMasterCacheOpen();
     if(!db)return false;
-    await new Promise((resolve,reject)=>{
-      const tx=db.transaction(CHARACTER_MASTER_CACHE_STORE,'readwrite');
-      const store=tx.objectStore(CHARACTER_MASTER_CACHE_STORE);
-      // 常に最新1件だけを残してDB肥大化を防ぐ。
-      store.clear();store.put(value,key);
-      tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||new Error('IndexedDB保存が中断されました。'));
+    const saved=await new Promise(resolve=>{
+      let settled=false;
+      const finish=value=>{if(settled)return;settled=true;clearTimeout(timer);resolve(!!value);};
+      const timer=setTimeout(()=>finish(false),CHARACTER_MASTER_CACHE_TIMEOUT_MS);
+      try{
+        const tx=db.transaction(CHARACTER_MASTER_CACHE_STORE,'readwrite');
+        const store=tx.objectStore(CHARACTER_MASTER_CACHE_STORE);
+        // 常に最新1件だけを残してDB肥大化を防ぐ。
+        store.clear();store.put(value,key);
+        tx.oncomplete=()=>finish(true);tx.onerror=()=>finish(false);tx.onabort=()=>finish(false);
+      }catch(_){finish(false);}
     });
-    return true;
+    return saved;
   }catch(_){return false;}finally{try{db?.close();}catch(_){}}
 }
 function characterMasterCacheKey(manifest={},info={}){
@@ -6892,10 +6910,18 @@ function characterMasterCacheKey(manifest={},info={}){
   const fingerprint=String(info.sha256||version||info.file||'').trim();
   return fingerprint?`${String(info.file||'recraft_alchemia_master.json')}::${fingerprint}`:'';
 }
-async function characterFetchGithubJson(url,{fresh=false}={}) {
-  const response = await fetch(url, { cache:fresh?'no-store':'force-cache' });
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  return response.json();
+async function characterFetchGithubJson(url,{fresh=false,timeoutMs=15000,cacheMode=''}={}) {
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),Math.max(1000,Number(timeoutMs)||15000));
+  const mode=cacheMode||(fresh?'no-cache':'force-cache');
+  try{
+    const response=await fetch(url,{cache:mode,signal:controller.signal});
+    if(!response.ok)throw new Error(`HTTP ${response.status}`);
+    return await response.json();
+  }catch(error){
+    if(error&&error.name==='AbortError')throw new Error(`GitHub共通DBの取得がタイムアウトしました（${Math.round((Number(timeoutMs)||15000)/1000)}秒）`);
+    throw error;
+  }finally{clearTimeout(timer);}
 }
 function characterGithubMasterResult(masterDocument, manifest={}) {
   const manifestVersion = String(manifest.version || '').trim();
@@ -6914,16 +6940,14 @@ async function fetchGithubCharacterSheetMaster({force=false}={}) {
     let usableMismatch=null;
     for(const base of characterGithubBaseCandidates()){
       let lastError=null;
-      for(let attempt=0;attempt<3;attempt++){
-        const token=`${Date.now()}_${attempt}_${Math.random().toString(36).slice(2)}`;
+      for(let attempt=0;attempt<2;attempt++){
         try{
           const manifestUrl=new URL('manifest.json',base);
-          manifestUrl.searchParams.set('_ra',token);
-          const manifest=await characterFetchGithubJson(manifestUrl.toString(),{fresh:true});
+          const manifest=await characterFetchGithubJson(manifestUrl.toString(),{timeoutMs:6000,cacheMode:'no-cache'});
           const info=characterManifestMasterInfo(manifest);
           if(!info.file||info.file.includes('..')||info.file.includes('\\'))throw new Error('GitHub共通DBのmanifestに有効なmasterファイル名がありません。');
           const cacheKey=characterMasterCacheKey(manifest,info);
-          if(!force&&cacheKey){
+          if(!force&&!attempt&&cacheKey){
             const cached=await characterMasterCacheGet(cacheKey);
             if(cached&&typeof cached==='object'){
               cached.__source='github';
@@ -6934,17 +6958,18 @@ async function fetchGithubCharacterSheetMaster({force=false}={}) {
             }
           }
           const masterUrlObject=new URL(info.file,base);
-          masterUrlObject.searchParams.set('v',info.sha256||String(manifest.version||'master'));
-          const result=characterGithubMasterResult(await characterFetchGithubJson(masterUrlObject.toString()),manifest);
+          masterUrlObject.searchParams.set('_ra',info.sha256||String(manifest.version||'master'));
+          const masterCacheMode=(force||attempt>0)?'reload':'force-cache';
+          const result=characterGithubMasterResult(await characterFetchGithubJson(masterUrlObject.toString(),{timeoutMs:15000,cacheMode:masterCacheMode}),manifest);
           if(!result.__versionWarning){if(cacheKey)characterMasterCachePut(cacheKey,result);return result;}
           usableMismatch=result;
           lastError=new Error(`GitHub共通DBの更新反映待ちです（${result.__versionWarning}）。`);
         }catch(error){lastError=error;}
-        if(attempt<2)await characterGithubDelay(250*(attempt+1));
+        if(attempt<1)await characterGithubDelay(300);
       }
       try{
         const directUrl=new URL('recraft_alchemia_master.json',base);
-        return characterGithubMasterResult(await characterFetchGithubJson(directUrl.toString(),{fresh:true}),{master:'recraft_alchemia_master.json'});
+        return characterGithubMasterResult(await characterFetchGithubJson(directUrl.toString(),{timeoutMs:15000,cacheMode:'no-cache'}),{master:'recraft_alchemia_master.json'});
       }catch(directError){
         errors.push(`${base}: ${[lastError&&lastError.message,directError&&directError.message].filter(Boolean).join(' / ')}`);
       }
