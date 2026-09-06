@@ -511,6 +511,14 @@
   .equipment-slot-body { display:grid; gap:10px; }
   .equipment-summary { color: var(--muted); font-size: .82rem; text-align: right; line-height: 1.4; }
   .inventory-card > .inventory-card-detail { display:none !important; }
+  /* v90.8.735 UI hotfix: 倉庫アイテムは詳細モーダルがあるため個別折り畳みを廃止。 */
+  .inventory-card.inventory-card-static { padding:12px!important; overflow:visible; }
+  .inventory-card.inventory-card-static > .inventory-card-head { padding:0; margin:0; }
+  .inventory-card.inventory-card-static .inventory-card-head::before { content:none!important; display:none!important; }
+  .inventory-card-inline-meta { display:grid; gap:6px; margin-top:9px; padding-top:9px; border-top:1px dashed rgba(170,137,95,.38); font-size:.82rem; line-height:1.55; }
+  .inventory-card-inline-meta-row { display:grid; grid-template-columns:max-content minmax(0,1fr); gap:8px; align-items:start; }
+  .inventory-card-inline-meta-row > b { color:var(--muted); font-size:.76rem; }
+  .inventory-card-inline-upgrades { white-space:pre-wrap; overflow-wrap:anywhere; }
   .owned-item-detail { margin-top:8px; border:1px solid rgba(221,203,176,.82); border-radius:12px; background:rgba(255,253,248,.76); overflow:hidden; }
   .owned-item-detail > summary { cursor:pointer; list-style:none; padding:7px 10px; font-size:.82rem; font-weight:900; color:var(--accent2); display:flex; align-items:center; gap:6px; }
   .owned-item-detail > summary::-webkit-details-marker { display:none; }
@@ -5467,14 +5475,49 @@ function ownedItemDetailHtml(item={}, count='') {
   if (count !== '' && count !== null && count !== undefined) add('個数', String(count));
   add('分類', [row.kind, row.itemType, row.materialType, row.category || row.itemCategory || row.materialCategory].map(v=>String(v||'').trim()).filter((v,i,a)=>v&&a.indexOf(v)===i).join(' / '));
   if (row.rank) add('ランク', inventoryRankLabel(row));
+  add('登録ID', row.publicId);
+  add('買値', inventoryBuyPriceText(row.buyPrice));
   const sell = inventorySellPriceText(row.price); if (sell) add('売値', sell);
+  add('装備/使用枠', row.equipSlot);
   add('属性', row.element);
   add('対象', row.target);
   add('使用技能', row.checkType || row.skill);
   add('威力', row.power);
+  add('命中補正', row.hit);
+  add('防御値', row.defense);
+  add('防御行動値', row.guard);
+  add('回避補正', row.evade);
+  add('副手追撃値', row.offhand);
+  add('補正', row.modifiers);
+  add('術式枠補正', row.spellSlots ? `+${row.spellSlots}` : '');
+  add('消費/コスト', row.cost);
+  add('役割', row.role);
+  add('矢弾種別', row.ammoKind);
+  add('対応武器種', row.compatibleWeaponTypes);
+  add('最大スタック数', row.maxStack);
+  add('矢筒収納種類数', row.quiverCapacity);
+  add('バッグ容量', row.bagCapacity || row.capacity);
+  add('完成品', row.recipeResult);
+  add('必要素材', row.materials);
+  if (inventoryKindSupportsUpgradeLimit(row.kind)) {
+    const savedUpgradeEntries=parseUpgradeLines(row.upgradeEntries||row.upgradeLines||'');
+    const usedSlots=equipmentUpgradeUsedSlots(savedUpgradeEntries);
+    const limit=resolvedEquipmentUpgradeLimit(row)||0;
+    add('強化枠', `${usedSlots} / ${limit}`);
+    add('強化素材最低ランク', row.upgradeMaterialMinRank ? characterPlayerRankLabel(row.upgradeMaterialMinRank) : '');
+    add('保存済み強化内容', serializeUpgradeEntries(savedUpgradeEntries));
+  }
   add('説明', row.description);
+  add('効果', row.effect);
+  add('備考', row.note);
   add(row.materialType==='魔物素材'?'ドロップ元':'入手先', row.source);
-  if (row.equipmentUpgradeEffect) add('装備強化', [row.equipmentUpgradeEffect, row.equipmentUpgradeDetail].filter(Boolean).join('：'));
+  if (row.equipmentUpgradeEffect) {
+    add('装備強化内容', row.equipmentUpgradeEffect);
+    add('消費強化枠', row.equipmentUpgradeSlotCost ? `${row.equipmentUpgradeSlotCost}枠` : '');
+    add('強化対象', row.equipmentUpgradeTarget);
+    add('強化効果説明', row.equipmentUpgradeDetail);
+  }
+  add('タグ', row.tags);
   const effects=equipmentEffectSectionsHtml(row);
   return (lines.join('')+effects) || '<div class="small">表示できる詳細情報がありません。</div>';
 }
@@ -6280,20 +6323,26 @@ function inventoryWarehouseQuickText(item={}){
     inventorySellPriceText(item.price)?`売値 ${inventorySellPriceText(item.price)}`:''
   ].filter(Boolean).join(' / ');
 }
+function inventoryWarehouseInlineMetaHtml(item={}){
+  if(!inventoryKindSupportsUpgradeLimit(item.kind))return '';
+  const entries=parseUpgradeLines(item.upgradeEntries||item.upgradeLines||'');
+  const used=equipmentUpgradeUsedSlots(entries),limit=resolvedEquipmentUpgradeLimit(item)||0;
+  const serialized=serializeUpgradeEntries(entries);
+  const rows=[`<div class="inventory-card-inline-meta-row"><b>強化枠</b><span>${esc(`${used} / ${limit}`)}</span></div>`];
+  if(serialized)rows.push(`<div class="inventory-card-inline-meta-row"><b>強化内容</b><span class="inventory-card-inline-upgrades">${esc(serialized)}</span></div>`);
+  return `<div class="inventory-card-inline-meta">${rows.join('')}</div>`;
+}
 function inventoryWarehouseCardHtml(item,index){
   if(isLearnedSpellInventoryRow(item))return '';
   const title=item.name||'未設定アイテム';
   const displayType=inventorySmallCategory(item);
   const displayCategory=inventoryInternalCategory(item);
-  const categoryDisplay=displayType==='素材'
-    ? [item.materialType||'素材',item.materialCategory||item.category||''].filter(Boolean).join(' / ')
-    : (item.category||displayCategory||'—');
   const quick=inventoryWarehouseQuickText(item);
   const stable=`item:${inventoryItemKey(item)||learnedRecipeKey(item)||String(index)}`;
   const namedOptions=parseNamedProcessingOptions(item.namedProcessingOptions);const namedApplied=!!String(item.appliedNamedProcessingId||'').trim();const namedClass=namedApplied?' named-process-applied':(namedOptions.length?' named-process-available':'');const namedBadge=namedApplied?'<span class="named-process-inline-badge applied">異名加工済</span>':(namedOptions.length?'<span class="named-process-inline-badge">異名加工可</span>':'');
-  return `<details class="inventory-card${namedClass}" data-inventory-row="${index}" data-inventory-stable-key="${esc(stable)}" data-inventory-id="${esc(item.id||'')}" data-inventory-location="倉庫" data-inventory-kind="${esc(item.kind||'アイテム')}" data-inventory-item-type="${esc(displayType)}" data-inventory-category="${esc(displayCategory)}" data-inventory-search="${esc(inventoryWarehouseCardSearchText(item))}">
-    <summary class="inventory-card-head">
-      <div><div class="inventory-title">${esc(title)}</div>${namedBadge?`<div class="named-process-badge-row">${namedBadge}</div>`:''}<div class="small">倉庫 / ${esc(displayType)} / ${esc(displayCategory)}<span data-inventory-quick-index="${index}">${quick?` / ${esc(quick)}`:''}</span></div></div>
+  return `<article class="inventory-card inventory-card-static${namedClass}" data-inventory-row="${index}" data-inventory-stable-key="${esc(stable)}" data-inventory-id="${esc(item.id||'')}" data-inventory-location="倉庫" data-inventory-kind="${esc(item.kind||'アイテム')}" data-inventory-item-type="${esc(displayType)}" data-inventory-category="${esc(displayCategory)}" data-inventory-search="${esc(inventoryWarehouseCardSearchText(item))}">
+    <div class="inventory-card-head">
+      <div><div class="inventory-title">${esc(title)}</div>${namedBadge?`<div class="named-process-badge-row">${namedBadge}</div>`:''}<div class="small">倉庫 / ${esc(displayType)} / ${esc(displayCategory)}<span data-inventory-quick-index="${index}">${quick?` / ${esc(quick)}`:''}</span></div>${inventoryWarehouseInlineMetaHtml(item)}</div>
       <div class="button-row" style="margin:0;">
         ${item.kind==='レシピ'?`<button type="button" class="secondary" data-inventory-action="learn-recipe" data-index="${index}" ${isRecipeLearned(item)?'disabled':''}>${isRecipeLearned(item)?'習得済み':'覚える'}</button>`:''}
         <button type="button" class="ghost inventory-detail-btn public-view-allowed" data-inventory-action="detail" data-index="${index}">詳細</button>
@@ -6301,9 +6350,8 @@ function inventoryWarehouseCardHtml(item,index){
         <button type="button" class="ghost" data-inventory-action="duplicate" data-index="${index}">複製</button>
         <button type="button" class="danger" data-inventory-action="delete" data-index="${index}">削除</button>
       </div>
-    </summary>
-    <div class="inventory-card-detail" data-inventory-detail-index="${index}"></div>
-  </details>`;
+    </div>
+  </article>`;
 }
 function inventoryWarehouseDetailHtml(item,index){
   const title=item.name||'未設定アイテム';
@@ -6366,19 +6414,14 @@ function refreshInventoryCardAt(index,{appendIfMissing=false}={}){
   if(!area||!inventoryItemsState[index])return false;
   const item=inventoryItemsState[index];
   if(isLearnedSpellInventoryRow(item))return false;
-  const selector=`details.inventory-card[data-inventory-row="${index}"]`;
+  const selector=`.inventory-card[data-inventory-row="${index}"]`;
   const existing=area.querySelector(selector);
-  const wasOpen=!!existing?.open || inventoryCardOpenState.get(`item:${inventoryItemKey(item)||learnedRecipeKey(item)||String(index)}`)===true;
   const html=inventoryWarehouseCardHtml(item,index);
   if(existing){
     existing.insertAdjacentHTML('afterend',html);
-    const next=existing.nextElementSibling;
     existing.remove();
-    if(next&&wasOpen){next.open=true;hydrateInventoryCardDetail(next);}
   }else if(appendIfMissing && index===inventoryItemsState.length-1){
     area.insertAdjacentHTML('beforeend',html);
-    const next=area.lastElementChild;
-    if(next&&wasOpen){next.open=true;hydrateInventoryCardDetail(next);}
   }else{
     return false;
   }
@@ -6423,7 +6466,7 @@ function renderInventory({refreshLinked=true}={}) {
     return;
   }
   if($('inventoryEmptyStatus'))$('inventoryEmptyStatus').textContent='まだ所持品が登録されていません。';
-  // v90.8.457: 閉じているカードの詳細DOMは生成しない。数百件でも初期描画を軽量化。
+  // 詳細はモーダルで開くため、倉庫カード本体は常時コンパクト表示する。
   area.innerHTML=cache.rows.map(inventoryWarehouseCardHtml).join('');
   if($('inventoryEmptyStatus'))$('inventoryEmptyStatus').style.display=cache.warehouseCount?'none':'';
   restoreInventoryCardOpenStates();
