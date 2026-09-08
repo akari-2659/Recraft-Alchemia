@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>リクラフト・アルケミア キャラクター作成ツール v90.8.745</title>
+<title>リクラフト・アルケミア キャラクター作成ツール v90.8.746</title>
 <style>
   :root {
     --bg: #f5eee4;
@@ -1151,10 +1151,10 @@ body.public-view .loadout-preset-panel{display:none!important}
 
 </style>
 
-<link rel="stylesheet" href="ra-design-system.css?v=90.8.745-weapon-ui-boss-slot-audit-20260908">
+<link rel="stylesheet" href="ra-design-system.css?v=90.8.746-equipment-material-effect-audit-20260908">
 </head>
 <body class="ra-app ra-player ra-character">
-<div class="ra-build-info">Version：v90.8.745 / 最終更新日：2026年9月8日</div>
+<div class="ra-build-info">Version：v90.8.746 / 最終更新日：2026年9月8日</div>
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 <header>
@@ -5843,17 +5843,6 @@ function normalizeInventoryItem(item={}) {
     const before=String(appliedNamedProcessing.applyBefore||'').trim(),after=String(appliedNamedProcessing.applyAfter||appliedNamedProcessing.fullAfter||'').trim();
     if(before&&after)equipmentEffects=equipmentEffects.map(effect=>String(effect.detail||'').includes(before)?{...effect,detail:String(effect.detail||'').replace(before,after)}:effect);
     if(equipmentEffects.length===1&&after)equipmentEffects[0]={...equipmentEffects[0],detail:after};
-  }
-  if(appliedNamedProcessing&&String(appliedNamedProcessing.applyKind||'').trim()==='spellSlots'){
-    const afterSlots=String(appliedNamedProcessing.applyAfter||'').trim();
-    if(afterSlots){
-      const slotPattern=/術式枠[+＋]?\d+/u;
-      equipmentEffects=equipmentEffects.map(effect=>{
-        const detail=String(effect.detail||''),summary=String(effect.summary||'');
-        if(String(effect.name||'').trim()!=='術式枠拡張'&&!slotPattern.test(detail))return effect;
-        return {...effect,detail:detail.replace(slotPattern,`術式枠+${afterSlots}`),summary:summary.replace(slotPattern,`術式枠+${afterSlots}`)};
-      });
-    }
   }
   const normalizedModifiers = serializeModifierRows(normalizedModifierRows);
   const firstModifierText = target => String(normalizedModifierRows.find(row => row.target === target)?.value || '').trim();
